@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 var version = "0.1.0"
@@ -23,6 +24,7 @@ var version = "0.1.0"
 var embedded embed.FS
 
 var modes = map[string]bool{
+	"auto":      true,
 	"discover":  true,
 	"select":    true,
 	"entry":     true,
@@ -37,6 +39,7 @@ type PlatformConfig struct {
 	Args         []string `json:"args"`
 	PromptMode   string   `json:"promptMode"`
 	Subscription string   `json:"subscription"`
+	SetupURL     string   `json:"setupUrl"`
 	Enabled      bool     `json:"enabled"`
 }
 
@@ -73,71 +76,79 @@ func run(args []string) error {
 	case "platforms":
 		return platforms()
 	case "prompt":
-		if len(args) < 2 {
-			return errors.New("missing mode")
+		if len(args) >= 2 && modes[args[1]] {
+			return printPrompt(args[1], args[2:])
 		}
-		return printPrompt(args[1], args[2:])
+		return printPrompt("auto", args[1:])
 	case "run":
-		if len(args) < 2 {
-			return errors.New("missing mode")
+		if len(args) >= 2 && modes[args[1]] {
+			return runMode(args[1], args[2:])
 		}
-		return runMode(args[1], args[2:])
+		return runMode("auto", args[1:])
 	default:
 		if modes[args[0]] {
-			return printPrompt(args[0], args[1:])
+			return runMode(args[0], args[1:])
 		}
-		return fmt.Errorf("unknown command: %s", args[0])
+		return runMode("auto", args)
 	}
 }
 
 func printUsage() {
-	fmt.Println(`investiq
+	fmt.Println(`iq
 
 Usage:
-  investiq init [--yes]                       Create ~/.investiq/config.json
-  investiq doctor                             Check configured AI platforms
-  investiq platforms                          Print platform config
-  investiq prompt <mode> [request]            Print the composed agent prompt
-  investiq run <mode> [request] [options]     Run through a configured platform
-  investiq <mode> [request]                   Alias for prompt <mode>
+  iq init                                     Set up AI platform routing
+  iq doctor                                   Check detected AI platforms
+  iq "question"                               Analyze with automatic request classification
+  iq entry "question"                         Analyze buy/entry timing
+  iq exit "question"                          Analyze sell/trim/stop conditions
+  iq discover "question"                      Find investment candidates
+  iq select "question"                        Rank candidates in a chosen domain
 
 Modes:
   discover, select, entry, exit, portfolio, journal
 
-Options:
-  --platform auto|claude|codex|opencode|gemini|manual
-  --dry-run
+Debug:
+  investiq prompt "question"                  Print the composed agent prompt
+  investiq platforms                          Print platform config
 
 Examples:
-  investiq init
-  investiq doctor
-  investiq run entry "NVDA current entry zone" --platform auto
-  investiq run discover "latest opportunities for a 12 month horizon" --platform manual`)
+  iq "NVDA 지금 사도 될까?"
+  iq entry "AAPL 현재 매수 구간 분석"
+  iq exit "TSLA 보유 중인데 매도 기준 점검"
+  iq discover "6개월에서 12개월 관점 투자 후보 찾아줘"`)
 }
 
 func initConfig(yes bool) error {
 	cfg := defaultConfig()
 	if !yes {
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Println("Configure the AI platforms you subscribe to or can run locally.")
+		fmt.Println("investiq will use the best available AI CLI on this machine.")
+		fmt.Println("If none are ready, it falls back to printing a prompt you can paste into any web AI.")
+		fmt.Println()
 		for _, name := range cfg.PlatformPriority {
 			if name == "manual" {
 				continue
 			}
 			platform := cfg.Platforms[name]
-			installed := hasCommand(platform.Command)
-			defaultAnswer := "[y/N]"
+			installed := hasRunnableCommand(platform.Command)
 			if installed {
-				defaultAnswer = "[Y/n]"
-			}
-			fmt.Printf("Enable %s (%s)? %s ", platform.Label, platform.Command, defaultAnswer)
-			answer, _ := reader.ReadString('\n')
-			normalized := strings.ToLower(strings.TrimSpace(answer))
-			platform.Enabled = (installed && normalized != "n" && normalized != "no") || (!installed && (normalized == "y" || normalized == "yes"))
-			if platform.Enabled {
-				fmt.Printf("Subscription/account label for %s (optional): ", platform.Label)
-				subscription, _ := reader.ReadString('\n')
-				platform.Subscription = strings.TrimSpace(subscription)
+				fmt.Printf("Use %s when available? [Y/n] ", platform.Label)
+				answer, _ := reader.ReadString('\n')
+				normalized := strings.ToLower(strings.TrimSpace(answer))
+				platform.Enabled = normalized != "n" && normalized != "no"
+			} else {
+				platform.Enabled = false
+				if platform.SetupURL != "" {
+					fmt.Printf("%s was not found. Open setup page? [y/N] ", platform.Label)
+					answer, _ := reader.ReadString('\n')
+					normalized := strings.ToLower(strings.TrimSpace(answer))
+					if normalized == "y" || normalized == "yes" {
+						_ = openBrowser(platform.SetupURL)
+					}
+				} else {
+					fmt.Printf("%s was not found. Skipping.\n", platform.Label)
+				}
 			}
 			cfg.Platforms[name] = platform
 		}
@@ -154,6 +165,9 @@ func initConfig(yes bool) error {
 		return err
 	}
 	fmt.Printf("Wrote %s\n", configPath())
+	fmt.Println()
+	fmt.Println("Try:")
+	fmt.Println(`  iq "NVDA 지금 사도 될까?"`)
 	return nil
 }
 
@@ -167,7 +181,7 @@ func doctor() error {
 	}
 	for _, name := range cfg.PlatformPriority {
 		platform := cfg.Platforms[name]
-		installed := name == "manual" || hasCommand(platform.Command)
+		installed := name == "manual" || hasRunnableCommand(platform.Command)
 		status := "disabled"
 		if platform.Enabled && installed {
 			status = "ready"
@@ -208,25 +222,18 @@ func runMode(mode string, args []string) error {
 	if !modes[mode] {
 		return fmt.Errorf("invalid mode: %s", mode)
 	}
-	platformName := "auto"
 	dryRun := false
 	query := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--dry-run":
 			dryRun = true
-		case "--platform":
-			if i+1 >= len(args) {
-				return errors.New("--platform requires a value")
-			}
-			platformName = args[i+1]
-			i++
 		default:
 			query = append(query, args[i])
 		}
 	}
 	cfg := loadConfig()
-	selected := selectPlatform(cfg, platformName)
+	selected := selectPlatform(cfg, cfg.DefaultPlatform)
 	platform, ok := cfg.Platforms[selected]
 	if !ok {
 		return fmt.Errorf("unknown platform: %s", selected)
@@ -250,10 +257,15 @@ func buildPrompt(mode string, queryParts []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	workflowPath := fmt.Sprintf("plugins/investiq/workflows/%s.md", mode)
-	workflow, err := readEmbedded(workflowPath)
-	if err != nil {
-		return "", err
+	workflow := `# investiq auto
+
+Classify the user's request into discover, select, entry, exit, portfolio, or journal, then follow the matching investiq workflow. If the request is ambiguous, choose the safest interpretation and state your assumption.`
+	if mode != "auto" {
+		workflowPath := fmt.Sprintf("plugins/investiq/workflows/%s.md", mode)
+		workflow, err = readEmbedded(workflowPath)
+		if err != nil {
+			return "", err
+		}
 	}
 	query := strings.TrimSpace(strings.Join(queryParts, " "))
 	if query == "" {
@@ -265,7 +277,7 @@ func buildPrompt(mode string, queryParts []string) (string, error) {
 		"User request:\n" + query,
 		"Report template:\n" + strings.TrimSpace(template),
 		`Hard requirements:
-- Use current web search or current market-data tools before analysis.
+- Always use current web search or current market-data tools before analysis, even if the user does not ask for latest/current/recent data.
 - If fresh data cannot be verified, do not make a recommendation.
 - Include data freshness, source links, risks, Devil's Advocate, action conditions, monitoring plan, and provenance.
 - Do not execute trades. The final decision remains with the user.`,
@@ -288,24 +300,28 @@ func defaultConfig() Config {
 			Command:    "claude",
 			Args:       []string{"-p", "{{prompt}}"},
 			PromptMode: "argument",
+			SetupURL:   "https://docs.anthropic.com/en/docs/claude-code/setup",
 		},
 		"codex": {
 			Label:      "Codex",
 			Command:    "codex",
 			Args:       []string{"{{prompt}}"},
 			PromptMode: "argument",
+			SetupURL:   "https://developers.openai.com/codex/cli",
 		},
 		"opencode": {
 			Label:      "OpenCode / Oh My OpenAgent",
 			Command:    "opencode",
 			Args:       []string{"run", "{{prompt}}"},
 			PromptMode: "argument",
+			SetupURL:   "https://opencode.ai/",
 		},
 		"gemini": {
 			Label:      "Gemini CLI",
 			Command:    "gemini",
 			Args:       []string{"{{prompt}}"},
 			PromptMode: "argument",
+			SetupURL:   "https://github.com/google-gemini/gemini-cli",
 		},
 		"manual": {
 			Label:        "Manual copy/paste",
@@ -315,7 +331,7 @@ func defaultConfig() Config {
 		},
 	}
 	for name, platform := range platforms {
-		if platform.Command != "" && hasCommand(platform.Command) {
+		if platform.Command != "" && hasRunnableCommand(platform.Command) {
 			platform.Enabled = true
 			platforms[name] = platform
 		}
@@ -366,7 +382,7 @@ func selectPlatform(cfg Config, requested string) string {
 		if !platform.Enabled {
 			continue
 		}
-		if name == "manual" || hasCommand(platform.Command) {
+		if name == "manual" || hasRunnableCommand(platform.Command) {
 			return name
 		}
 	}
@@ -378,8 +394,8 @@ func runPlatform(name string, platform PlatformConfig, prompt string, dryRun boo
 		fmt.Println(prompt)
 		return nil
 	}
-	if !hasCommand(platform.Command) {
-		return fmt.Errorf("platform command not found: %s\nRun `investiq doctor` or use `--platform manual`.", platform.Command)
+	if !hasRunnableCommand(platform.Command) {
+		return fmt.Errorf("platform command not found: %s\nRun `iq doctor` to check platform routing.", platform.Command)
 	}
 	args := renderArgs(platform.Args, prompt)
 	if dryRun {
@@ -423,6 +439,35 @@ func hasCommand(command string) bool {
 	}
 	_, err := exec.LookPath(command)
 	return err == nil
+}
+
+func hasRunnableCommand(command string) bool {
+	if !hasCommand(command) {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, command, "--version")
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+	return ctx.Err() == nil
+}
+
+func openBrowser(url string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		return fmt.Errorf("cannot open browser on %s", runtime.GOOS)
+	}
+	return cmd.Start()
 }
 
 func shellQuote(value string) string {

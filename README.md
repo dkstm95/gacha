@@ -6,12 +6,12 @@
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
-investiq init
-investiq doctor
-investiq run entry "NVDA 현재 가격이 매수하기 적절한지 최신 데이터로 분석"
+iq init
+iq doctor
+iq "NVDA 지금 사도 될까?"
 ```
 
-The installer downloads a standalone binary from GitHub Releases. It does not require Node, npm, Python, or Go on the user's machine.
+The installer downloads a standalone binary from GitHub Releases and installs both `investiq` and the shorter `iq` alias. It does not require Node, npm, Python, or Go on the user's machine.
 
 Install a specific release:
 
@@ -61,15 +61,14 @@ The CLI composes host-agnostic workflows and templates, then routes them to the 
 Harness commands:
 
 ```bash
-investiq init
-investiq doctor
-investiq platforms
-investiq prompt entry "AAPL"
-investiq run entry "AAPL" --platform auto
-investiq run exit "TSLA 보유 중인데 매도 기준 점검" --platform claude
+iq init
+iq doctor
+iq "AAPL 지금 살까?"
+iq entry "AAPL 현재 매수 구간 분석"
+iq exit "TSLA 보유 중인데 매도 기준 점검"
 ```
 
-`investiq init` writes `~/.investiq/config.json`. This file records which AI platforms the user can access, their command names, subscription/account labels, and routing priority.
+`iq init` writes `~/.investiq/config.json`. This file records which AI platforms are available and the internal routing priority. Users do not need to choose a platform for each request.
 
 The default routing order is:
 

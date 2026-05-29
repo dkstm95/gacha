@@ -5,6 +5,7 @@ REPO="${INVESTIQ_REPO:-dkstm95/investiq}"
 VERSION="${INVESTIQ_VERSION:-latest}"
 INSTALL_DIR="${INVESTIQ_INSTALL_DIR:-$HOME/.local/bin}"
 BIN_NAME="investiq"
+ALIAS_NAME="iq"
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -50,14 +51,25 @@ echo "Downloading $url"
 curl -fsSL "$url" -o "$tmpdir/investiq.tar.gz"
 tar -xzf "$tmpdir/investiq.tar.gz" -C "$tmpdir"
 install -m 0755 "$tmpdir/investiq" "$INSTALL_DIR/$BIN_NAME"
+ln -sf "$BIN_NAME" "$INSTALL_DIR/$ALIAS_NAME"
 
 echo "Installed $BIN_NAME to $INSTALL_DIR/$BIN_NAME"
+echo "Installed short alias $ALIAS_NAME to $INSTALL_DIR/$ALIAS_NAME"
 case ":$PATH:" in
-  *":$INSTALL_DIR:"*) ;;
+  *":$INSTALL_DIR:"*)
+    echo "$INSTALL_DIR is already on PATH."
+    echo "You can now run:"
+    echo "  iq version"
+    echo "  iq init"
+    ;;
   *)
-    echo "Add this to your shell profile if needed:"
+    echo "$INSTALL_DIR is not on PATH."
+    echo "Run this now:"
+    echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
+    echo
+    echo "Add this to your shell profile:"
     echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
     ;;
 esac
 
-"$INSTALL_DIR/$BIN_NAME" version
+"$INSTALL_DIR/$ALIAS_NAME" version
