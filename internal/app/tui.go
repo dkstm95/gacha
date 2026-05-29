@@ -1,9 +1,7 @@
 package app
 
 import (
-	"bytes"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -187,14 +185,19 @@ func runPrompt(query string) (string, error) {
 	if !ok || !hasOpenCodeAuth() {
 		return prompt, nil
 	}
-	cmd := exec.Command(commandPath, "run", prompt)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &out
-	if err := cmd.Run(); err != nil {
-		return out.String(), err
+	args := openCodeRunArgs(prompt, preferredOpenCodeModel())
+	output, err := runOpenCode(commandPath, args, false)
+	if err == nil {
+		return strings.TrimSpace(output), nil
 	}
-	return strings.TrimSpace(out.String()), nil
+	if fallback := fallbackOpenCodeModel(args, output); fallback != "" {
+		retryOutput, retryErr := runOpenCode(commandPath, openCodeRunArgs(prompt, fallback), false)
+		if retryErr == nil {
+			return strings.TrimSpace(retryOutput), nil
+		}
+		return retryOutput, retryErr
+	}
+	return output, err
 }
 
 func welcomeContent(version string) string {
@@ -268,6 +271,9 @@ func doctorContent() string {
 	}
 	if resolved, ok := resolveCommand(openCodeCommand); ok {
 		lines = append(lines, fmt.Sprintf("Resolved: %s", resolved))
+	}
+	if model := preferredOpenCodeModel(); model != "" {
+		lines = append(lines, fmt.Sprintf("Model:    %s", model))
 	}
 	if hasOpenCodeAuth() {
 		if providers, err := openCodeAuthList(); err == nil && strings.TrimSpace(providers) != "" {

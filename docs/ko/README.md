@@ -78,6 +78,14 @@ gch "NVDA 지금 사도 될까?"
 gch doctor
 ```
 
+이 명령은 Gacha가 OpenCode에 요청할 모델도 보여줍니다. OpenAI OAuth, 즉 ChatGPT 구독 계정으로 연결된 경우 Gacha는 OpenCode의 마지막 선택 모델을 그대로 쓰지 않고 `openai/gpt-5.1-codex`를 명시적으로 사용합니다. 이렇게 하면 `gpt-5.5-pro`처럼 ChatGPT/Codex 경로에서 지원되지 않는 모델 오류를 피할 수 있습니다.
+
+고급 사용자는 다음처럼 직접 모델을 지정할 수 있습니다.
+
+```bash
+GACHA_OPENCODE_MODEL=provider/model gch
+```
+
 `gacha`는 다음 경로를 사용합니다.
 
 ```text

@@ -78,6 +78,14 @@ Run this if you want to see whether the local AI runtime is ready:
 gch doctor
 ```
 
+The check also shows the model Gacha will ask OpenCode to use. When your provider is OpenAI OAuth, the ChatGPT subscription route, Gacha pins OpenCode to `openai/gpt-5.1-codex` instead of reusing OpenCode's last selected model. This avoids unsupported ChatGPT/Codex models such as `gpt-5.5-pro`.
+
+Advanced users can override this with:
+
+```bash
+GACHA_OPENCODE_MODEL=provider/model gch
+```
+
 `gacha` uses this route:
 
 ```text
