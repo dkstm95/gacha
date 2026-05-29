@@ -5,10 +5,9 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "investiq": "./bin/investiq"
+    "investiq": "./src/investiq.mjs"
   },
   "files": [
-    "bin/",
     "src/",
     "plugins/",
     ".agents/",
