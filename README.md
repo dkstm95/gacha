@@ -5,19 +5,34 @@
 ## Quick Start
 
 ```bash
-npm install -g investiq
+curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
 investiq init
 investiq doctor
 investiq run entry "NVDA 현재 가격이 매수하기 적절한지 최신 데이터로 분석"
 ```
 
-Non-global local usage:
+The installer downloads a standalone binary from GitHub Releases. It does not require Node, npm, Python, or Go on the user's machine.
+
+Install a specific release:
 
 ```bash
-npm install
-npm run build
-npm link
-investiq run discover "12개월 투자 후보를 최신 데이터로 찾아줘" --platform manual
+curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | INVESTIQ_VERSION=v0.1.0 sh
+```
+
+Build from source:
+
+```bash
+git clone https://github.com/dkstm95/investiq.git
+cd investiq
+go build -o investiq .
+./investiq doctor
+```
+
+Maintainer release flow:
+
+```bash
+VERSION=0.1.0 sh scripts/build-release.sh
+gh release create v0.1.0 dist/*.tar.gz dist/checksums.txt --title "v0.1.0"
 ```
 
 Codex marketplace plugin:
