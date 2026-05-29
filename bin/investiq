@@ -1,0 +1,37 @@
+#!/usr/bin/env sh
+set -eu
+
+ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+PLUGIN_DIR="$ROOT_DIR/plugins/investiq"
+MODE="${1:-help}"
+
+case "$MODE" in
+  discover|select|entry|exit)
+    cat "$PLUGIN_DIR/workflows/$MODE.md"
+    printf "\n"
+    cat "$PLUGIN_DIR/templates/investment-report.md"
+    ;;
+  prompt)
+    cat "$PLUGIN_DIR/platforms/generic/system-prompt.md"
+    ;;
+  help|-h|--help)
+    cat <<'EOF'
+investiq
+
+Usage:
+  investiq discover   Print the discover workflow
+  investiq select     Print the select workflow
+  investiq entry      Print the entry workflow
+  investiq exit       Print the exit workflow
+  investiq prompt     Print the generic agent system prompt
+
+This CLI is a lightweight prompt/workflow helper. It does not fetch market data
+or execute trades by itself. Host agents must use fresh web/current data.
+EOF
+    ;;
+  *)
+    echo "Unknown mode: $MODE" >&2
+    echo "Run: investiq help" >&2
+    exit 2
+    ;;
+esac
