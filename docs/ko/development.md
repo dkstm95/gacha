@@ -15,8 +15,8 @@ ln -sf gacha gch
 ## 릴리즈
 
 ```bash
-VERSION=0.1.10 sh scripts/build-release.sh
-gh release create v0.1.10 dist/*.tar.gz dist/checksums.txt --title "v0.1.10"
+VERSION=0.1.11 sh scripts/build-release.sh
+gh release create v0.1.11 dist/*.tar.gz dist/checksums.txt --title "v0.1.11"
 ```
 
 GitHub Actions 템플릿은 다음 위치에 있습니다.

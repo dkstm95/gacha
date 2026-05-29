@@ -28,6 +28,7 @@ type tuiModel struct {
 	busy    bool
 	status  string
 	runtime string
+	mode    string
 }
 
 func newTUIModel(version string) tuiModel {
@@ -53,6 +54,7 @@ func newTUIModel(version string) tuiModel {
 		height:  34,
 		status:  "Ready",
 		runtime: routeLabel(),
+		mode:    "Auto",
 	}
 }
 
@@ -85,6 +87,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case runResultMsg:
 		m.busy = false
 		m.runtime = routeLabel()
+		m.mode = "Report"
 		if msg.err != nil {
 			m.status = "Fallback"
 			m.view.SetContent(errorContent(msg.err, msg.output))
@@ -115,27 +118,32 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case "/h", "/help", "help":
 		m.status = "Help"
+		m.mode = "Command"
 		m.view.SetContent(helpContent())
 		m.view.GotoTop()
 		return m, nil
 	case "/home", "home":
 		m.status = "Ready"
+		m.mode = "Auto"
 		m.view.SetContent(welcomeContent(m.version))
 		m.view.GotoTop()
 		return m, nil
 	case "/doctor", "doctor":
 		m.status = "Doctor"
 		m.runtime = routeLabel()
+		m.mode = "Runtime"
 		m.view.SetContent(doctorContent())
 		m.view.GotoTop()
 		return m, nil
 	case "/setup", "setup":
 		m.status = "Setup"
+		m.mode = "Runtime"
 		m.view.SetContent(setupContent())
 		m.view.GotoTop()
 		return m, nil
 	case "/update", "update":
 		m.status = "Update"
+		m.mode = "System"
 		m.view.SetContent("Run `gacha update` outside the interactive UI to update the binary.")
 		m.view.GotoTop()
 		return m, nil
@@ -143,7 +151,8 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 
 	m.busy = true
 	m.status = "Researching"
-	m.view.SetContent("Preparing fresh-data workflow for:\n\n" + value)
+	m.mode = "Auto"
+	m.view.SetContent(researchingContent(value))
 	return m, tea.Batch(m.spin.Tick, runPromptCmd(value))
 }
 
@@ -155,7 +164,7 @@ func (m tuiModel) View() string {
 	m.view.Height = contentHeight
 
 	header := renderHeader(bodyWidth, m.version)
-	status := renderStatus(bodyWidth, m.status, m.runtime, m.busy, m.spin.View())
+	status := renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View())
 	panel := panelStyle.Width(bodyWidth - 2).Height(contentHeight).Render(m.view.View())
 	input := renderInput(bodyWidth, m.input.View())
 	footer := mutedStyle.Render(" /help  /doctor  /setup  /update  /quit   •   enter to run   •   esc to exit")
@@ -190,22 +199,44 @@ func runPrompt(query string) (string, error) {
 
 func welcomeContent(version string) string {
 	return strings.Join([]string{
-		titleStyle.Render("Ask anything"),
-		"gacha classifies your request.",
-		"It selects the matching investment workflow.",
-		"It requires fresh web or market data before analysis.",
+		titleStyle.Render("Investment research cockpit"),
+		"Ask one question. Gacha routes it through the right research workflow.",
+		"Every workflow requires current web or market data before analysis.",
+		"",
+		titleStyle.Render("Workflow rail"),
+		chipStyle.Render("Discover") + "  find opportunities when you do not know what to buy",
+		chipStyle.Render("Select") + "    rank concrete assets inside a sector or theme",
+		chipStyle.Render("Entry") + "     decide whether the current price is attractive",
+		chipStyle.Render("Exit") + "      define trim, sell, stop-loss, and thesis-break zones",
+		chipStyle.Render("Portfolio") + " review concentration, exposure, and rebalancing risks",
+		chipStyle.Render("Journal") + "   record thesis, decision rules, and postmortems",
 		"",
 		titleStyle.Render("Try"),
-		"• NVDA 지금 사도 될까?",
-		"• What should I invest in for the next 6 to 12 months?",
-		"• I own TSLA. When should I trim, sell, or stop out?",
+		"NVDA 지금 사도 될까?",
+		"What should I invest in for the next 6 to 12 months?",
+		"I own TSLA. When should I trim, sell, or stop out?",
 		"",
-		titleStyle.Render("Operating rules"),
-		"• No fresh data, no recommendation.",
-		"• Trading is disabled.",
-		"• Final decisions stay with the user.",
+		titleStyle.Render("Report contract"),
+		"Data freshness • Sources • Thesis • Valuation • Risks • Devil's Advocate • Action conditions",
 		"",
-		mutedStyle.Render("Version " + version),
+		mutedStyle.Render("No fresh data, no recommendation. Trading is disabled. Version " + version),
+	}, "\n")
+}
+
+func researchingContent(query string) string {
+	return strings.Join([]string{
+		titleStyle.Render("Research run"),
+		"Query:",
+		"  " + query,
+		"",
+		titleStyle.Render("Pipeline"),
+		"1. Classify request: discover, select, entry, exit, portfolio, or journal",
+		"2. Require current web or market data",
+		"3. Build thesis, valuation, and scenario analysis",
+		"4. Run risk review and Devil's Advocate",
+		"5. Produce action conditions and provenance",
+		"",
+		mutedStyle.Render("Waiting for the local AI runtime..."),
 	}, "\n")
 }
 
@@ -275,13 +306,14 @@ func renderHeader(width int, version string) string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, left, mutedStyle.Render(line), right)
 }
 
-func renderStatus(width int, status string, runtime string, busy bool, spin string) string {
+func renderStatus(width int, status string, runtime string, mode string, busy bool, spin string) string {
 	indicator := "●"
 	if busy {
 		indicator = spin
 	}
 	items := []string{
 		accentStyle.Render(indicator + " " + status),
+		"Mode " + mode,
 		"Runtime " + runtime,
 		"Fresh data required",
 		"No trading",
@@ -327,6 +359,7 @@ var (
 	accentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
 	titleStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
 	mutedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	chipStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("238")).Padding(0, 1)
 	statusStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("238")).
