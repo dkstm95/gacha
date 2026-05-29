@@ -24,7 +24,7 @@ Build from source:
 ```bash
 git clone https://github.com/dkstm95/investiq.git
 cd investiq
-go build -o investiq .
+go build -o investiq ./cmd/investiq
 ./investiq doctor
 ```
 

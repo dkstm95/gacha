@@ -16,7 +16,7 @@ for target in $TARGETS; do
   GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 go build \
     -trimpath \
     -ldflags="-s -w -X main.version=$VERSION" \
-    -o "$OUT_DIR/$name/investiq" .
+    -o "$OUT_DIR/$name/investiq" ./cmd/investiq
   tar -C "$OUT_DIR/$name" -czf "$OUT_DIR/$name.tar.gz" investiq
   rm -rf "$OUT_DIR/$name"
 done

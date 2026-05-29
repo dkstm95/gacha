@@ -132,7 +132,7 @@ It composes and routes a strict investment research workflow to an AI platform. 
 git clone https://github.com/dkstm95/investiq.git
 cd investiq
 go test ./...
-go build -o investiq .
+go build -o investiq ./cmd/investiq
 ./investiq doctor
 ```
 
