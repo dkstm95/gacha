@@ -26,18 +26,42 @@ If the installer says your install directory is not on `PATH`, run the printed `
 ```bash
 iq init
 iq doctor
-iq "Should I buy NVDA now?"
+investiq
 ```
 
-That is the primary interface. You do not need to choose `entry`, `exit`, or a platform. `investiq` classifies the request internally and routes it automatically.
+Running `investiq` opens the interactive UI:
+
+```text
+investiq
+Fresh-data investment research agent
+
+Ask an investment question. investiq will classify it and route it automatically.
+Type /help for commands, /doctor to check AI platforms, /quit to exit.
+
+iq>
+```
+
+Type your question at the `iq>` prompt:
+
+```text
+iq> Should I buy NVDA now?
+```
+
+You do not need to choose `entry`, `exit`, or a platform. `investiq` classifies the request internally and routes it automatically.
 
 More examples:
 
+```text
+iq> What should I invest in for the next 6 to 12 months?
+iq> I want exposure to AI infrastructure. Which stocks or ETFs should I compare?
+iq> I own TSLA. When should I trim, sell, or stop out?
+iq> Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
+```
+
+For one-shot usage, you can still run:
+
 ```bash
-iq "What should I invest in for the next 6 to 12 months?"
-iq "I want exposure to AI infrastructure. Which stocks or ETFs should I compare?"
-iq "I own TSLA. When should I trim, sell, or stop out?"
-iq "Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%."
+iq "Should I buy NVDA now?"
 ```
 
 ## How It Works

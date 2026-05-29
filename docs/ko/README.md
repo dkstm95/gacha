@@ -24,18 +24,42 @@ curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | 
 ```bash
 iq init
 iq doctor
-iq "NVDA 지금 사도 될까?"
+investiq
 ```
 
-기본 인터페이스는 `iq "질문"` 하나입니다. 사용자가 `entry`, `exit`, `platform` 같은 옵션을 고를 필요가 없습니다. `investiq`가 내부적으로 요청 종류를 분류하고 사용할 AI 플랫폼을 자동 선택합니다.
+`investiq`를 실행하면 interactive UI로 진입합니다.
+
+```text
+investiq
+Fresh-data investment research agent
+
+Ask an investment question. investiq will classify it and route it automatically.
+Type /help for commands, /doctor to check AI platforms, /quit to exit.
+
+iq>
+```
+
+`iq>` 프롬프트에 질문을 입력하면 됩니다.
+
+```text
+iq> NVDA 지금 사도 될까?
+```
+
+사용자가 `entry`, `exit`, `platform` 같은 옵션을 고를 필요가 없습니다. `investiq`가 내부적으로 요청 종류를 분류하고 사용할 AI 플랫폼을 자동 선택합니다.
 
 예시:
 
+```text
+iq> 6개월에서 12개월 관점에서 무엇에 투자하면 좋을까?
+iq> AI 인프라에 투자하고 싶은데 어떤 종목이나 ETF를 비교해야 할까?
+iq> TSLA를 보유 중인데 언제 줄이거나 팔아야 할까?
+iq> 내 포트폴리오를 점검해줘: AAPL 35%, NVDA 30%, SGOV 35%
+```
+
+한 번만 실행하고 싶으면 기존처럼 짧게 쓸 수도 있습니다.
+
 ```bash
-iq "6개월에서 12개월 관점에서 무엇에 투자하면 좋을까?"
-iq "AI 인프라에 투자하고 싶은데 어떤 종목이나 ETF를 비교해야 할까?"
-iq "TSLA를 보유 중인데 언제 줄이거나 팔아야 할까?"
-iq "내 포트폴리오를 점검해줘: AAPL 35%, NVDA 30%, SGOV 35%"
+iq "NVDA 지금 사도 될까?"
 ```
 
 ## 동작 방식

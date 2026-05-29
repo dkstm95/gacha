@@ -60,7 +60,10 @@ func main() {
 }
 
 func run(args []string) error {
-	if len(args) == 0 || args[0] == "help" || args[0] == "-h" || args[0] == "--help" {
+	if len(args) == 0 {
+		return startSession()
+	}
+	if args[0] == "help" || args[0] == "-h" || args[0] == "--help" {
 		printUsage()
 		return nil
 	}
@@ -94,9 +97,11 @@ func run(args []string) error {
 }
 
 func printUsage() {
-	fmt.Println(`iq
+	fmt.Println(`investiq
 
 Usage:
+  investiq                                    Open the interactive investiq UI
+  iq                                          Open the interactive investiq UI
   iq init                                     Set up AI platform routing
   iq doctor                                   Check detected AI platforms
   iq "question"                               Analyze with automatic request classification
@@ -110,6 +115,76 @@ Examples:
   iq "AAPL 현재 매수 구간 분석"
   iq "TSLA 보유 중인데 매도 기준 점검"
   iq "6개월에서 12개월 관점 투자 후보 찾아줘"`)
+}
+
+func startSession() error {
+	reader := bufio.NewReader(os.Stdin)
+	printSessionHeader()
+
+	for {
+		fmt.Print("\niq> ")
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if strings.TrimSpace(line) == "" {
+				fmt.Println()
+				return nil
+			}
+		}
+		input := strings.TrimSpace(line)
+		if input == "" {
+			continue
+		}
+		switch input {
+		case "/q", "/quit", "quit", "exit":
+			fmt.Println("Goodbye.")
+			return nil
+		case "/h", "/help", "help":
+			printSessionHelp()
+			continue
+		case "/doctor", "doctor":
+			if err := doctor(); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		case "/init", "init":
+			if err := initConfig(false); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		case "/platforms":
+			if err := platforms(); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
+		fmt.Println()
+		if err := runMode("auto", []string{input}); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}
+}
+
+func printSessionHeader() {
+	fmt.Println("investiq")
+	fmt.Println("Fresh-data investment research agent")
+	fmt.Println()
+	fmt.Println("Ask an investment question. investiq will classify it and route it automatically.")
+	fmt.Println("Type /help for commands, /doctor to check AI platforms, /quit to exit.")
+}
+
+func printSessionHelp() {
+	fmt.Println()
+	fmt.Println("Commands:")
+	fmt.Println("  /help       Show this help")
+	fmt.Println("  /doctor     Check detected AI platforms")
+	fmt.Println("  /init       Configure AI platform routing")
+	fmt.Println("  /platforms  Print platform config")
+	fmt.Println("  /quit       Exit")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println(`  NVDA 지금 사도 될까?`)
+	fmt.Println(`  What should I invest in for the next 6 to 12 months?`)
+	fmt.Println(`  I own TSLA. When should I trim, sell, or stop out?`)
 }
 
 func initConfig(yes bool) error {
