@@ -1,16 +1,25 @@
 # investiq
 
-`investiq` is a marketplace-ready investment research agent plugin. It is designed to run across agent hosts such as Codex, Claude Code, and generic LLM agents by sharing the same workflows, prompts, and report template.
+`investiq` is a marketplace-ready investment research agent harness. It is designed to run across the AI platforms a user already subscribes to, such as Codex, Claude Code, OpenCode / Oh My OpenAgent, Gemini CLI, or a generic manual copy/paste workflow.
 
 ## Quick Start
 
 ```bash
-bin/investiq help
-bin/investiq discover
-bin/investiq entry
+npm link
+investiq init
+investiq doctor
+investiq run entry "NVDA 현재 가격이 매수하기 적절한지 최신 데이터로 분석"
 ```
 
-Codex plugin marketplace:
+Non-global local usage:
+
+```bash
+bin/investiq init
+bin/investiq doctor
+bin/investiq run discover "12개월 투자 후보를 최신 데이터로 찾아줘" --platform manual
+```
+
+Codex marketplace plugin:
 
 ```text
 .agents/plugins/marketplace.json
@@ -30,6 +39,27 @@ plugins/investiq/platforms/claude-code/commands/
 ```
 
 The lightweight CLI prints host-agnostic workflows and templates. It does not fetch market data or execute trades by itself. The host agent must use current web or market-data tools before producing investment conclusions.
+
+Harness commands:
+
+```bash
+investiq init
+investiq doctor
+investiq platforms
+investiq prompt entry "AAPL"
+investiq run entry "AAPL" --platform auto
+investiq run exit "TSLA 보유 중인데 매도 기준 점검" --platform claude
+```
+
+`investiq init` writes `~/.investiq/config.json`. This file records which AI platforms the user can access, their command names, subscription/account labels, and routing priority.
+
+The default routing order is:
+
+```text
+claude → codex → opencode → gemini → manual
+```
+
+Users can edit `~/.investiq/config.json` to match their actual subscriptions, local commands, and preferred routing.
 
 ## 1. Project Purpose
 

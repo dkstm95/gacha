@@ -1,0 +1,36 @@
+{
+  "name": "investiq",
+  "version": "0.1.0",
+  "description": "Fresh-data investment research agent harness and marketplace plugin.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "investiq": "./bin/investiq"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "plugins/",
+    ".agents/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "doctor": "node src/investiq.mjs doctor",
+    "validate:plugin": "python3 /Users/SeungIl/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py plugins/investiq"
+  },
+  "keywords": [
+    "investment",
+    "finance",
+    "agent",
+    "harness",
+    "codex",
+    "claude-code",
+    "opencode"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dkstm95/investiq.git"
+  },
+  "homepage": "https://github.com/dkstm95/investiq"
+}

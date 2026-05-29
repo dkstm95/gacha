@@ -1,7 +1,7 @@
 {
   "name": "investiq",
   "version": "0.1.0",
-  "description": "Fresh-data investment research agent team for discovery, selection, entry, and exit decisions.",
+  "description": "Fresh-data investment research agent harness for discovery, selection, entry, and exit decisions.",
   "author": {
     "name": "investiq contributors"
   },
@@ -18,8 +18,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "investiq",
-    "shortDescription": "Fresh-data investment research agent team.",
-    "longDescription": "investiq helps agents produce source-grounded investment research reports for opportunity discovery, asset selection, entry analysis, and exit analysis. It requires fresh web data, provenance, risk review, and human final decision-making.",
+    "shortDescription": "Fresh-data investment research agent harness.",
+    "longDescription": "investiq helps users route investment research workflows to AI platforms they already subscribe to, including Codex, Claude Code, OpenCode, Gemini CLI, or manual agent sessions. It requires fresh web data, provenance, risk review, and human final decision-making.",
     "developerName": "investiq contributors",
     "category": "Finance",
     "capabilities": [
