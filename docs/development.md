@@ -8,6 +8,8 @@ cd gacha
 go test ./...
 go build -o gacha ./cmd/gacha
 ./gacha doctor
+ln -sf gacha gch
+./gch doctor
 ```
 
 ## Release

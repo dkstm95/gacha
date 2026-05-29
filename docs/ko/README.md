@@ -14,11 +14,12 @@ English: [../../README.md](../../README.md)
 curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 ```
 
-설치하면 하나의 명령어가 생깁니다.
+설치하면 기본 명령어와 짧은 별칭이 생깁니다.
 
 - `gacha`
+- `gch`
 
-앱을 열 때는 `gacha`를 쓰면 됩니다.
+평소에는 짧은 `gch`를 쓰면 됩니다. 전체 이름이 필요할 때는 `gacha`를 쓰면 됩니다.
 
 `gacha` 자체를 사용하기 위해 Node, npm, Python, Go를 따로 설치할 필요는 없습니다.
 
@@ -29,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 ## 시작하기
 
 ```bash
-gacha
+gch
 ```
 
 다음 화면이 열립니다.
@@ -66,7 +67,7 @@ Ask > 내 포트폴리오를 점검해줘: AAPL 35%, NVDA 30%, SGOV 35%
 앱을 열지 않고 한 번만 질문할 수도 있습니다.
 
 ```bash
-gacha "NVDA 지금 사도 될까?"
+gch "NVDA 지금 사도 될까?"
 ```
 
 ## 설정 확인
@@ -74,7 +75,7 @@ gacha "NVDA 지금 사도 될까?"
 로컬 AI runtime 준비 상태를 확인하려면 다음을 실행하세요.
 
 ```bash
-gacha doctor
+gch doctor
 ```
 
 `gacha`는 다음 경로를 사용합니다.
@@ -86,10 +87,10 @@ OpenCode runtime -> 복사/붙여넣기 프롬프트
 OpenCode가 없거나 연결된 provider가 없다면 다음 명령을 실행하세요.
 
 ```bash
-gacha setup
+gch setup
 ```
 
-`gacha setup`은 필요한 경우 runtime을 설치한 뒤 provider login을 시작합니다. ChatGPT, GitHub Copilot, Gemini, OpenAI API 또는 OpenCode가 지원하는 다른 provider를 연결할 수 있습니다.
+`gch setup`은 필요한 경우 runtime을 설치한 뒤 provider login을 시작합니다. ChatGPT, GitHub Copilot, Gemini, OpenAI API 또는 OpenCode가 지원하는 다른 provider를 연결할 수 있습니다.
 
 설정 후 투자 리서치 흐름과 결과 표시는 계속 Gacha UI 안에서 처리됩니다.
 
@@ -98,7 +99,7 @@ runtime 실행에 실패하면 웹 AI에 붙여넣을 수 있는 프롬프트로
 ## 업데이트
 
 ```bash
-gacha update
+gch update
 ```
 
 현재 컴퓨터에 맞는 바이너리를 내려받아 기존 파일을 교체합니다.

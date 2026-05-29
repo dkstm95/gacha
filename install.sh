@@ -5,6 +5,7 @@ REPO="${GACHA_REPO:-dkstm95/gacha}"
 VERSION="${GACHA_VERSION:-latest}"
 INSTALL_DIR="${GACHA_INSTALL_DIR:-$HOME/.local/bin}"
 BIN_NAME="gacha"
+ALIAS_NAME="gch"
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -52,12 +53,24 @@ tar -xzf "$tmpdir/gacha.tar.gz" -C "$tmpdir"
 install -m 0755 "$tmpdir/gacha" "$INSTALL_DIR/$BIN_NAME"
 
 echo "Installed $BIN_NAME to $INSTALL_DIR/$BIN_NAME"
+if command -v "$ALIAS_NAME" >/dev/null 2>&1; then
+  alias_path="$(command -v "$ALIAS_NAME")"
+  if [ "$alias_path" = "$INSTALL_DIR/$ALIAS_NAME" ]; then
+    ln -sf "$BIN_NAME" "$INSTALL_DIR/$ALIAS_NAME"
+    echo "Updated short alias $ALIAS_NAME at $INSTALL_DIR/$ALIAS_NAME"
+  else
+    echo "Skipped short alias $ALIAS_NAME because it already exists at $alias_path"
+  fi
+else
+  ln -sf "$BIN_NAME" "$INSTALL_DIR/$ALIAS_NAME"
+  echo "Installed short alias $ALIAS_NAME to $INSTALL_DIR/$ALIAS_NAME"
+fi
 case ":$PATH:" in
   *":$INSTALL_DIR:"*)
     echo "$INSTALL_DIR is already on PATH."
     echo "You can now run:"
-    echo "  gacha version"
-    echo "  gacha setup"
+    echo "  gch version"
+    echo "  gch setup"
     ;;
   *)
     echo "$INSTALL_DIR is not on PATH."

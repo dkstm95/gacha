@@ -14,11 +14,12 @@ Korean: [docs/ko/README.md](docs/ko/README.md)
 curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 ```
 
-The installer adds one command:
+The installer adds the main command and a short alias:
 
 - `gacha`
+- `gch`
 
-Use `gacha` to open the app.
+Use `gch` for day-to-day use. Use `gacha` when you want the full command name.
 
 No Node, npm, Python, or Go setup is needed for `gacha`.
 
@@ -29,7 +30,7 @@ If the installer prints an `export PATH=...` line, run it once in your terminal.
 ## Start
 
 ```bash
-gacha
+gch
 ```
 
 You will see:
@@ -66,7 +67,7 @@ Ask > Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
 You can also ask one question without opening the app:
 
 ```bash
-gacha "Should I buy NVDA now?"
+gch "Should I buy NVDA now?"
 ```
 
 ## Setup Check
@@ -74,7 +75,7 @@ gacha "Should I buy NVDA now?"
 Run this if you want to see whether the local AI runtime is ready:
 
 ```bash
-gacha doctor
+gch doctor
 ```
 
 `gacha` uses this route:
@@ -86,10 +87,10 @@ OpenCode runtime -> copy/paste prompt
 If OpenCode is missing or no provider is connected, run:
 
 ```bash
-gacha setup
+gch setup
 ```
 
-`gacha setup` installs the runtime if needed, then starts provider login. You can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another OpenCode-supported provider.
+`gch setup` installs the runtime if needed, then starts provider login. You can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another OpenCode-supported provider.
 
 After setup, `gacha` keeps the investment workflow and results inside the Gacha UI.
 
@@ -98,7 +99,7 @@ If the runtime fails, `gacha` falls back to a prompt you can paste into a web AI
 ## Update
 
 ```bash
-gacha update
+gch update
 ```
 
 This downloads the right binary for your computer and replaces the old one.

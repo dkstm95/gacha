@@ -41,17 +41,18 @@ func printUsage() {
 
 Usage:
   gacha                                    Open the interactive gacha UI
-  gacha doctor                             Check the local AI runtime
-  gacha setup                              Install the runtime and connect an AI provider
-  gacha update                             Update gacha to the latest release
-  gacha "question"                         Analyze with automatic request classification
+  gch                                      Open the interactive gacha UI
+  gch doctor                               Check the local AI runtime
+  gch setup                                Install the runtime and connect an AI provider
+  gch update                               Update gacha to the latest release
+  gch "question"                           Analyze with automatic request classification
 
 Debug:
   gacha prompt "question"                  Print the composed agent prompt
 
 Examples:
-  gacha "NVDA 지금 사도 될까?"
-  gacha "AAPL 현재 매수 구간 분석"
-  gacha "TSLA 보유 중인데 매도 기준 점검"
-  gacha "6개월에서 12개월 관점 투자 후보 찾아줘"`)
+  gch "NVDA 지금 사도 될까?"
+  gch "AAPL 현재 매수 구간 분석"
+  gch "TSLA 보유 중인데 매도 기준 점검"
+  gch "6개월에서 12개월 관점 투자 후보 찾아줘"`)
 }

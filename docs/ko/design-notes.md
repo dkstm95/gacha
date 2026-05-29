@@ -7,11 +7,11 @@
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 gacha setup
-gacha doctor
-gacha "NVDA 지금 사도 될까?"
+gch doctor
+gch "NVDA 지금 사도 될까?"
 ```
 
-The installer downloads a standalone binary from GitHub Releases and installs the `gacha` command. It does not require Node, npm, Python, or Go for the Gacha binary. On first run, Gacha can install OpenCode runtime and start provider login for the user.
+The installer downloads a standalone binary from GitHub Releases and installs the `gacha` command and the `gch` short alias. It does not require Node, npm, Python, or Go for the Gacha binary. On first run, Gacha can install OpenCode runtime and start provider login for the user.
 
 Install a specific release:
 
@@ -50,21 +50,21 @@ internal/app/assets/plugins/gacha/workflows/
 internal/app/assets/plugins/gacha/templates/
 ```
 
-The user-facing command is always `gacha`.
+The product name and full command are `gacha`. The day-to-day short command is `gch`.
 
 The CLI composes host-agnostic workflows and templates, then routes them to OpenCode runtime. It does not fetch market data or execute trades by itself. The connected AI provider must use current web or market-data tools before producing investment conclusions.
 
 Harness commands:
 
 ```bash
-gacha doctor
-gacha setup
-gacha "AAPL 지금 살까?"
-gacha "AAPL 현재 매수 구간 분석"
-gacha "TSLA 보유 중인데 매도 기준 점검"
+gch doctor
+gch setup
+gch "AAPL 지금 살까?"
+gch "AAPL 현재 매수 구간 분석"
+gch "TSLA 보유 중인데 매도 기준 점검"
 ```
 
-Users connect their actual subscriptions through `gacha setup`, which delegates credential storage to OpenCode. Gacha keeps the investment workflow and UI on top. The runtime route is intentionally fixed:
+Users connect their actual subscriptions through `gch setup`, which delegates credential storage to OpenCode. Gacha keeps the investment workflow and UI on top. The runtime route is intentionally fixed:
 
 ```text
 OpenCode runtime → copy/paste prompt fallback
