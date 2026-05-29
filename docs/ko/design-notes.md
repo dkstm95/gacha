@@ -1,70 +1,70 @@
-# investiq
+# gacha
 
-`investiq` is a marketplace-ready investment research agent harness. The default product direction is an InvestIQ-owned terminal UI backed by a local OpenCode runtime. Users connect ChatGPT, GitHub Copilot, Gemini, API providers, or other OpenCode-supported providers through that runtime instead of choosing a platform on every request.
+`gacha` is a marketplace-ready investment research agent harness. The default product direction is a Gacha-owned terminal UI backed by a local OpenCode runtime. Users connect ChatGPT, GitHub Copilot, Gemini, API providers, or other OpenCode-supported providers through that runtime instead of choosing a platform on every request.
 
 ## Quick Start
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
-iq setup
-iq doctor
-iq "NVDA 지금 사도 될까?"
+curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
+gacha setup
+gacha doctor
+gacha "NVDA 지금 사도 될까?"
 ```
 
-The installer downloads a standalone binary from GitHub Releases and installs both `investiq` and the shorter `iq` alias. It does not require Node, npm, Python, or Go for the InvestIQ binary. On first run, InvestIQ can install OpenCode runtime and start provider login for the user.
+The installer downloads a standalone binary from GitHub Releases and installs the `gacha` command. It does not require Node, npm, Python, or Go for the Gacha binary. On first run, Gacha can install OpenCode runtime and start provider login for the user.
 
 Install a specific release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | INVESTIQ_VERSION=v0.1.8 sh
+curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | GACHA_VERSION=v0.1.9 sh
 ```
 
 Build from source:
 
 ```bash
-git clone https://github.com/dkstm95/investiq.git
-cd investiq
-go build -o investiq ./cmd/investiq
-./investiq doctor
+git clone https://github.com/dkstm95/gacha.git
+cd gacha
+go build -o gacha ./cmd/gacha
+./gacha doctor
 ```
 
 Maintainer release flow:
 
 ```bash
-VERSION=0.1.8 sh scripts/build-release.sh
-gh release create v0.1.8 dist/*.tar.gz dist/checksums.txt --title "v0.1.8"
+VERSION=0.1.9 sh scripts/build-release.sh
+gh release create v0.1.9 dist/*.tar.gz dist/checksums.txt --title "v0.1.9"
 ```
 
 Codex marketplace plugin:
 
 ```text
 .agents/plugins/marketplace.json
-plugins/investiq/.codex-plugin/plugin.json
+plugins/gacha/.codex-plugin/plugin.json
 ```
 
 Embedded agent assets:
 
 ```text
-internal/app/assets/plugins/investiq/platforms/generic/system-prompt.md
-internal/app/assets/plugins/investiq/workflows/
-internal/app/assets/plugins/investiq/templates/
+internal/app/assets/plugins/gacha/platforms/generic/system-prompt.md
+internal/app/assets/plugins/gacha/workflows/
+internal/app/assets/plugins/gacha/templates/
 ```
 
-The user-facing command is always `investiq`.
+The user-facing command is always `gacha`.
 
 The CLI composes host-agnostic workflows and templates, then routes them to OpenCode runtime. It does not fetch market data or execute trades by itself. The connected AI provider must use current web or market-data tools before producing investment conclusions.
 
 Harness commands:
 
 ```bash
-iq doctor
-iq setup
-iq "AAPL 지금 살까?"
-iq "AAPL 현재 매수 구간 분석"
-iq "TSLA 보유 중인데 매도 기준 점검"
+gacha doctor
+gacha setup
+gacha "AAPL 지금 살까?"
+gacha "AAPL 현재 매수 구간 분석"
+gacha "TSLA 보유 중인데 매도 기준 점검"
 ```
 
-Users connect their actual subscriptions through `iq setup`, which delegates credential storage to OpenCode. InvestIQ keeps the investment workflow and UI on top. The runtime route is intentionally fixed:
+Users connect their actual subscriptions through `gacha setup`, which delegates credential storage to OpenCode. Gacha keeps the investment workflow and UI on top. The runtime route is intentionally fixed:
 
 ```text
 OpenCode runtime → copy/paste prompt fallback
@@ -72,7 +72,7 @@ OpenCode runtime → copy/paste prompt fallback
 
 ## 1. Project Purpose
 
-`investiq`는 투자 판단을 돕는 AI agent 팀을 설계하기 위한 프로젝트이다. 프로젝트명은 이후 CLI 명령어 이름으로도 사용한다.
+`gacha`는 투자 판단을 돕는 AI agent 팀을 설계하기 위한 프로젝트이다. 프로젝트명은 이후 CLI 명령어 이름으로도 사용한다.
 
 목표는 AI가 사용자를 대신해 매수/매도 결정을 내리는 것이 아니라, 최신 데이터와 신뢰 가능한 출처를 기반으로 투자 후보를 좁히고, 매수/매도 가격대와 리스크를 체계적으로 검토하도록 돕는 것이다.
 
@@ -466,7 +466,7 @@ Investment Decision Report
 
 ## 7. Evaluation and Quality Gates
 
-투자 AI 팀은 그럴듯한 설명을 생성하는 것보다 판단 품질을 반복적으로 개선하는 것이 중요하다. 따라서 `investiq`는 다음 평가 기준을 가져야 한다.
+투자 AI 팀은 그럴듯한 설명을 생성하는 것보다 판단 품질을 반복적으로 개선하는 것이 중요하다. 따라서 `gacha`는 다음 평가 기준을 가져야 한다.
 
 ### 7.1 Report Quality
 
@@ -607,12 +607,12 @@ Reference:
 
 - https://www.deloitte.com/us/en/insights/industry/financial-services/agentic-ai-risks-banking.html
 
-### 8.6 `investiq`의 차별화 방향
+### 8.6 `gacha`의 차별화 방향
 
-유사 프로젝트 중 상당수는 trading framework, stock report generator, portfolio analytics product에 가깝다. `investiq`는 다음 위치를 목표로 한다.
+유사 프로젝트 중 상당수는 trading framework, stock report generator, portfolio analytics product에 가깝다. `gacha`는 다음 위치를 목표로 한다.
 
 ```text
-investiq =
+gacha =
 개인 투자자를 위한 최신 데이터 기반 investment decision copilot
 ```
 
@@ -667,7 +667,7 @@ investiq =
 
 ## 11. MVP Implementation Direction
 
-처음에는 복잡한 명령 모드보다 단일 질문 인터페이스로 시작한다. InvestIQ가 요청을 내부적으로 다음 유형 중 하나로 분류한다.
+처음에는 복잡한 명령 모드보다 단일 질문 인터페이스로 시작한다. Gacha가 요청을 내부적으로 다음 유형 중 하나로 분류한다.
 
 ```text
 discover

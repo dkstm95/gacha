@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-VERSION="${VERSION:-0.1.8}"
+VERSION="${VERSION:-0.1.9}"
 OUT_DIR="${OUT_DIR:-dist}"
 TARGETS="${TARGETS:-darwin/arm64 darwin/amd64 linux/arm64 linux/amd64}"
 
@@ -11,13 +11,13 @@ mkdir -p "$OUT_DIR"
 for target in $TARGETS; do
   os="${target%/*}"
   arch="${target#*/}"
-  name="investiq-$os-$arch"
+  name="gacha-$os-$arch"
   echo "Building $name"
   GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 go build \
     -trimpath \
     -ldflags="-s -w -X main.version=$VERSION" \
-    -o "$OUT_DIR/$name/investiq" ./cmd/investiq
-  tar -C "$OUT_DIR/$name" -czf "$OUT_DIR/$name.tar.gz" investiq
+    -o "$OUT_DIR/$name/gacha" ./cmd/gacha
+  tar -C "$OUT_DIR/$name" -czf "$OUT_DIR/$name.tar.gz" gacha
   rm -rf "$OUT_DIR/$name"
 done
 

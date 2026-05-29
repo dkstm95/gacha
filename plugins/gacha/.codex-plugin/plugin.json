@@ -1,0 +1,37 @@
+{
+  "name": "gacha",
+  "version": "0.1.9",
+  "description": "Fresh-data investment research agent harness for discovery, selection, entry, and exit decisions.",
+  "author": {
+    "name": "gacha contributors"
+  },
+  "homepage": "https://github.com/dkstm95/gacha",
+  "repository": "https://github.com/dkstm95/gacha",
+  "license": "MIT",
+  "keywords": [
+    "investment",
+    "finance",
+    "research",
+    "portfolio",
+    "agents"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "gacha",
+    "shortDescription": "Fresh-data investment research agent harness.",
+    "longDescription": "gacha helps users route investment research workflows through a local OpenCode runtime. It requires fresh web data, provenance, risk review, and human final decision-making.",
+    "developerName": "gacha contributors",
+    "category": "Finance",
+    "capabilities": [
+      "Research",
+      "Analysis",
+      "Web"
+    ],
+    "defaultPrompt": [
+      "gacha discover: find current investment opportunities",
+      "gacha entry: analyze whether a target is buyable now",
+      "gacha exit: review sell and stop-loss conditions"
+    ],
+    "brandColor": "#0F766E"
+  }
+}

@@ -12,9 +12,9 @@ func TestBuildPromptIncludesWorkflowAndRequirements(t *testing.T) {
 	}
 
 	for _, expected := range []string{
-		"# investiq auto",
+		"# gacha auto",
 		"Workflow library:",
-		"# investiq entry",
+		"# gacha entry",
 		"User request:\nNVDA",
 		"Always use current web search",
 		"Provenance Appendix",
@@ -32,7 +32,7 @@ func TestBuildPromptAutoClassifiesAndRequiresFreshData(t *testing.T) {
 	}
 
 	for _, expected := range []string{
-		"# investiq auto",
+		"# gacha auto",
 		"Classify the user's request",
 		"Always use current web search",
 		"even if the user does not ask",

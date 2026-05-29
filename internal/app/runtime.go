@@ -38,12 +38,12 @@ func ensureRuntime(interactive bool) error {
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("InvestIQ needs a local AI runtime to run research inside this UI.")
+	fmt.Println("Gacha needs a local AI runtime to run research inside this UI.")
 	fmt.Print("Install OpenCode runtime now? [Y/n] ")
 	answer, _ := reader.ReadString('\n')
 	normalized := strings.ToLower(strings.TrimSpace(answer))
 	if normalized == "n" || normalized == "no" {
-		fmt.Println("Skipping runtime setup. InvestIQ will print a copy/paste prompt when no AI runtime is ready.")
+		fmt.Println("Skipping runtime setup. Gacha will print a copy/paste prompt when no AI runtime is ready.")
 		return nil
 	}
 	if err := installOpenCode(); err != nil {
@@ -84,7 +84,7 @@ func ensureProviderConnected() error {
 	answer, _ := reader.ReadString('\n')
 	normalized := strings.ToLower(strings.TrimSpace(answer))
 	if normalized == "n" || normalized == "no" {
-		fmt.Println("Skipping provider connection. InvestIQ will print a copy/paste prompt until a provider is connected.")
+		fmt.Println("Skipping provider connection. Gacha will print a copy/paste prompt until a provider is connected.")
 		return nil
 	}
 
@@ -108,7 +108,7 @@ func ensureProviderConnected() error {
 		printConnectedProviders()
 		return nil
 	}
-	fmt.Println("Provider login finished, but InvestIQ could not confirm stored credentials yet.")
+	fmt.Println("Provider login finished, but Gacha could not confirm stored credentials yet.")
 	fmt.Printf("Check OpenCode credentials at: %s\n", openCodeAuthPath())
 	return nil
 }

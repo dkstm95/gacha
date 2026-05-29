@@ -37,22 +37,21 @@ func (a *App) Run(args []string) error {
 }
 
 func printUsage() {
-	fmt.Println(`investiq
+	fmt.Println(`gacha
 
 Usage:
-  investiq                                    Open the interactive investiq UI
-  iq                                          Open the interactive investiq UI
-  iq doctor                                   Check the local AI runtime
-  iq setup                                    Install the runtime and connect an AI provider
-  iq update                                   Update investiq to the latest release
-  iq "question"                               Analyze with automatic request classification
+  gacha                                    Open the interactive gacha UI
+  gacha doctor                             Check the local AI runtime
+  gacha setup                              Install the runtime and connect an AI provider
+  gacha update                             Update gacha to the latest release
+  gacha "question"                         Analyze with automatic request classification
 
 Debug:
-  investiq prompt "question"                  Print the composed agent prompt
+  gacha prompt "question"                  Print the composed agent prompt
 
 Examples:
-  iq "NVDA 지금 사도 될까?"
-  iq "AAPL 현재 매수 구간 분석"
-  iq "TSLA 보유 중인데 매도 기준 점검"
-  iq "6개월에서 12개월 관점 투자 후보 찾아줘"`)
+  gacha "NVDA 지금 사도 될까?"
+  gacha "AAPL 현재 매수 구간 분석"
+  gacha "TSLA 보유 중인데 매도 기준 점검"
+  gacha "6개월에서 12개월 관점 투자 후보 찾아줘"`)
 }

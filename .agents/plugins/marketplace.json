@@ -1,14 +1,14 @@
 {
-  "name": "investiq-marketplace",
+  "name": "gacha-marketplace",
   "interface": {
-    "displayName": "investiq Marketplace"
+    "displayName": "gacha Marketplace"
   },
   "plugins": [
     {
-      "name": "investiq",
+      "name": "gacha",
       "source": {
         "source": "local",
-        "path": "./plugins/investiq"
+        "path": "./plugins/gacha"
       },
       "policy": {
         "installation": "AVAILABLE",

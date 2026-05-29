@@ -9,9 +9,9 @@ import (
 	"strings"
 )
 
-//go:embed assets/plugins/investiq/platforms/generic/system-prompt.md
-//go:embed assets/plugins/investiq/templates/investment-report.md
-//go:embed assets/plugins/investiq/workflows/*.md
+//go:embed assets/plugins/gacha/platforms/generic/system-prompt.md
+//go:embed assets/plugins/gacha/templates/investment-report.md
+//go:embed assets/plugins/gacha/workflows/*.md
 var embedded embed.FS
 
 func printPrompt(query []string) error {
@@ -48,11 +48,11 @@ func runQuery(args []string) error {
 }
 
 func buildPrompt(queryParts []string) (string, error) {
-	system, err := readEmbedded("assets/plugins/investiq/platforms/generic/system-prompt.md")
+	system, err := readEmbedded("assets/plugins/gacha/platforms/generic/system-prompt.md")
 	if err != nil {
 		return "", err
 	}
-	template, err := readEmbedded("assets/plugins/investiq/templates/investment-report.md")
+	template, err := readEmbedded("assets/plugins/gacha/templates/investment-report.md")
 	if err != nil {
 		return "", err
 	}
@@ -60,9 +60,9 @@ func buildPrompt(queryParts []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	workflow := `# investiq auto
+	workflow := `# gacha auto
 
-Classify the user's request into discover, select, entry, exit, portfolio, or journal, then follow the matching investiq workflow. If the request is ambiguous, choose the safest interpretation and state your assumption.`
+Classify the user's request into discover, select, entry, exit, portfolio, or journal, then follow the matching gacha workflow. If the request is ambiguous, choose the safest interpretation and state your assumption.`
 	query := strings.TrimSpace(strings.Join(queryParts, " "))
 	if query == "" {
 		query = "(No additional user request supplied.)"
@@ -83,7 +83,7 @@ Classify the user's request into discover, select, entry, exit, portfolio, or jo
 }
 
 func readWorkflows() (string, error) {
-	entries, err := fs.ReadDir(embedded, "assets/plugins/investiq/workflows")
+	entries, err := fs.ReadDir(embedded, "assets/plugins/gacha/workflows")
 	if err != nil {
 		return "", err
 	}
@@ -92,7 +92,7 @@ func readWorkflows() (string, error) {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
 			continue
 		}
-		content, err := readEmbedded("assets/plugins/investiq/workflows/" + entry.Name())
+		content, err := readEmbedded("assets/plugins/gacha/workflows/" + entry.Name())
 		if err != nil {
 			return "", err
 		}

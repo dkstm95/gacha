@@ -1,11 +1,10 @@
 #!/usr/bin/env sh
 set -eu
 
-REPO="${INVESTIQ_REPO:-dkstm95/investiq}"
-VERSION="${INVESTIQ_VERSION:-latest}"
-INSTALL_DIR="${INVESTIQ_INSTALL_DIR:-$HOME/.local/bin}"
-BIN_NAME="investiq"
-ALIAS_NAME="iq"
+REPO="${GACHA_REPO:-dkstm95/gacha}"
+VERSION="${GACHA_VERSION:-latest}"
+INSTALL_DIR="${GACHA_INSTALL_DIR:-$HOME/.local/bin}"
+BIN_NAME="gacha"
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -41,26 +40,24 @@ tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 if [ "$VERSION" = "latest" ]; then
-  url="https://github.com/$REPO/releases/latest/download/investiq-$target.tar.gz"
+  url="https://github.com/$REPO/releases/latest/download/gacha-$target.tar.gz"
 else
-  url="https://github.com/$REPO/releases/download/$VERSION/investiq-$target.tar.gz"
+  url="https://github.com/$REPO/releases/download/$VERSION/gacha-$target.tar.gz"
 fi
 
 mkdir -p "$INSTALL_DIR"
 echo "Downloading $url"
-curl -fsSL "$url" -o "$tmpdir/investiq.tar.gz"
-tar -xzf "$tmpdir/investiq.tar.gz" -C "$tmpdir"
-install -m 0755 "$tmpdir/investiq" "$INSTALL_DIR/$BIN_NAME"
-ln -sf "$BIN_NAME" "$INSTALL_DIR/$ALIAS_NAME"
+curl -fsSL "$url" -o "$tmpdir/gacha.tar.gz"
+tar -xzf "$tmpdir/gacha.tar.gz" -C "$tmpdir"
+install -m 0755 "$tmpdir/gacha" "$INSTALL_DIR/$BIN_NAME"
 
 echo "Installed $BIN_NAME to $INSTALL_DIR/$BIN_NAME"
-echo "Installed short alias $ALIAS_NAME to $INSTALL_DIR/$ALIAS_NAME"
 case ":$PATH:" in
   *":$INSTALL_DIR:"*)
     echo "$INSTALL_DIR is already on PATH."
     echo "You can now run:"
-    echo "  iq version"
-    echo "  iq init"
+    echo "  gacha version"
+    echo "  gacha setup"
     ;;
   *)
     echo "$INSTALL_DIR is not on PATH."
@@ -72,4 +69,4 @@ case ":$PATH:" in
     ;;
 esac
 
-"$INSTALL_DIR/$ALIAS_NAME" version
+"$INSTALL_DIR/$BIN_NAME" version

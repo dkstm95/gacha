@@ -28,7 +28,7 @@ func (a *App) updateSelf() error {
 	current := normalizeVersion(a.version)
 	target := normalizeVersion(latest)
 	if current == target {
-		fmt.Printf("investiq is already up to date (%s).\n", a.version)
+		fmt.Printf("gacha is already up to date (%s).\n", a.version)
 		return nil
 	}
 
@@ -41,14 +41,14 @@ func (a *App) updateSelf() error {
 		return err
 	}
 
-	fmt.Printf("Updating investiq %s -> %s\n", a.version, target)
-	tmpDir, err := os.MkdirTemp("", "investiq-update-*")
+	fmt.Printf("Updating gacha %s -> %s\n", a.version, target)
+	tmpDir, err := os.MkdirTemp("", "gacha-update-*")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
 
-	archivePath := filepath.Join(tmpDir, "investiq.tar.gz")
+	archivePath := filepath.Join(tmpDir, "gacha.tar.gz")
 	url := releaseAssetURL(latest)
 	if err := a.downloadFile(url, archivePath); err != nil {
 		return err
@@ -56,7 +56,7 @@ func (a *App) updateSelf() error {
 	if err := extractTarGz(archivePath, tmpDir); err != nil {
 		return err
 	}
-	newBinary := filepath.Join(tmpDir, "investiq")
+	newBinary := filepath.Join(tmpDir, "gacha")
 	if err := os.Chmod(newBinary, 0o755); err != nil {
 		return err
 	}
@@ -72,12 +72,6 @@ func (a *App) updateSelf() error {
 	}
 	_ = os.Remove(backup)
 
-	aliasPath := filepath.Join(filepath.Dir(exe), "iq")
-	if _, err := os.Lstat(aliasPath); err == nil {
-		_ = os.Remove(aliasPath)
-		_ = os.Symlink(filepath.Base(exe), aliasPath)
-	}
-
 	fmt.Printf("Updated %s to %s.\n", exe, target)
 	return nil
 }
@@ -85,12 +79,12 @@ func (a *App) updateSelf() error {
 func (a *App) latestReleaseTag() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/repos/dkstm95/investiq/releases/latest", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/repos/dkstm95/gacha/releases/latest", nil)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "investiq/"+a.version)
+	req.Header.Set("User-Agent", "gacha/"+a.version)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
@@ -114,7 +108,7 @@ func normalizeVersion(value string) string {
 }
 
 func releaseAssetURL(tag string) string {
-	return fmt.Sprintf("https://github.com/dkstm95/investiq/releases/download/%s/investiq-%s.tar.gz", tag, targetTriple())
+	return fmt.Sprintf("https://github.com/dkstm95/gacha/releases/download/%s/gacha-%s.tar.gz", tag, targetTriple())
 }
 
 func (a *App) downloadFile(url string, destination string) error {
@@ -124,7 +118,7 @@ func (a *App) downloadFile(url string, destination string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "investiq/"+a.version)
+	req.Header.Set("User-Agent", "gacha/"+a.version)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -168,10 +162,10 @@ func extractTarGz(archivePath string, destinationDir string) error {
 			continue
 		}
 		name := filepath.Clean(header.Name)
-		if name != "investiq" {
+		if name != "gacha" {
 			continue
 		}
-		target := filepath.Join(destinationDir, "investiq")
+		target := filepath.Join(destinationDir, "gacha")
 		out, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
 		if err != nil {
 			return err

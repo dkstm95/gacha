@@ -73,11 +73,11 @@ func printSessionHome(interactive bool, version string) {
 	if interactive {
 		clearScreen()
 	}
-	fmt.Println("INVESTIQ")
+	fmt.Println("GACHA")
 	fmt.Println("Fresh-data investment research for your AI tools")
 	fmt.Println()
 	fmt.Println("+------------------------------------------------------------+")
-	fmt.Println("| Ask a question. investiq will classify it automatically.   |")
+	fmt.Println("| Ask a question. gacha will classify it automatically.      |")
 	fmt.Println("| It always asks the AI to use current web or market data.   |")
 	fmt.Println("+------------------------------------------------------------+")
 	fmt.Println()
@@ -93,7 +93,7 @@ func printSessionHome(interactive bool, version string) {
 	fmt.Println("  /help      show commands")
 	fmt.Println("  /doctor    check AI runtime")
 	fmt.Println("  /setup     install/connect AI")
-	fmt.Println("  /update    update investiq")
+	fmt.Println("  /update    update gacha")
 	fmt.Println("  /quit      exit")
 }
 
@@ -102,14 +102,14 @@ func printSessionHelp(interactive bool) {
 		clearScreen()
 	}
 	fmt.Println()
-	fmt.Println("INVESTIQ HELP")
+	fmt.Println("GACHA HELP")
 	fmt.Println()
 	fmt.Println("Commands")
 	fmt.Println("  /home       Show the home screen")
 	fmt.Println("  /help       Show this help")
 	fmt.Println("  /doctor     Check the local AI runtime")
 	fmt.Println("  /setup      Install OpenCode runtime and connect a provider")
-	fmt.Println("  /update     Update investiq to the latest release")
+	fmt.Println("  /update     Update gacha to the latest release")
 	fmt.Println("  /quit       Exit")
 	fmt.Println()
 	fmt.Println("Examples:")

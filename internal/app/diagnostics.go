@@ -27,7 +27,7 @@ func doctor() error {
 			}
 		}
 	} else {
-		fmt.Println("           next: run `iq setup` to connect ChatGPT, Copilot, Gemini, or an API provider")
+		fmt.Println("           next: run `gacha setup` to connect ChatGPT, Copilot, Gemini, or an API provider")
 	}
 
 	fmt.Printf("%-9s %-8s %s\n", "manual", "ready", "Copy/paste prompt fallback")

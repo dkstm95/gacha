@@ -3,18 +3,18 @@
 ## Build From Source
 
 ```bash
-git clone https://github.com/dkstm95/investiq.git
-cd investiq
+git clone https://github.com/dkstm95/gacha.git
+cd gacha
 go test ./...
-go build -o investiq ./cmd/investiq
-./investiq doctor
+go build -o gacha ./cmd/gacha
+./gacha doctor
 ```
 
 ## Release
 
 ```bash
-VERSION=0.1.8 sh scripts/build-release.sh
-gh release create v0.1.8 dist/*.tar.gz dist/checksums.txt --title "v0.1.8"
+VERSION=0.1.9 sh scripts/build-release.sh
+gh release create v0.1.9 dist/*.tar.gz dist/checksums.txt --title "v0.1.9"
 ```
 
 GitHub Actions templates are available in:
@@ -29,6 +29,6 @@ They are kept as templates until the repository token has permission to push wor
 
 ```text
 .agents/plugins/marketplace.json
-plugins/investiq/.codex-plugin/plugin.json
-plugins/investiq/skills/investiq/SKILL.md
+plugins/gacha/.codex-plugin/plugin.json
+plugins/gacha/skills/gacha/SKILL.md
 ```
