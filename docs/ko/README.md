@@ -80,6 +80,14 @@ Claude Code -> Codex -> OpenCode -> Gemini CLI -> manual prompt
 
 라우팅 순서나 명령어 이름을 바꾸고 싶으면 이 파일을 수정하면 됩니다.
 
+## 업데이트
+
+```bash
+iq update
+```
+
+`iq update`는 최신 GitHub Release를 확인하고, 현재 OS/CPU에 맞는 standalone binary를 내려받아 설치된 `investiq` 바이너리를 교체합니다.
+
 ## 최신 데이터 원칙
 
 사용자가 "최신", "현재", "최근" 같은 표현을 쓰지 않아도 모든 투자 분석은 최신 웹/시장 데이터를 조사해야 합니다.

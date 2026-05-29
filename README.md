@@ -82,6 +82,14 @@ If a detected platform fails at runtime, `investiq` falls back to printing a pro
 
 You can edit that file if you want to change routing priority or command names.
 
+## Update
+
+```bash
+iq update
+```
+
+`iq update` checks the latest GitHub Release, downloads the matching standalone binary for your OS/CPU, and replaces the installed `investiq` binary.
+
 ## Fresh Data Rule
 
 Every investment workflow requires current web or market data, even if the user does not explicitly ask for "latest", "current", or "recent" data.
