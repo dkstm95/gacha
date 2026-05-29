@@ -100,13 +100,6 @@ Usage:
   iq init                                     Set up AI platform routing
   iq doctor                                   Check detected AI platforms
   iq "question"                               Analyze with automatic request classification
-  iq entry "question"                         Analyze buy/entry timing
-  iq exit "question"                          Analyze sell/trim/stop conditions
-  iq discover "question"                      Find investment candidates
-  iq select "question"                        Rank candidates in a chosen domain
-
-Modes:
-  discover, select, entry, exit, portfolio, journal
 
 Debug:
   investiq prompt "question"                  Print the composed agent prompt
@@ -114,9 +107,9 @@ Debug:
 
 Examples:
   iq "NVDA 지금 사도 될까?"
-  iq entry "AAPL 현재 매수 구간 분석"
-  iq exit "TSLA 보유 중인데 매도 기준 점검"
-  iq discover "6개월에서 12개월 관점 투자 후보 찾아줘"`)
+  iq "AAPL 현재 매수 구간 분석"
+  iq "TSLA 보유 중인데 매도 기준 점검"
+  iq "6개월에서 12개월 관점 투자 후보 찾아줘"`)
 }
 
 func initConfig(yes bool) error {
