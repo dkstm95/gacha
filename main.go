@@ -242,7 +242,16 @@ func runMode(mode string, args []string) error {
 	if err != nil {
 		return err
 	}
-	return runPlatform(selected, platform, prompt, dryRun)
+	if err := runPlatform(selected, platform, prompt, dryRun); err != nil {
+		if selected == "manual" {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "Could not use %s automatically: %v\n", platform.Label, err)
+		fmt.Fprintln(os.Stderr, "Falling back to a prompt you can paste into any web AI.")
+		fmt.Fprintln(os.Stderr)
+		return runPlatform("manual", cfg.Platforms["manual"], prompt, dryRun)
+	}
+	return nil
 }
 
 func buildPrompt(mode string, queryParts []string) (string, error) {
