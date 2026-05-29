@@ -32,19 +32,21 @@ investiq
 You will see:
 
 ```text
-investiq
-Fresh-data investment research agent
+INVESTIQ
+Fresh-data investment research for your AI tools
 
-Ask an investment question. investiq will classify it and route it automatically.
-Type /help for commands, /doctor to check AI platforms, /quit to exit.
++------------------------------------------------------------+
+| Ask a question. investiq will classify it automatically.   |
+| It always asks the AI to use current web or market data.   |
++------------------------------------------------------------+
 
-iq>
+Ask >
 ```
 
 Type a question:
 
 ```text
-iq> Should I buy NVDA now?
+Ask > Should I buy NVDA now?
 ```
 
 You do not need to pick a mode or choose an AI platform. `investiq` handles that for you.
@@ -52,10 +54,10 @@ You do not need to pick a mode or choose an AI platform. `investiq` handles that
 ## Example Questions
 
 ```text
-iq> What should I invest in for the next 6 to 12 months?
-iq> I want exposure to AI infrastructure. Which stocks or ETFs should I compare?
-iq> I own TSLA. When should I trim, sell, or stop out?
-iq> Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
+Ask > What should I invest in for the next 6 to 12 months?
+Ask > I want exposure to AI infrastructure. Which stocks or ETFs should I compare?
+Ask > I own TSLA. When should I trim, sell, or stop out?
+Ask > Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
 ```
 
 You can also ask one question without opening the app:

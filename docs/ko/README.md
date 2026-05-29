@@ -32,19 +32,21 @@ investiq
 다음 화면이 열립니다.
 
 ```text
-investiq
-Fresh-data investment research agent
+INVESTIQ
+Fresh-data investment research for your AI tools
 
-Ask an investment question. investiq will classify it and route it automatically.
-Type /help for commands, /doctor to check AI platforms, /quit to exit.
++------------------------------------------------------------+
+| Ask a question. investiq will classify it automatically.   |
+| It always asks the AI to use current web or market data.   |
++------------------------------------------------------------+
 
-iq>
+Ask >
 ```
 
 질문을 입력하면 됩니다.
 
 ```text
-iq> NVDA 지금 사도 될까?
+Ask > NVDA 지금 사도 될까?
 ```
 
 사용자가 모드나 AI 플랫폼을 고를 필요는 없습니다. `investiq`가 내부적으로 처리합니다.
@@ -52,10 +54,10 @@ iq> NVDA 지금 사도 될까?
 ## 질문 예시
 
 ```text
-iq> 6개월에서 12개월 관점에서 무엇에 투자하면 좋을까?
-iq> AI 인프라에 투자하고 싶은데 어떤 종목이나 ETF를 비교해야 할까?
-iq> TSLA를 보유 중인데 언제 줄이거나 팔아야 할까?
-iq> 내 포트폴리오를 점검해줘: AAPL 35%, NVDA 30%, SGOV 35%
+Ask > 6개월에서 12개월 관점에서 무엇에 투자하면 좋을까?
+Ask > AI 인프라에 투자하고 싶은데 어떤 종목이나 ETF를 비교해야 할까?
+Ask > TSLA를 보유 중인데 언제 줄이거나 팔아야 할까?
+Ask > 내 포트폴리오를 점검해줘: AAPL 35%, NVDA 30%, SGOV 35%
 ```
 
 앱을 열지 않고 한 번만 질문할 수도 있습니다.
