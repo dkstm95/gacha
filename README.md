@@ -90,6 +90,12 @@ iq update
 
 `iq update` checks the latest GitHub Release, downloads the matching standalone binary for your OS/CPU, and replaces the installed `investiq` binary.
 
+If you installed `v0.1.4` or earlier, run the installer once to get the update command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
+```
+
 ## Fresh Data Rule
 
 Every investment workflow requires current web or market data, even if the user does not explicitly ask for "latest", "current", or "recent" data.

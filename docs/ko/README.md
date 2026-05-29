@@ -88,6 +88,12 @@ iq update
 
 `iq update`는 최신 GitHub Release를 확인하고, 현재 OS/CPU에 맞는 standalone binary를 내려받아 설치된 `investiq` 바이너리를 교체합니다.
 
+`v0.1.4` 이하를 설치한 사용자는 아직 `update` 명령이 없으므로, 최초 1회는 설치 명령을 다시 실행해야 합니다.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
+```
+
 ## 최신 데이터 원칙
 
 사용자가 "최신", "현재", "최근" 같은 표현을 쓰지 않아도 모든 투자 분석은 최신 웹/시장 데이터를 조사해야 합니다.
