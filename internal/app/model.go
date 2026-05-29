@@ -163,7 +163,14 @@ func parseOpenCodeModels(output string) []string {
 }
 
 func chooseModel(models []string) string {
-	return firstModel(rankModels(models, ""))
+	provider := ""
+	for _, model := range models {
+		if strings.HasPrefix(strings.ToLower(model), "openai/") {
+			provider = "openai"
+			break
+		}
+	}
+	return firstModel(rankModels(models, provider))
 }
 
 func rankModels(models []string, provider string) []string {
@@ -193,30 +200,61 @@ func modelScore(model string, provider string) int {
 	name := strings.ToLower(model)
 	score := 0
 
+	if provider == "openai" && strings.Contains(name, "/gpt-") {
+		score += openAIFrontierScore(name)
+	} else {
+		score += newestVersionScore(name)
+		for _, token := range []string{"pro", "opus", "ultra", "max"} {
+			if strings.Contains(name, token) {
+				score += 70
+			}
+		}
+	}
+
 	for _, token := range []string{"pro", "opus", "ultra", "max"} {
-		if strings.Contains(name, token) {
+		if provider != "openai" && strings.Contains(name, token) {
 			score += 70
 		}
 	}
-	for _, token := range []string{"codex", "sonnet", "gpt", "gemini", "claude"} {
+	for _, token := range []string{"sonnet", "gemini", "claude"} {
 		if strings.Contains(name, token) {
 			score += 30
 		}
 	}
-	score += newestVersionScore(name)
+	if strings.Contains(name, "codex") && provider != "openai" {
+		score += 30
+	}
 
-	for _, token := range []string{"mini", "nano", "lite", "flash", "haiku"} {
+	for _, token := range []string{"mini", "nano", "lite", "flash", "haiku", "fast", "spark"} {
 		if strings.Contains(name, token) {
 			score -= 1200
 		}
 	}
 	if provider == "openai" && hasOpenAIChatGPTAuth() && strings.Contains(name, "pro") {
-		score -= 220
+		score -= 2400
 	}
 	return score
 }
 
+func openAIFrontierScore(name string) int {
+	score := newestVersionScore(name)
+	if isOpenAIBaseGPTModel(name) {
+		score += 1500
+	}
+	if strings.Contains(name, "codex") {
+		score -= 600
+	}
+	return score
+}
+
+func isOpenAIBaseGPTModel(name string) bool {
+	parts := strings.Split(name, "/")
+	modelID := parts[len(parts)-1]
+	return openAIBaseGPTPattern.MatchString(modelID)
+}
+
 var modelVersionPattern = regexp.MustCompile(`\d+(?:\.\d+)?`)
+var openAIBaseGPTPattern = regexp.MustCompile(`^gpt-\d+(?:\.\d+)?$`)
 
 func newestVersionScore(name string) int {
 	matches := modelVersionPattern.FindAllString(name, -1)

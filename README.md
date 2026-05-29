@@ -80,7 +80,7 @@ gch doctor
 
 The check also shows the model Gacha will ask OpenCode to use. The default model mode is `auto`.
 
-In auto mode, Gacha asks OpenCode for the connected provider's current model list, then chooses a strong research model from that list. It prefers quality-oriented names such as `pro`, `opus`, `codex`, `sonnet`, and newer version numbers, while pushing small/fast names such as `mini`, `nano`, `lite`, `flash`, and `haiku` behind.
+In auto mode, Gacha asks OpenCode for the connected provider's current model list, then chooses a strong research model from that list. For OpenAI, it prefers the newest base frontier model pattern, such as `gpt-N` or `gpt-N.M`, instead of hard-coding a specific model name. It pushes small/fast variants such as `mini`, `nano`, `lite`, `flash`, `fast`, `spark`, and coding-specialized variants behind the frontier base model.
 
 For OpenAI OAuth, the ChatGPT subscription route, Gacha treats `pro` models as lower priority because OpenCode can list models that the current ChatGPT account cannot actually run. If OpenCode still rejects a selected model as unsupported for the ChatGPT account, Gacha retries the next discovered candidate.
 

@@ -109,18 +109,19 @@ func TestParseOpenCodeModels(t *testing.T) {
 }
 
 func TestChooseModelPrefersQualityAndLatest(t *testing.T) {
-	got := chooseModel([]string{
+	got := firstModel(rankModels([]string{
 		"openai/gpt-5.5-mini",
 		"openai/gpt-5.1-codex",
 		"openai/gpt-5.5-pro",
+		"openai/gpt-5.5",
 		"openai/gpt-5",
-	})
-	if got != "openai/gpt-5.5-pro" {
+	}, "openai"))
+	if got != "openai/gpt-5.5" {
 		t.Fatalf("unexpected model: %s", got)
 	}
 }
 
-func TestRankModelsDemotesOpenAIProForChatGPTOAuth(t *testing.T) {
+func TestRankModelsPrefersNewestOpenAIBaseFrontier(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_DATA_HOME", dir)
 	authDir := dir + "/opencode"
@@ -131,9 +132,24 @@ func TestRankModelsDemotesOpenAIProForChatGPTOAuth(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := rankModels([]string{
+		"openai/gpt-5.6-pro",
+		"openai/gpt-5.6-fast",
+		"openai/gpt-5.6",
 		"openai/gpt-5.5-pro",
 		"openai/gpt-5.5",
 		"openai/gpt-5.1-codex",
+	}, "openai")
+	if got[0] != "openai/gpt-5.6" {
+		t.Fatalf("unexpected ranked models: %#v", got)
+	}
+}
+
+func TestRankModelsKeepsOpenAICodexBehindFrontierBase(t *testing.T) {
+	got := rankModels([]string{
+		"openai/gpt-5.3-codex-spark",
+		"openai/gpt-5.3-codex",
+		"openai/gpt-5.5",
+		"openai/gpt-5.5-fast",
 	}, "openai")
 	if got[0] != "openai/gpt-5.5" {
 		t.Fatalf("unexpected ranked models: %#v", got)
