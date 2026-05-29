@@ -120,6 +120,26 @@ func TestChooseModelPrefersQualityAndLatest(t *testing.T) {
 	}
 }
 
+func TestRankModelsDemotesOpenAIProForChatGPTOAuth(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_DATA_HOME", dir)
+	authDir := dir + "/opencode"
+	if err := os.MkdirAll(authDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(authDir+"/auth.json", []byte(`{"openai":{"type":"oauth"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got := rankModels([]string{
+		"openai/gpt-5.5-pro",
+		"openai/gpt-5.5",
+		"openai/gpt-5.1-codex",
+	}, "openai")
+	if got[0] != "openai/gpt-5.5" {
+		t.Fatalf("unexpected ranked models: %#v", got)
+	}
+}
+
 func TestChooseModelPenalizesSmallModels(t *testing.T) {
 	got := chooseModel([]string{
 		"google/gemini-3-flash",
@@ -127,5 +147,12 @@ func TestChooseModelPenalizesSmallModels(t *testing.T) {
 	})
 	if got != "google/gemini-2.5-pro" {
 		t.Fatalf("unexpected model: %s", got)
+	}
+}
+
+func TestUnsupportedChatGPTModelErrorDetection(t *testing.T) {
+	output := `Bad Request: {"detail":"The 'gpt-5.5-pro' model is not supported when using Codex with a ChatGPT account."}`
+	if !isUnsupportedChatGPTModelError(output) {
+		t.Fatal("expected unsupported ChatGPT model error")
 	}
 }

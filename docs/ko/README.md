@@ -82,6 +82,8 @@ gch doctor
 
 auto 모드에서 Gacha는 연결된 provider의 현재 모델 목록을 OpenCode에 물어본 뒤, 그 목록 안에서 리서치에 적합한 모델을 고릅니다. `pro`, `opus`, `codex`, `sonnet`, 더 최신 버전 번호처럼 품질 지향 이름을 우선하고, `mini`, `nano`, `lite`, `flash`, `haiku`처럼 작고 빠른 모델은 뒤로 보냅니다.
 
+OpenAI OAuth, 즉 ChatGPT 구독 계정 경로에서는 `pro` 모델의 우선순위를 낮춥니다. OpenCode가 현재 ChatGPT 계정으로 실제 실행할 수 없는 모델까지 목록에 보여줄 수 있기 때문입니다. 그래도 선택된 모델이 ChatGPT 계정에서 지원되지 않는다고 거절되면 Gacha는 발견된 다음 후보로 재시도합니다.
+
 모델 목록을 읽을 수 없으면 Gacha는 하드코딩된 모델을 추측하지 않습니다. `--model` 없이 OpenCode를 실행해서 OpenCode 기본값을 사용합니다.
 
 고급 사용자는 다음처럼 직접 모델을 지정할 수 있습니다.

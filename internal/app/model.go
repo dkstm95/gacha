@@ -26,9 +26,10 @@ type gachaConfig struct {
 }
 
 type modelResolution struct {
-	Model  string
-	Reason string
-	Source string
+	Model     string
+	Reason    string
+	Source    string
+	Fallbacks []string
 }
 
 func resolveOpenCodeModel() modelResolution {
@@ -80,7 +81,11 @@ func autoOpenCodeModel() modelResolution {
 		}
 	}
 
-	selected := chooseModel(models)
+	candidates := rankModels(models, provider)
+	if len(candidates) > 6 {
+		candidates = candidates[:6]
+	}
+	selected := firstModel(candidates)
 	if selected == "" {
 		return modelResolution{
 			Reason: "auto: no usable model found",
@@ -88,9 +93,10 @@ func autoOpenCodeModel() modelResolution {
 		}
 	}
 	return modelResolution{
-		Model:  selected,
-		Reason: "auto: selected from current OpenCode model list",
-		Source: "opencode models " + provider,
+		Model:     selected,
+		Fallbacks: candidates[1:],
+		Reason:    "auto: selected from current OpenCode model list",
+		Source:    "opencode models " + provider,
 	}
 }
 
@@ -157,22 +163,33 @@ func parseOpenCodeModels(output string) []string {
 }
 
 func chooseModel(models []string) string {
+	return firstModel(rankModels(models, ""))
+}
+
+func rankModels(models []string, provider string) []string {
 	if len(models) == 0 {
-		return ""
+		return nil
 	}
 	sorted := append([]string(nil), models...)
 	sort.SliceStable(sorted, func(i, j int) bool {
-		left := modelScore(sorted[i])
-		right := modelScore(sorted[j])
+		left := modelScore(sorted[i], provider)
+		right := modelScore(sorted[j], provider)
 		if left == right {
 			return sorted[i] > sorted[j]
 		}
 		return left > right
 	})
-	return sorted[0]
+	return sorted
 }
 
-func modelScore(model string) int {
+func firstModel(models []string) string {
+	if len(models) == 0 {
+		return ""
+	}
+	return models[0]
+}
+
+func modelScore(model string, provider string) int {
 	name := strings.ToLower(model)
 	score := 0
 
@@ -190,8 +207,11 @@ func modelScore(model string) int {
 
 	for _, token := range []string{"mini", "nano", "lite", "flash", "haiku"} {
 		if strings.Contains(name, token) {
-			score -= 80
+			score -= 1200
 		}
+	}
+	if provider == "openai" && hasOpenAIChatGPTAuth() && strings.Contains(name, "pro") {
+		score -= 220
 	}
 	return score
 }
@@ -208,7 +228,7 @@ func newestVersionScore(name string) int {
 		if len(parts) == 2 {
 			minor, _ = strconv.Atoi(parts[1])
 		}
-		value := major*100 + minor
+		value := major*1000 + minor*10
 		if value > best {
 			best = value
 		}
@@ -220,12 +240,17 @@ func modelCandidates(resolution modelResolution) []string {
 	if resolution.Model == "" {
 		return nil
 	}
-	return []string{resolution.Model}
+	candidates := []string{resolution.Model}
+	candidates = append(candidates, resolution.Fallbacks...)
+	return candidates
 }
 
 func modelDescription(resolution modelResolution) string {
 	if resolution.Model == "" {
 		return fmt.Sprintf("OpenCode default (%s)", resolution.Reason)
+	}
+	if len(resolution.Fallbacks) > 0 {
+		return fmt.Sprintf("%s (%s; fallback: %s)", resolution.Model, resolution.Reason, strings.Join(resolution.Fallbacks, ", "))
 	}
 	return fmt.Sprintf("%s (%s)", resolution.Model, resolution.Reason)
 }

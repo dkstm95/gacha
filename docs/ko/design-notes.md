@@ -16,7 +16,7 @@ The installer downloads a standalone binary from GitHub Releases and installs th
 Install a specific release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | GACHA_VERSION=v0.1.15 sh
+curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | GACHA_VERSION=v0.1.16 sh
 ```
 
 Build from source:
@@ -31,8 +31,8 @@ go build -o gacha ./cmd/gacha
 Maintainer release flow:
 
 ```bash
-VERSION=0.1.15 sh scripts/build-release.sh
-gh release create v0.1.15 dist/*.tar.gz dist/checksums.txt --title "v0.1.15"
+VERSION=0.1.16 sh scripts/build-release.sh
+gh release create v0.1.16 dist/*.tar.gz dist/checksums.txt --title "v0.1.16"
 ```
 
 Codex marketplace plugin:
