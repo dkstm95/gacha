@@ -1,8 +1,10 @@
 # investiq
 
-`investiq`는 standalone 투자 리서치 AI agent harness입니다.
+이미 사용 중인 AI 도구로 투자 질문을 더 엄격하게 조사하세요.
 
-사용자의 투자 질문을 현재 사용할 수 있는 AI CLI에 자동으로 전달하고, 항상 최신 데이터 조사, 출처 링크, 리스크 검토, 반대 논리, provenance를 포함하도록 강제합니다. 사용할 수 있는 AI CLI가 없으면 웹 검색 가능한 AI에 붙여넣을 수 있는 프롬프트를 출력합니다.
+`investiq`는 터미널에서 실행되는 작은 투자 리서치 앱입니다. 사용자의 질문을 현재 컴퓨터에서 사용할 수 있는 AI 도구에 자동으로 전달합니다. 사용할 수 있는 도구가 없으면 ChatGPT, Claude, Gemini 같은 웹 AI에 붙여넣을 수 있는 프롬프트를 만들어 줍니다.
+
+English: [../../README.md](../../README.md)
 
 ## 설치
 
@@ -15,19 +17,19 @@ curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | 
 - `investiq`
 - `iq`
 
-일반 사용자는 짧은 `iq`를 쓰면 됩니다.
+앱을 열 때는 `investiq`를 쓰면 됩니다. 짧게 쓰고 싶으면 `iq`를 쓰면 됩니다.
 
-설치 중 PATH 안내가 나오면 출력된 `export PATH=...` 명령을 실행하세요.
+Node, npm, Python, Go를 따로 설치할 필요는 없습니다.
 
-## 빠른 시작
+설치 중 `export PATH=...` 문구가 나오면 터미널에 한 번 실행하세요.
+
+## 시작하기
 
 ```bash
-iq init
-iq doctor
 investiq
 ```
 
-`investiq`를 실행하면 interactive UI로 진입합니다.
+다음 화면이 열립니다.
 
 ```text
 investiq
@@ -39,15 +41,15 @@ Type /help for commands, /doctor to check AI platforms, /quit to exit.
 iq>
 ```
 
-`iq>` 프롬프트에 질문을 입력하면 됩니다.
+질문을 입력하면 됩니다.
 
 ```text
 iq> NVDA 지금 사도 될까?
 ```
 
-사용자가 `entry`, `exit`, `platform` 같은 옵션을 고를 필요가 없습니다. `investiq`가 내부적으로 요청 종류를 분류하고 사용할 AI 플랫폼을 자동 선택합니다.
+사용자가 모드나 AI 플랫폼을 고를 필요는 없습니다. `investiq`가 내부적으로 처리합니다.
 
-예시:
+## 질문 예시
 
 ```text
 iq> 6개월에서 12개월 관점에서 무엇에 투자하면 좋을까?
@@ -56,29 +58,27 @@ iq> TSLA를 보유 중인데 언제 줄이거나 팔아야 할까?
 iq> 내 포트폴리오를 점검해줘: AAPL 35%, NVDA 30%, SGOV 35%
 ```
 
-한 번만 실행하고 싶으면 기존처럼 짧게 쓸 수도 있습니다.
+앱을 열지 않고 한 번만 질문할 수도 있습니다.
 
 ```bash
 iq "NVDA 지금 사도 될까?"
 ```
 
-## 동작 방식
+## 설정 확인
 
-`investiq`는 로컬에서 사용 가능한 AI CLI를 확인하고 다음 순서로 자동 선택합니다.
+사용 가능한 AI 도구를 확인하려면 다음을 실행하세요.
 
-```text
-Claude Code -> Codex -> OpenCode -> Gemini CLI -> manual prompt
+```bash
+iq doctor
 ```
 
-감지된 플랫폼이 실행 중 실패하면 사용자가 막히지 않도록 자동으로 프롬프트 출력 방식으로 fallback합니다.
-
-`iq init`은 다음 파일을 생성합니다.
+`investiq`는 다음 순서로 사용할 도구를 찾습니다.
 
 ```text
-~/.investiq/config.json
+Claude Code -> Codex -> OpenCode -> Gemini CLI -> 복사/붙여넣기 프롬프트
 ```
 
-라우팅 순서나 명령어 이름을 바꾸고 싶으면 이 파일을 수정하면 됩니다.
+도구 실행에 실패하면 웹 AI에 붙여넣을 수 있는 프롬프트로 자동 전환합니다.
 
 ## 업데이트
 
@@ -86,44 +86,44 @@ Claude Code -> Codex -> OpenCode -> Gemini CLI -> manual prompt
 iq update
 ```
 
-`iq update`는 최신 GitHub Release를 확인하고, 현재 OS/CPU에 맞는 standalone binary를 내려받아 설치된 `investiq` 바이너리를 교체합니다.
+현재 컴퓨터에 맞는 바이너리를 내려받아 기존 파일을 교체합니다.
 
-`v0.1.4` 이하를 설치한 사용자는 아직 `update` 명령이 없으므로, 최초 1회는 설치 명령을 다시 실행해야 합니다.
+`v0.1.4` 이하를 설치한 사용자는 업데이트 명령이 없으므로, 최초 1회는 설치 명령을 다시 실행해야 합니다.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
 ```
 
-## 최신 데이터 원칙
+그 이후부터는 `iq update`를 사용할 수 있습니다.
 
-사용자가 "최신", "현재", "최근" 같은 표현을 쓰지 않아도 모든 투자 분석은 최신 웹/시장 데이터를 조사해야 합니다.
+## 최신 데이터
 
-최신 데이터를 검증할 수 없으면 추천을 내리지 않아야 합니다.
+투자 정보는 빠르게 바뀝니다. 사용자가 "최신"이라고 쓰지 않아도 `investiq`는 AI에게 현재 웹/시장 데이터를 확인하라고 지시합니다.
 
-결과에는 다음이 포함되어야 합니다.
+현재 데이터를 확인할 수 없으면 AI는 추천을 내리지 않아야 합니다.
+
+좋은 답변에는 다음이 포함되어야 합니다.
 
 - 데이터 기준 시점
 - 출처 링크
 - 현재 가격 또는 최신 수치
-- 투자 thesis
-- 밸류에이션 또는 시나리오 분석
+- 핵심 아이디어
 - 리스크
-- 반대 논리
-- 행동 조건
-- 모니터링 계획
-- provenance appendix
+- 반대 의견
+- 매수, 보유, 매도, 관망 조건
+- 앞으로 볼 지표
 
-## 하지 않는 것
+## 한계
 
 `investiq`는 다음을 하지 않습니다.
 
-- 자동 매매 실행
+- 자동 매매
 - 수익 보장
-- 전문 금융/세무/법률 자문 대체
-- 현재 버전에서 직접 시장 데이터 API 호출
+- 전문 금융, 세무, 법률 자문 대체
+- 현재 버전에서 직접 시장 데이터 조회
 
-현재 버전은 엄격한 투자 리서치 워크플로우를 구성하고 AI 플랫폼에 전달하는 역할을 합니다. 최신 데이터 조사는 연결된 AI 플랫폼이 수행해야 합니다.
+`investiq`는 엄격한 리서치 흐름을 만들어 AI 도구에 전달합니다. 최신 웹/시장 데이터 조사는 연결된 AI 도구가 수행해야 합니다.
 
-## 설계 메모
+## 개발자 문서
 
-초기 설계와 리서치 노트는 [design-notes.md](design-notes.md)에 있습니다.
+개발 문서: [../development.md](../development.md)

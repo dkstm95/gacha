@@ -1,10 +1,10 @@
 # investiq
 
-`investiq` is a standalone investment research agent harness.
+Ask investment questions through your existing AI tools.
 
-It routes your investment question to the best available AI CLI on your machine, while enforcing fresh-data research, source links, risk review, counterarguments, and provenance. If no supported AI CLI is ready, it prints a complete prompt you can paste into any web AI with browsing.
+`investiq` opens a small terminal app for investment research. It sends your question to the best AI tool available on your computer. If no supported tool is ready, it gives you a complete prompt you can paste into ChatGPT, Claude, Gemini, or another AI with web browsing.
 
-Korean documentation: [docs/ko/README.md](docs/ko/README.md)
+Korean: [docs/ko/README.md](docs/ko/README.md)
 
 ## Install
 
@@ -12,24 +12,24 @@ Korean documentation: [docs/ko/README.md](docs/ko/README.md)
 curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
 ```
 
-The installer downloads a standalone binary from GitHub Releases and installs:
+The installer adds two commands:
 
 - `investiq`
-- `iq`, the short command most users should use
+- `iq`
 
-No Node, npm, Python, or Go runtime is required.
+Use `investiq` to open the app. Use `iq` if you want a shorter command.
 
-If the installer says your install directory is not on `PATH`, run the printed `export PATH=...` command.
+No Node, npm, Python, or Go setup is needed.
 
-## Quick Start
+If the installer prints an `export PATH=...` line, run it once in your terminal.
+
+## Start
 
 ```bash
-iq init
-iq doctor
 investiq
 ```
 
-Running `investiq` opens the interactive UI:
+You will see:
 
 ```text
 investiq
@@ -41,15 +41,15 @@ Type /help for commands, /doctor to check AI platforms, /quit to exit.
 iq>
 ```
 
-Type your question at the `iq>` prompt:
+Type a question:
 
 ```text
 iq> Should I buy NVDA now?
 ```
 
-You do not need to choose `entry`, `exit`, or a platform. `investiq` classifies the request internally and routes it automatically.
+You do not need to pick a mode or choose an AI platform. `investiq` handles that for you.
 
-More examples:
+## Example Questions
 
 ```text
 iq> What should I invest in for the next 6 to 12 months?
@@ -58,29 +58,27 @@ iq> I own TSLA. When should I trim, sell, or stop out?
 iq> Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
 ```
 
-For one-shot usage, you can still run:
+You can also ask one question without opening the app:
 
 ```bash
 iq "Should I buy NVDA now?"
 ```
 
-## How It Works
+## Setup Check
 
-`investiq` checks your locally available AI CLIs and uses the first working platform in this routing order:
+Run this if you want to see which AI tools `investiq` can use:
 
-```text
-Claude Code -> Codex -> OpenCode -> Gemini CLI -> manual prompt
+```bash
+iq doctor
 ```
 
-If a detected platform fails at runtime, `investiq` falls back to printing a prompt instead of blocking you.
-
-`iq init` writes:
+`investiq` tries supported tools in this order:
 
 ```text
-~/.investiq/config.json
+Claude Code -> Codex -> OpenCode -> Gemini CLI -> copy/paste prompt
 ```
 
-You can edit that file if you want to change routing priority or command names.
+If a tool fails, `investiq` falls back to a prompt you can paste into a web AI.
 
 ## Update
 
@@ -88,78 +86,47 @@ You can edit that file if you want to change routing priority or command names.
 iq update
 ```
 
-`iq update` checks the latest GitHub Release, downloads the matching standalone binary for your OS/CPU, and replaces the installed `investiq` binary.
+This downloads the right binary for your computer and replaces the old one.
 
-If you installed `v0.1.4` or earlier, run the installer once to get the update command:
+If you installed `v0.1.4` or earlier, run the installer again once:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
 ```
 
-## Fresh Data Rule
+After that, `iq update` will work.
 
-Every investment workflow requires current web or market data, even if the user does not explicitly ask for "latest", "current", or "recent" data.
+## Fresh Data
 
-If fresh data cannot be verified, the AI should not make a recommendation.
+Investment information changes quickly. `investiq` always tells the AI to check current web or market data, even if you do not ask for "latest" data.
 
-Required report elements:
+If current data cannot be checked, the AI should not make a recommendation.
 
-- data freshness
+A good answer should include:
+
+- data date and time
 - source links
-- current price or latest relevant values
-- investment thesis
-- valuation or scenario analysis
+- current price or latest numbers
+- main idea
 - risks
-- Devil's Advocate
-- action conditions
-- monitoring plan
-- provenance appendix
+- opposite view
+- buy, hold, sell, or watch conditions
+- what to monitor next
 
-## What investiq Does Not Do
+## Important Limits
 
 `investiq` does not:
 
-- execute trades
-- guarantee returns
+- place trades
+- promise returns
 - replace professional financial, tax, or legal advice
-- fetch market data by itself in the current version
+- fetch market data by itself yet
 
-It composes and routes a strict investment research workflow to an AI platform. The connected AI platform must perform the fresh web or market-data research.
+It prepares a strict research workflow and sends it to an AI tool. The AI tool must do the current web or market-data research.
 
-## Build From Source
+## Developers
 
-```bash
-git clone https://github.com/dkstm95/investiq.git
-cd investiq
-go test ./...
-go build -o investiq ./cmd/investiq
-./investiq doctor
-```
-
-## Release
-
-```bash
-VERSION=0.1.2 sh scripts/build-release.sh
-gh release create v0.1.2 dist/*.tar.gz dist/checksums.txt --title "v0.1.2"
-```
-
-GitHub Actions templates are available in:
-
-```text
-docs/github-actions/
-```
-
-They are kept as templates until the repository token has permission to push workflow files.
-
-## Codex Plugin Assets
-
-This repository also includes marketplace/plugin assets:
-
-```text
-.agents/plugins/marketplace.json
-plugins/investiq/.codex-plugin/plugin.json
-plugins/investiq/skills/investiq/SKILL.md
-```
+Development notes: [docs/development.md](docs/development.md)
 
 ## License
 
