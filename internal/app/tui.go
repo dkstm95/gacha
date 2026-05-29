@@ -185,19 +185,11 @@ func runPrompt(query string) (string, error) {
 	if !ok || !hasOpenCodeAuth() {
 		return prompt, nil
 	}
-	args := openCodeRunArgs(prompt, preferredOpenCodeModel())
-	output, err := runOpenCode(commandPath, args, false)
-	if err == nil {
-		return strings.TrimSpace(output), nil
+	output, err := runOpenCodeWithResolution(commandPath, prompt, resolveOpenCodeModel(), false)
+	if err != nil {
+		return output, err
 	}
-	if fallback := fallbackOpenCodeModel(args, output); fallback != "" {
-		retryOutput, retryErr := runOpenCode(commandPath, openCodeRunArgs(prompt, fallback), false)
-		if retryErr == nil {
-			return strings.TrimSpace(retryOutput), nil
-		}
-		return retryOutput, retryErr
-	}
-	return output, err
+	return strings.TrimSpace(output), nil
 }
 
 func welcomeContent(version string) string {
@@ -272,9 +264,7 @@ func doctorContent() string {
 	if resolved, ok := resolveCommand(openCodeCommand); ok {
 		lines = append(lines, fmt.Sprintf("Resolved: %s", resolved))
 	}
-	if model := preferredOpenCodeModel(); model != "" {
-		lines = append(lines, fmt.Sprintf("Model:    %s", model))
-	}
+	lines = append(lines, fmt.Sprintf("Model:    %s", modelDescription(resolveOpenCodeModel())))
 	if hasOpenCodeAuth() {
 		if providers, err := openCodeAuthList(); err == nil && strings.TrimSpace(providers) != "" {
 			lines = append(lines, "", titleStyle.Render("Providers"), strings.TrimSpace(stripANSI(providers)))

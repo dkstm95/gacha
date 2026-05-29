@@ -20,8 +20,10 @@ func doctor() error {
 		fmt.Printf("           resolved: %s\n", resolved)
 	}
 	fmt.Printf("           auth: %s\n", openCodeAuthPath())
-	if model := preferredOpenCodeModel(); model != "" {
-		fmt.Printf("           model: %s\n", model)
+	resolution := resolveOpenCodeModel()
+	fmt.Printf("           model: %s\n", modelDescription(resolution))
+	if resolution.Source != "" {
+		fmt.Printf("           model source: %s\n", resolution.Source)
 	}
 	if hasOpenCodeAuth() {
 		if providers, err := openCodeAuthList(); err == nil && strings.TrimSpace(providers) != "" {

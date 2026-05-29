@@ -13,7 +13,6 @@ import (
 )
 
 const openCodeCommand = "opencode"
-const defaultOpenAIChatGPTCodexModel = "openai/gpt-5.1-codex"
 
 type openCodeAuthCredential struct {
 	Type string `json:"type"`
@@ -25,7 +24,8 @@ func runAgent(prompt string, dryRun bool) error {
 		fmt.Println(prompt)
 		return nil
 	}
-	args := openCodeRunArgs(prompt, preferredOpenCodeModel())
+	resolution := resolveOpenCodeModel()
+	args := openCodeRunArgs(prompt, resolution.Model)
 	if dryRun {
 		parts := []string{commandPath}
 		for _, arg := range args {
@@ -34,15 +34,7 @@ func runAgent(prompt string, dryRun bool) error {
 		fmt.Println(strings.Join(parts, " "))
 		return nil
 	}
-	output, err := runOpenCode(commandPath, args, true)
-	if err == nil {
-		return nil
-	}
-	if fallback := fallbackOpenCodeModel(args, output); fallback != "" {
-		fmt.Fprintf(os.Stderr, "\nOpenCode rejected the selected model. Retrying with %s...\n\n", fallback)
-		_, retryErr := runOpenCode(commandPath, openCodeRunArgs(prompt, fallback), true)
-		return retryErr
-	}
+	_, err := runOpenCodeWithResolution(commandPath, prompt, resolution, true)
 	return err
 }
 
@@ -98,16 +90,6 @@ func openCodeRunArgs(prompt string, model string) []string {
 	return append(args, prompt)
 }
 
-func preferredOpenCodeModel() string {
-	if model := strings.TrimSpace(os.Getenv("GACHA_OPENCODE_MODEL")); model != "" {
-		return model
-	}
-	if hasOpenAIChatGPTAuth() {
-		return defaultOpenAIChatGPTCodexModel
-	}
-	return ""
-}
-
 func hasOpenAIChatGPTAuth() bool {
 	providers, err := openCodeAuthProviders()
 	if err != nil {
@@ -133,6 +115,32 @@ func openCodeAuthProviders() (map[string]openCodeAuthCredential, error) {
 	return providers, nil
 }
 
+func runOpenCodeWithResolution(commandPath string, prompt string, resolution modelResolution, stream bool) (string, error) {
+	candidates := modelCandidates(resolution)
+	if len(candidates) == 0 {
+		return runOpenCode(commandPath, openCodeRunArgs(prompt, ""), stream)
+	}
+
+	var lastOutput string
+	var lastErr error
+	for index, model := range candidates {
+		if index > 0 && stream {
+			fmt.Fprintf(os.Stderr, "\nOpenCode rejected the selected model. Retrying with %s...\n\n", model)
+		}
+		output, err := runOpenCode(commandPath, openCodeRunArgs(prompt, model), stream)
+		if err == nil {
+			return output, nil
+		}
+		lastOutput = output
+		lastErr = err
+		if !isUnsupportedChatGPTCodexModelError(output) {
+			return output, err
+		}
+		rememberModelFailure(model)
+	}
+	return lastOutput, lastErr
+}
+
 func runOpenCode(commandPath string, args []string, stream bool) (string, error) {
 	cmd := exec.Command(commandPath, args...)
 	cmd.Stdin = os.Stdin
@@ -155,11 +163,7 @@ func fallbackOpenCodeModel(args []string, output string) string {
 		return ""
 	}
 	current := modelFromOpenCodeArgs(args)
-	for _, candidate := range []string{
-		defaultOpenAIChatGPTCodexModel,
-		"openai/gpt-5.1-codex-mini",
-		"openai/gpt-5-codex",
-	} {
+	for _, candidate := range modelCandidates(autoOpenCodeModel()) {
 		if candidate != current {
 			return candidate
 		}
