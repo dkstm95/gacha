@@ -14,6 +14,9 @@ func (a *App) startSession() error {
 		enterScreen()
 		defer exitScreen()
 	}
+	if err := ensureRuntime(interactive); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
 	printSessionHome(interactive, a.version)
 
 	for {
@@ -48,24 +51,19 @@ func (a *App) startSession() error {
 				fmt.Fprintln(os.Stderr, err)
 			}
 			continue
+		case "/setup", "setup":
+			if err := ensureRuntime(true); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
 		case "/update", "update":
 			if err := a.updateSelf(); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
 			continue
-		case "/init", "init":
-			if err := initConfig(false); err != nil {
-				fmt.Fprintln(os.Stderr, err)
-			}
-			continue
-		case "/platforms":
-			if err := platforms(); err != nil {
-				fmt.Fprintln(os.Stderr, err)
-			}
-			continue
 		}
 		fmt.Println()
-		if err := runMode("auto", []string{input}); err != nil {
+		if err := runQuery([]string{input}); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}
@@ -75,14 +73,6 @@ func printSessionHome(interactive bool, version string) {
 	if interactive {
 		clearScreen()
 	}
-	cfg := loadConfig()
-	selected := selectPlatform(cfg, cfg.DefaultPlatform)
-	platform := cfg.Platforms[selected]
-	platformLabel := platform.Label
-	if selected == "manual" {
-		platformLabel = "Copy/paste prompt"
-	}
-
 	fmt.Println("INVESTIQ")
 	fmt.Println("Fresh-data investment research for your AI tools")
 	fmt.Println()
@@ -91,8 +81,7 @@ func printSessionHome(interactive bool, version string) {
 	fmt.Println("| It always asks the AI to use current web or market data.   |")
 	fmt.Println("+------------------------------------------------------------+")
 	fmt.Println()
-	fmt.Printf("Route        %s\n", platformLabel)
-	fmt.Printf("Config       %s\n", configPath())
+	fmt.Printf("Route        %s\n", routeLabel())
 	fmt.Printf("Version      %s\n", version)
 	fmt.Println()
 	fmt.Println("Try")
@@ -102,7 +91,8 @@ func printSessionHome(interactive bool, version string) {
 	fmt.Println()
 	fmt.Println("Commands")
 	fmt.Println("  /help      show commands")
-	fmt.Println("  /doctor    check AI tools")
+	fmt.Println("  /doctor    check AI runtime")
+	fmt.Println("  /setup     install/connect AI")
 	fmt.Println("  /update    update investiq")
 	fmt.Println("  /quit      exit")
 }
@@ -117,10 +107,9 @@ func printSessionHelp(interactive bool) {
 	fmt.Println("Commands")
 	fmt.Println("  /home       Show the home screen")
 	fmt.Println("  /help       Show this help")
-	fmt.Println("  /doctor     Check detected AI platforms")
+	fmt.Println("  /doctor     Check the local AI runtime")
+	fmt.Println("  /setup      Install OpenCode runtime and connect a provider")
 	fmt.Println("  /update     Update investiq to the latest release")
-	fmt.Println("  /init       Configure AI platform routing")
-	fmt.Println("  /platforms  Print platform config")
 	fmt.Println("  /quit       Exit")
 	fmt.Println()
 	fmt.Println("Examples:")

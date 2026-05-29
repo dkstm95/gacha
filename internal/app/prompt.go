@@ -14,8 +14,8 @@ import (
 //go:embed assets/plugins/investiq/workflows/*.md
 var embedded embed.FS
 
-func printPrompt(mode string, query []string) error {
-	prompt, err := buildPrompt(mode, query)
+func printPrompt(query []string) error {
+	prompt, err := buildPrompt(query)
 	if err != nil {
 		return err
 	}
@@ -23,10 +23,7 @@ func printPrompt(mode string, query []string) error {
 	return nil
 }
 
-func runMode(mode string, args []string) error {
-	if !modes[mode] {
-		return fmt.Errorf("invalid mode: %s", mode)
-	}
+func runQuery(args []string) error {
 	dryRun := false
 	query := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
@@ -37,32 +34,20 @@ func runMode(mode string, args []string) error {
 			query = append(query, args[i])
 		}
 	}
-	cfg := loadConfig()
-	selected := selectPlatform(cfg, cfg.DefaultPlatform)
-	platform, ok := cfg.Platforms[selected]
-	if !ok {
-		return fmt.Errorf("unknown platform: %s", selected)
-	}
-	prompt, err := buildPrompt(mode, query)
+	prompt, err := buildPrompt(query)
 	if err != nil {
 		return err
 	}
-	if err := runPlatform(selected, platform, prompt, dryRun); err != nil {
-		if selected == "manual" {
-			return err
-		}
-		fmt.Fprintf(os.Stderr, "Could not use %s automatically: %v\n", platform.Label, err)
+	if err := runAgent(prompt, dryRun); err != nil {
+		fmt.Fprintf(os.Stderr, "Could not use OpenCode automatically: %v\n", err)
 		fmt.Fprintln(os.Stderr, "Falling back to a prompt you can paste into any web AI.")
 		fmt.Fprintln(os.Stderr)
-		return runPlatform("manual", cfg.Platforms["manual"], prompt, dryRun)
+		fmt.Println(prompt)
 	}
 	return nil
 }
 
-func buildPrompt(mode string, queryParts []string) (string, error) {
-	if !modes[mode] {
-		return "", fmt.Errorf("unknown mode: %s", mode)
-	}
+func buildPrompt(queryParts []string) (string, error) {
 	system, err := readEmbedded("assets/plugins/investiq/platforms/generic/system-prompt.md")
 	if err != nil {
 		return "", err
@@ -71,16 +56,13 @@ func buildPrompt(mode string, queryParts []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	workflows, err := readWorkflows()
+	if err != nil {
+		return "", err
+	}
 	workflow := `# investiq auto
 
 Classify the user's request into discover, select, entry, exit, portfolio, or journal, then follow the matching investiq workflow. If the request is ambiguous, choose the safest interpretation and state your assumption.`
-	if mode != "auto" {
-		workflowPath := fmt.Sprintf("assets/plugins/investiq/workflows/%s.md", mode)
-		workflow, err = readEmbedded(workflowPath)
-		if err != nil {
-			return "", err
-		}
-	}
 	query := strings.TrimSpace(strings.Join(queryParts, " "))
 	if query == "" {
 		query = "(No additional user request supplied.)"
@@ -88,6 +70,7 @@ Classify the user's request into discover, select, entry, exit, portfolio, or jo
 	sections := []string{
 		strings.TrimSpace(system),
 		strings.TrimSpace(workflow),
+		"Workflow library:\n" + strings.TrimSpace(workflows),
 		"User request:\n" + query,
 		"Report template:\n" + strings.TrimSpace(template),
 		`Hard requirements:
@@ -97,6 +80,25 @@ Classify the user's request into discover, select, entry, exit, portfolio, or jo
 - Do not execute trades. The final decision remains with the user.`,
 	}
 	return strings.Join(sections, "\n\n"), nil
+}
+
+func readWorkflows() (string, error) {
+	entries, err := fs.ReadDir(embedded, "assets/plugins/investiq/workflows")
+	if err != nil {
+		return "", err
+	}
+	parts := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+			continue
+		}
+		content, err := readEmbedded("assets/plugins/investiq/workflows/" + entry.Name())
+		if err != nil {
+			return "", err
+		}
+		parts = append(parts, strings.TrimSpace(content))
+	}
+	return strings.Join(parts, "\n\n"), nil
 }
 
 func readEmbedded(name string) (string, error) {

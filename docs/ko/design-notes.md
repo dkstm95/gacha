@@ -1,22 +1,22 @@
 # investiq
 
-`investiq` is a marketplace-ready investment research agent harness. It is designed to run across the AI platforms a user already subscribes to, such as Codex, Claude Code, OpenCode / Oh My OpenAgent, Gemini CLI, or a generic manual copy/paste workflow.
+`investiq` is a marketplace-ready investment research agent harness. The default product direction is an InvestIQ-owned terminal UI backed by a local OpenCode runtime. Users connect ChatGPT, GitHub Copilot, Gemini, API providers, or other OpenCode-supported providers through that runtime instead of choosing a platform on every request.
 
 ## Quick Start
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
-iq init
+iq setup
 iq doctor
 iq "NVDA 지금 사도 될까?"
 ```
 
-The installer downloads a standalone binary from GitHub Releases and installs both `investiq` and the shorter `iq` alias. It does not require Node, npm, Python, or Go on the user's machine.
+The installer downloads a standalone binary from GitHub Releases and installs both `investiq` and the shorter `iq` alias. It does not require Node, npm, Python, or Go for the InvestIQ binary. On first run, InvestIQ can install OpenCode runtime and start provider login for the user.
 
 Install a specific release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | INVESTIQ_VERSION=v0.1.0 sh
+curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | INVESTIQ_VERSION=v0.1.8 sh
 ```
 
 Build from source:
@@ -31,8 +31,8 @@ go build -o investiq ./cmd/investiq
 Maintainer release flow:
 
 ```bash
-VERSION=0.1.0 sh scripts/build-release.sh
-gh release create v0.1.0 dist/*.tar.gz dist/checksums.txt --title "v0.1.0"
+VERSION=0.1.8 sh scripts/build-release.sh
+gh release create v0.1.8 dist/*.tar.gz dist/checksums.txt --title "v0.1.8"
 ```
 
 Codex marketplace plugin:
@@ -42,41 +42,33 @@ Codex marketplace plugin:
 plugins/investiq/.codex-plugin/plugin.json
 ```
 
-Generic agent prompt:
+Embedded agent assets:
 
 ```text
-plugins/investiq/platforms/generic/system-prompt.md
-```
-
-Claude Code command prompts:
-
-```text
-plugins/investiq/platforms/claude-code/commands/
+internal/app/assets/plugins/investiq/platforms/generic/system-prompt.md
+internal/app/assets/plugins/investiq/workflows/
+internal/app/assets/plugins/investiq/templates/
 ```
 
 The user-facing command is always `investiq`.
 
-The CLI composes host-agnostic workflows and templates, then routes them to the user's configured AI platform. It does not fetch market data or execute trades by itself. The host agent must use current web or market-data tools before producing investment conclusions.
+The CLI composes host-agnostic workflows and templates, then routes them to OpenCode runtime. It does not fetch market data or execute trades by itself. The connected AI provider must use current web or market-data tools before producing investment conclusions.
 
 Harness commands:
 
 ```bash
-iq init
 iq doctor
+iq setup
 iq "AAPL 지금 살까?"
-iq entry "AAPL 현재 매수 구간 분석"
-iq exit "TSLA 보유 중인데 매도 기준 점검"
+iq "AAPL 현재 매수 구간 분석"
+iq "TSLA 보유 중인데 매도 기준 점검"
 ```
 
-`iq init` writes `~/.investiq/config.json`. This file records which AI platforms are available and the internal routing priority. Users do not need to choose a platform for each request.
-
-The default routing order is:
+Users connect their actual subscriptions through `iq setup`, which delegates credential storage to OpenCode. InvestIQ keeps the investment workflow and UI on top. The runtime route is intentionally fixed:
 
 ```text
-claude → codex → opencode → gemini → manual
+OpenCode runtime → copy/paste prompt fallback
 ```
-
-Users can edit `~/.investiq/config.json` to match their actual subscriptions, local commands, and preferred routing.
 
 ## 1. Project Purpose
 
@@ -675,19 +667,19 @@ investiq =
 
 ## 11. MVP Implementation Direction
 
-처음에는 복잡한 자동화 시스템보다 다음 4개 명령 모드로 시작하는 것이 좋다.
+처음에는 복잡한 명령 모드보다 단일 질문 인터페이스로 시작한다. InvestIQ가 요청을 내부적으로 다음 유형 중 하나로 분류한다.
 
 ```text
-investiq discover
+discover
 무엇에 투자할지 모를 때 후보 추천
 
-investiq select
+select
 섹터/도메인 안에서 구체적 투자 대상 추천
 
-investiq entry
+entry
 특정 대상의 매수 적정 가격대 분석
 
-investiq exit
+exit
 보유 자산의 매도/손절/익절 기준 분석
 ```
 
@@ -704,18 +696,18 @@ investiq exit
 8. 사용자 최종 판단 지원
 ```
 
-MVP 이후에는 다음 명령을 추가할 수 있다.
+MVP 이후에는 다음 내부 workflow를 추가할 수 있다.
 
 ```text
-investiq journal
+journal
 투자 판단과 사후 결과 기록
 
-investiq monitor
+monitor
 보유 자산의 가격, 뉴스, 공시, thesis invalidation 조건 모니터링
 
-investiq portfolio
+portfolio
 포트폴리오 집중도, 상관관계, drawdown, 리밸런싱 필요성 점검
 
-investiq backtest
+backtest
 후보 랭킹, entry zone, exit rule의 과거 성과 검증
 ```

@@ -2,16 +2,6 @@ package app
 
 import "fmt"
 
-var modes = map[string]bool{
-	"auto":      true,
-	"discover":  true,
-	"select":    true,
-	"entry":     true,
-	"exit":      true,
-	"portfolio": true,
-	"journal":   true,
-}
-
 type App struct {
 	version string
 }
@@ -33,29 +23,16 @@ func (a *App) Run(args []string) error {
 	case "version", "--version", "-v":
 		fmt.Println(a.version)
 		return nil
-	case "init":
-		return initConfig(hasFlag(args[1:], "--yes") || hasFlag(args[1:], "-y"))
 	case "doctor":
 		return doctor()
+	case "setup":
+		return ensureRuntime(true)
 	case "update":
 		return a.updateSelf()
-	case "platforms":
-		return platforms()
 	case "prompt":
-		if len(args) >= 2 && modes[args[1]] {
-			return printPrompt(args[1], args[2:])
-		}
-		return printPrompt("auto", args[1:])
-	case "run":
-		if len(args) >= 2 && modes[args[1]] {
-			return runMode(args[1], args[2:])
-		}
-		return runMode("auto", args[1:])
+		return printPrompt(args[1:])
 	default:
-		if modes[args[0]] {
-			return runMode(args[0], args[1:])
-		}
-		return runMode("auto", args)
+		return runQuery(args)
 	}
 }
 
@@ -65,14 +42,13 @@ func printUsage() {
 Usage:
   investiq                                    Open the interactive investiq UI
   iq                                          Open the interactive investiq UI
-  iq init                                     Set up AI platform routing
-  iq doctor                                   Check detected AI platforms
+  iq doctor                                   Check the local AI runtime
+  iq setup                                    Install the runtime and connect an AI provider
   iq update                                   Update investiq to the latest release
   iq "question"                               Analyze with automatic request classification
 
 Debug:
   investiq prompt "question"                  Print the composed agent prompt
-  investiq platforms                          Print platform config
 
 Examples:
   iq "NVDA 지금 사도 될까?"

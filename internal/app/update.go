@@ -16,6 +16,10 @@ import (
 	"time"
 )
 
+type GitHubRelease struct {
+	TagName string `json:"tag_name"`
+}
+
 func (a *App) updateSelf() error {
 	latest, err := a.latestReleaseTag()
 	if err != nil {

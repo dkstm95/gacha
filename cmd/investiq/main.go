@@ -7,7 +7,7 @@ import (
 	"github.com/dkstm95/investiq/internal/app"
 )
 
-var version = "0.1.0"
+var version = "0.1.8"
 
 func main() {
 	application := app.New(version)

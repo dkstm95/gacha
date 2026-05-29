@@ -13,8 +13,8 @@ go build -o investiq ./cmd/investiq
 ## 릴리즈
 
 ```bash
-VERSION=0.1.6 sh scripts/build-release.sh
-gh release create v0.1.6 dist/*.tar.gz dist/checksums.txt --title "v0.1.6"
+VERSION=0.1.8 sh scripts/build-release.sh
+gh release create v0.1.8 dist/*.tar.gz dist/checksums.txt --title "v0.1.8"
 ```
 
 GitHub Actions 템플릿은 다음 위치에 있습니다.

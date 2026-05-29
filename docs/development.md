@@ -13,8 +13,8 @@ go build -o investiq ./cmd/investiq
 ## Release
 
 ```bash
-VERSION=0.1.6 sh scripts/build-release.sh
-gh release create v0.1.6 dist/*.tar.gz dist/checksums.txt --title "v0.1.6"
+VERSION=0.1.8 sh scripts/build-release.sh
+gh release create v0.1.8 dist/*.tar.gz dist/checksums.txt --title "v0.1.8"
 ```
 
 GitHub Actions templates are available in:

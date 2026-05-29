@@ -1,8 +1,10 @@
 # investiq
 
-Ask investment questions through your existing AI tools.
+Ask investment questions through a local AI runtime.
 
-`investiq` opens a small terminal app for investment research. It sends your question to the best AI tool available on your computer. If no supported tool is ready, it gives you a complete prompt you can paste into ChatGPT, Claude, Gemini, or another AI with web browsing.
+`investiq` opens a terminal app for investment research. It uses OpenCode as the local AI runtime, so you can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another supported provider without choosing a platform for every question.
+
+If the runtime is missing, `investiq` can install it for you on first run. If no runtime is ready, it still gives you a complete prompt you can paste into any AI with web browsing.
 
 Korean: [docs/ko/README.md](docs/ko/README.md)
 
@@ -19,7 +21,9 @@ The installer adds two commands:
 
 Use `investiq` to open the app. Use `iq` if you want a shorter command.
 
-No Node, npm, Python, or Go setup is needed.
+No Node, npm, Python, or Go setup is needed for `investiq`.
+
+On first run, `investiq` may ask to install OpenCode runtime and connect an AI provider. This runtime runs behind the InvestIQ UI.
 
 If the installer prints an `export PATH=...` line, run it once in your terminal.
 
@@ -68,19 +72,29 @@ iq "Should I buy NVDA now?"
 
 ## Setup Check
 
-Run this if you want to see which AI tools `investiq` can use:
+Run this if you want to see whether the local AI runtime is ready:
 
 ```bash
 iq doctor
 ```
 
-`investiq` tries supported tools in this order:
+`investiq` uses this route:
 
 ```text
-Claude Code -> Codex -> OpenCode -> Gemini CLI -> copy/paste prompt
+OpenCode runtime -> copy/paste prompt
 ```
 
-If a tool fails, `investiq` falls back to a prompt you can paste into a web AI.
+If OpenCode is missing or no provider is connected, run:
+
+```bash
+iq setup
+```
+
+`iq setup` installs the runtime if needed, then starts provider login. You can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another OpenCode-supported provider.
+
+After setup, `investiq` keeps the investment workflow and results inside the InvestIQ UI.
+
+If the runtime fails, `investiq` falls back to a prompt you can paste into a web AI.
 
 ## Update
 
@@ -89,14 +103,6 @@ iq update
 ```
 
 This downloads the right binary for your computer and replaces the old one.
-
-If you installed `v0.1.4` or earlier, run the installer again once:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/dkstm95/investiq/main/install.sh | sh
-```
-
-After that, `iq update` will work.
 
 ## Fresh Data
 
