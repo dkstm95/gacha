@@ -5,18 +5,41 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "investiq": "./src/investiq.mjs"
+    "investiq": "./dist/index.js"
   },
   "files": [
-    "src/",
+    "dist/",
     "plugins/",
     ".agents/",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "doctor": "node src/investiq.mjs doctor",
-    "validate:plugin": "python3 /Users/SeungIl/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py plugins/investiq"
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "doctor": "tsx src/index.ts doctor",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "validate:plugin": "node scripts/validate-plugin.mjs",
+    "validate": "npm run typecheck && npm run lint && npm run test && npm run build && npm run validate:plugin"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "prettier": "^3.7.4",
+    "tsup": "^8.5.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.1",
+    "vitest": "^4.0.14"
   },
   "keywords": [
     "investment",
