@@ -69,7 +69,6 @@ func TestPreferredOpenCodeModelAllowsEnvOverride(t *testing.T) {
 func TestOpenAIChatGPTAuthDetection(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_DATA_HOME", dir)
-	t.Setenv("GACHA_OPENCODE_MODEL", "")
 	authDir := dir + "/opencode"
 	if err := os.MkdirAll(authDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -79,17 +78,6 @@ func TestOpenAIChatGPTAuthDetection(t *testing.T) {
 	}
 	if !hasOpenAIChatGPTAuth() {
 		t.Fatal("expected OpenAI OAuth auth to be detected")
-	}
-	if got := resolveOpenCodeModel(); got.Model != defaultOpenAIChatGPTModel {
-		t.Fatalf("unexpected model: %#v", got)
-	}
-}
-
-func TestFallbackOpenCodeModelForUnsupportedChatGPTModel(t *testing.T) {
-	output := `Bad Request: {"detail":"The 'gpt-5.5-pro' model is not supported when using Codex with a ChatGPT account."}`
-	got := fallbackOpenCodeModel([]string{"run", "--model", "openai/gpt-5.5-pro", "hello"}, output)
-	if got != defaultOpenAIChatGPTModel {
-		t.Fatalf("unexpected fallback: %s", got)
 	}
 }
 
@@ -111,21 +99,33 @@ func TestResolveOpenCodeModelUsesConfigDefault(t *testing.T) {
 	}
 }
 
-func TestModelFailureCacheSkipsFailedAutoCandidate(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("XDG_DATA_HOME", dir)
-	t.Setenv("XDG_STATE_HOME", dir)
-	t.Setenv("GACHA_OPENCODE_MODEL", "")
-	authDir := dir + "/opencode"
-	if err := os.MkdirAll(authDir, 0o755); err != nil {
-		t.Fatal(err)
+func TestParseOpenCodeModels(t *testing.T) {
+	output := "\x1b[0m\nopenai/gpt-5.5\nopenai/gpt-5.5-pro\nnot a model\nopenai/gpt-5.5\n"
+	got := parseOpenCodeModels(output)
+	want := []string{"openai/gpt-5.5", "openai/gpt-5.5-pro"}
+	if strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("unexpected models: %#v", got)
 	}
-	if err := os.WriteFile(authDir+"/auth.json", []byte(`{"openai":{"type":"oauth"}}`), 0o600); err != nil {
-		t.Fatal(err)
+}
+
+func TestChooseModelPrefersQualityAndLatest(t *testing.T) {
+	got := chooseModel([]string{
+		"openai/gpt-5.5-mini",
+		"openai/gpt-5.1-codex",
+		"openai/gpt-5.5-pro",
+		"openai/gpt-5",
+	})
+	if got != "openai/gpt-5.5-pro" {
+		t.Fatalf("unexpected model: %s", got)
 	}
-	rememberModelFailure(defaultOpenAIChatGPTModel)
-	got := resolveOpenCodeModel()
-	if got.Model != "openai/gpt-5.1-codex-mini" {
-		t.Fatalf("unexpected model after failure cache: %#v", got)
+}
+
+func TestChooseModelPenalizesSmallModels(t *testing.T) {
+	got := chooseModel([]string{
+		"google/gemini-3-flash",
+		"google/gemini-2.5-pro",
+	})
+	if got != "google/gemini-2.5-pro" {
+		t.Fatalf("unexpected model: %s", got)
 	}
 }

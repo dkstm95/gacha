@@ -80,9 +80,9 @@ gch doctor
 
 이 명령은 Gacha가 OpenCode에 요청할 모델도 보여줍니다. 기본 모델 모드는 `auto`입니다.
 
-auto 모드에서 OpenAI OAuth, 즉 ChatGPT 구독 계정으로 연결된 경우 Gacha는 OpenCode의 마지막 선택 모델을 그대로 쓰지 않고 ChatGPT/Codex 경로에서 가장 안전한 후보를 선택합니다. 이렇게 하면 `gpt-5.5-pro`처럼 지원되지 않는 모델 오류를 피할 수 있습니다.
+auto 모드에서 Gacha는 연결된 provider의 현재 모델 목록을 OpenCode에 물어본 뒤, 그 목록 안에서 리서치에 적합한 모델을 고릅니다. `pro`, `opus`, `codex`, `sonnet`, 더 최신 버전 번호처럼 품질 지향 이름을 우선하고, `mini`, `nano`, `lite`, `flash`, `haiku`처럼 작고 빠른 모델은 뒤로 보냅니다.
 
-모델이 지원되지 않아 거절되면 Gacha는 그 실패를 짧은 시간 동안 기억하고 다음 실행에서 해당 모델을 피합니다.
+모델 목록을 읽을 수 없으면 Gacha는 하드코딩된 모델을 추측하지 않습니다. `--model` 없이 OpenCode를 실행해서 OpenCode 기본값을 사용합니다.
 
 고급 사용자는 다음처럼 직접 모델을 지정할 수 있습니다.
 

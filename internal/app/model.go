@@ -1,10 +1,17 @@
 package app
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -12,8 +19,6 @@ import (
 const (
 	modelSettingAuto            = "auto"
 	modelSettingOpenCodeDefault = "opencode-default"
-	defaultOpenAIChatGPTModel   = "openai/gpt-5.1-codex"
-	modelFailureTTL             = 24 * time.Hour
 )
 
 type gachaConfig struct {
@@ -21,14 +26,9 @@ type gachaConfig struct {
 }
 
 type modelResolution struct {
-	Model     string
-	Reason    string
-	Source    string
-	Fallbacks []string
-}
-
-type modelFailureCache struct {
-	Failures map[string]time.Time `json:"failures"`
+	Model  string
+	Reason string
+	Source string
 }
 
 func resolveOpenCodeModel() modelResolution {
@@ -60,47 +60,174 @@ func resolveOpenCodeModel() modelResolution {
 }
 
 func autoOpenCodeModel() modelResolution {
-	if hasOpenAIChatGPTAuth() {
-		known := []string{
-			defaultOpenAIChatGPTModel,
-			"openai/gpt-5.1-codex-mini",
+	provider := preferredOpenCodeProvider()
+	if provider == "" {
+		return modelResolution{
+			Reason: "auto: no connected provider detected",
+			Source: "OpenCode default",
 		}
-		candidates := filterFailedModels(known)
-		reason := "auto: OpenAI OAuth ChatGPT account"
-		if len(candidates) == 0 {
-			candidates = known
-			reason = "auto: all known OpenAI OAuth Codex models recently failed; retrying best known model"
+	}
+
+	models, err := discoverOpenCodeModels(provider)
+	if err != nil || len(models) == 0 {
+		reason := "auto: could not read provider model list"
+		if err != nil {
+			reason += ": " + firstLine(err.Error())
 		}
 		return modelResolution{
-			Model:     candidates[0],
-			Fallbacks: candidates[1:],
-			Reason:    reason,
-			Source:    "OpenCode auth",
+			Reason: reason,
+			Source: "OpenCode default",
+		}
+	}
+
+	selected := chooseModel(models)
+	if selected == "" {
+		return modelResolution{
+			Reason: "auto: no usable model found",
+			Source: "OpenCode default",
 		}
 	}
 	return modelResolution{
-		Reason: "auto: provider-specific default",
-		Source: "OpenCode",
+		Model:  selected,
+		Reason: "auto: selected from current OpenCode model list",
+		Source: "opencode models " + provider,
 	}
+}
+
+func firstLine(value string) string {
+	value = strings.TrimSpace(value)
+	if index := strings.IndexByte(value, '\n'); index >= 0 {
+		return strings.TrimSpace(value[:index])
+	}
+	return value
+}
+
+func preferredOpenCodeProvider() string {
+	providers, err := openCodeAuthProviders()
+	if err != nil || len(providers) == 0 {
+		return ""
+	}
+	for _, preferred := range []string{"openai", "anthropic", "google", "gemini"} {
+		if _, ok := providers[preferred]; ok {
+			return preferred
+		}
+	}
+	names := make([]string, 0, len(providers))
+	for provider := range providers {
+		names = append(names, provider)
+	}
+	sort.Strings(names)
+	return names[0]
+}
+
+func discoverOpenCodeModels(provider string) ([]string, error) {
+	commandPath, ok := resolveCommand(openCodeCommand)
+	if !ok {
+		return nil, fmt.Errorf("OpenCode runtime not found")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, commandPath, "models", provider)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	if err := cmd.Run(); err != nil {
+		return nil, errors.New(strings.TrimSpace(stripANSI(out.String())))
+	}
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	return parseOpenCodeModels(out.String()), nil
+}
+
+func parseOpenCodeModels(output string) []string {
+	var models []string
+	seen := map[string]bool{}
+	for _, line := range strings.Split(stripANSI(output), "\n") {
+		model := strings.TrimSpace(line)
+		if model == "" || !strings.Contains(model, "/") || seen[model] {
+			continue
+		}
+		seen[model] = true
+		models = append(models, model)
+	}
+	return models
+}
+
+func chooseModel(models []string) string {
+	if len(models) == 0 {
+		return ""
+	}
+	sorted := append([]string(nil), models...)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		left := modelScore(sorted[i])
+		right := modelScore(sorted[j])
+		if left == right {
+			return sorted[i] > sorted[j]
+		}
+		return left > right
+	})
+	return sorted[0]
+}
+
+func modelScore(model string) int {
+	name := strings.ToLower(model)
+	score := 0
+
+	for _, token := range []string{"pro", "opus", "ultra", "max"} {
+		if strings.Contains(name, token) {
+			score += 70
+		}
+	}
+	for _, token := range []string{"codex", "sonnet", "gpt", "gemini", "claude"} {
+		if strings.Contains(name, token) {
+			score += 30
+		}
+	}
+	score += newestVersionScore(name)
+
+	for _, token := range []string{"mini", "nano", "lite", "flash", "haiku"} {
+		if strings.Contains(name, token) {
+			score -= 80
+		}
+	}
+	return score
+}
+
+var modelVersionPattern = regexp.MustCompile(`\d+(?:\.\d+)?`)
+
+func newestVersionScore(name string) int {
+	matches := modelVersionPattern.FindAllString(name, -1)
+	best := 0
+	for _, match := range matches {
+		parts := strings.SplitN(match, ".", 2)
+		major, _ := strconv.Atoi(parts[0])
+		minor := 0
+		if len(parts) == 2 {
+			minor, _ = strconv.Atoi(parts[1])
+		}
+		value := major*100 + minor
+		if value > best {
+			best = value
+		}
+	}
+	return best
 }
 
 func modelCandidates(resolution modelResolution) []string {
 	if resolution.Model == "" {
 		return nil
 	}
-	candidates := []string{resolution.Model}
-	candidates = append(candidates, resolution.Fallbacks...)
-	return candidates
+	return []string{resolution.Model}
 }
 
 func modelDescription(resolution modelResolution) string {
 	if resolution.Model == "" {
 		return fmt.Sprintf("OpenCode default (%s)", resolution.Reason)
 	}
-	if len(resolution.Fallbacks) == 0 {
-		return fmt.Sprintf("%s (%s)", resolution.Model, resolution.Reason)
-	}
-	return fmt.Sprintf("%s (%s; fallback: %s)", resolution.Model, resolution.Reason, strings.Join(resolution.Fallbacks, ", "))
+	return fmt.Sprintf("%s (%s)", resolution.Model, resolution.Reason)
 }
 
 func loadGachaConfig() (gachaConfig, error) {
@@ -132,88 +259,4 @@ func gachaConfigPath() string {
 		base = filepath.Join(home, ".config")
 	}
 	return filepath.Join(base, "gacha", "config.json")
-}
-
-func gachaStateDir() string {
-	base := os.Getenv("XDG_STATE_HOME")
-	if base == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return ""
-		}
-		base = filepath.Join(home, ".local", "state")
-	}
-	return filepath.Join(base, "gacha")
-}
-
-func modelFailurePath() string {
-	dir := gachaStateDir()
-	if dir == "" {
-		return ""
-	}
-	return filepath.Join(dir, "model-failures.json")
-}
-
-func filterFailedModels(models []string) []string {
-	cache := loadModelFailureCache(time.Now())
-	filtered := make([]string, 0, len(models))
-	for _, model := range models {
-		if _, failed := cache.Failures[model]; !failed {
-			filtered = append(filtered, model)
-		}
-	}
-	return filtered
-}
-
-func rememberModelFailure(model string) {
-	model = strings.TrimSpace(model)
-	if model == "" {
-		return
-	}
-	now := time.Now()
-	cache := loadModelFailureCache(now)
-	if cache.Failures == nil {
-		cache.Failures = map[string]time.Time{}
-	}
-	cache.Failures[model] = now.Add(modelFailureTTL)
-	_ = saveModelFailureCache(cache)
-}
-
-func loadModelFailureCache(now time.Time) modelFailureCache {
-	path := modelFailurePath()
-	if path == "" {
-		return modelFailureCache{Failures: map[string]time.Time{}}
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return modelFailureCache{Failures: map[string]time.Time{}}
-	}
-	var cache modelFailureCache
-	if err := json.Unmarshal(data, &cache); err != nil {
-		return modelFailureCache{Failures: map[string]time.Time{}}
-	}
-	if cache.Failures == nil {
-		cache.Failures = map[string]time.Time{}
-	}
-	for model, expiresAt := range cache.Failures {
-		if !expiresAt.After(now) {
-			delete(cache.Failures, model)
-		}
-	}
-	return cache
-}
-
-func saveModelFailureCache(cache modelFailureCache) error {
-	path := modelFailurePath()
-	if path == "" {
-		return nil
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(cache, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, append(data, '\n'), 0o600)
 }

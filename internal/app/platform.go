@@ -120,25 +120,7 @@ func runOpenCodeWithResolution(commandPath string, prompt string, resolution mod
 	if len(candidates) == 0 {
 		return runOpenCode(commandPath, openCodeRunArgs(prompt, ""), stream)
 	}
-
-	var lastOutput string
-	var lastErr error
-	for index, model := range candidates {
-		if index > 0 && stream {
-			fmt.Fprintf(os.Stderr, "\nOpenCode rejected the selected model. Retrying with %s...\n\n", model)
-		}
-		output, err := runOpenCode(commandPath, openCodeRunArgs(prompt, model), stream)
-		if err == nil {
-			return output, nil
-		}
-		lastOutput = output
-		lastErr = err
-		if !isUnsupportedChatGPTCodexModelError(output) {
-			return output, err
-		}
-		rememberModelFailure(model)
-	}
-	return lastOutput, lastErr
+	return runOpenCode(commandPath, openCodeRunArgs(prompt, candidates[0]), stream)
 }
 
 func runOpenCode(commandPath string, args []string, stream bool) (string, error) {
@@ -156,35 +138,4 @@ func runOpenCode(commandPath string, args []string, stream bool) (string, error)
 	cmd.Stderr = &out
 	err := cmd.Run()
 	return out.String(), err
-}
-
-func fallbackOpenCodeModel(args []string, output string) string {
-	if !isUnsupportedChatGPTCodexModelError(output) {
-		return ""
-	}
-	current := modelFromOpenCodeArgs(args)
-	for _, candidate := range modelCandidates(autoOpenCodeModel()) {
-		if candidate != current {
-			return candidate
-		}
-	}
-	return ""
-}
-
-func isUnsupportedChatGPTCodexModelError(output string) bool {
-	normalized := strings.ToLower(output)
-	return strings.Contains(normalized, "model is not supported") &&
-		strings.Contains(normalized, "chatgpt account")
-}
-
-func modelFromOpenCodeArgs(args []string) string {
-	for i, arg := range args {
-		if (arg == "--model" || arg == "-m") && i+1 < len(args) {
-			return args[i+1]
-		}
-		if strings.HasPrefix(arg, "--model=") {
-			return strings.TrimPrefix(arg, "--model=")
-		}
-	}
-	return ""
 }

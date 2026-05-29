@@ -80,9 +80,9 @@ gch doctor
 
 The check also shows the model Gacha will ask OpenCode to use. The default model mode is `auto`.
 
-In auto mode, when your provider is OpenAI OAuth, the ChatGPT subscription route, Gacha chooses the best known ChatGPT/Codex model and keeps fallback candidates ready instead of reusing OpenCode's last selected model. This avoids unsupported ChatGPT/Codex models such as `gpt-5.5-pro`.
+In auto mode, Gacha asks OpenCode for the connected provider's current model list, then chooses a strong research model from that list. It prefers quality-oriented names such as `pro`, `opus`, `codex`, `sonnet`, and newer version numbers, while pushing small/fast names such as `mini`, `nano`, `lite`, `flash`, and `haiku` behind.
 
-If a model is rejected as unsupported, Gacha remembers that failure for a short time and avoids that model on the next run.
+If Gacha cannot read the model list, it does not guess a hard-coded model. It runs OpenCode without `--model` and lets OpenCode use its default.
 
 Advanced users can override this with:
 
