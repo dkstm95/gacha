@@ -322,7 +322,7 @@ func renderStatus(width int, status string, runtime string, mode string, busy bo
 }
 
 func renderInput(width int, input string) string {
-	return inputStyle.Width(width - 2).Render("Ask " + input)
+	return inputStyle.Width(width - 2).Render(input)
 }
 
 func max(a, b int) int {
