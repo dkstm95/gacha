@@ -52,7 +52,7 @@ func newTUIModel(version string) tuiModel {
 	spin.Style = accentStyle
 
 	view := viewport.New(80, 16)
-	view.SetContent(welcomeContent(version, text))
+	view.SetContent(welcomeContent(version, text, 80, 16))
 
 	return tuiModel{
 		version: version,
@@ -79,9 +79,17 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.view.Width = max(40, msg.Width-4)
-		m.view.Height = max(8, msg.Height-17)
-		m.input.Width = max(20, msg.Width-8)
+		m.view.Width = max(32, msg.Width-4)
+		m.view.Height = max(6, msg.Height-8)
+		m.input.Width = max(16, msg.Width-8)
+		if msg.Width < 72 {
+			m.input.Placeholder = m.text.InputPlaceholderShort
+		} else {
+			m.input.Placeholder = m.text.InputPlaceholder
+		}
+		if m.mode == m.text.Auto && !m.busy {
+			m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
+		}
 	case tea.KeyMsg:
 		key := msg.String()
 		switch key {
@@ -153,7 +161,7 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	case "/home", "home":
 		m.status = m.text.Ready
 		m.mode = m.text.Auto
-		m.view.SetContent(welcomeContent(m.version, m.text))
+		m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
 		m.view.GotoTop()
 		return m, nil
 	case "/doctor", "doctor":
@@ -231,17 +239,29 @@ func (m tuiModel) handleReportAction(value string) (tea.Model, tea.Cmd) {
 }
 
 func (m tuiModel) View() string {
-	width := max(72, m.width)
-	bodyWidth := max(64, width-4)
-	contentHeight := max(8, m.height-17)
-	m.view.Width = bodyWidth - 4
+	width := max(44, m.width)
+	outerPadding := 4
+	if width < 72 {
+		outerPadding = 2
+	}
+	bodyWidth := max(40, width-outerPadding)
+	contentHeight := max(6, m.height-8)
+	m.view.Width = max(30, bodyWidth-4)
 	m.view.Height = contentHeight
+
+	content := m.view.View()
+	if m.mode == m.text.Auto && !m.busy {
+		content = welcomeContent(m.version, m.text, m.view.Width, contentHeight)
+		homeHeight := lipgloss.Height(content) + 2
+		contentHeight = min(contentHeight, max(8, homeHeight))
+		m.view.Height = contentHeight
+	}
 
 	header := renderHeader(bodyWidth, m.version)
 	status := renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text)
-	panel := panelStyle.Width(bodyWidth - 2).Height(contentHeight).Render(m.view.View())
+	panel := panelStyle.Width(bodyWidth - 2).Height(contentHeight).Render(content)
 	input := renderInput(bodyWidth, m.input.View())
-	footer := mutedStyle.Render(m.text.Footer)
+	footer := renderFooter(bodyWidth, m.text)
 	return lipgloss.JoinVertical(lipgloss.Left, header, status, panel, input, footer)
 }
 
@@ -313,31 +333,43 @@ func runDetailedPrompt(query string, basicReport string) promptRunResult {
 	return promptRunResult{output: strings.TrimSpace(basicReport) + "\n\n" + report, completed: true}
 }
 
-func welcomeContent(version string, text uiText) string {
-	lines := []string{
-		titleStyle.Render(text.Welcome[0]),
-		text.Welcome[1],
-		text.Welcome[2],
-		"",
-		titleStyle.Render(text.Welcome[3]),
+func welcomeContent(version string, text uiText, width int, height int) string {
+	compact := width < 72 || height < 14
+	wide := width >= 104 && height >= 16
+	examples := text.Welcome[3:6]
+	promise := text.Welcome[7:12]
+	if compact {
+		examples = examples[:min(2, len(examples))]
+		promise = promise[:min(4, len(promise))]
 	}
-	for _, item := range text.Welcome[4:10] {
-		parts := strings.SplitN(item, "|", 2)
-		lines = append(lines, chipStyle.Render(parts[0])+"  "+parts[1])
-	}
-	lines = append(lines,
-		"",
-		titleStyle.Render(text.Welcome[10]),
-		text.Welcome[11],
-		text.Welcome[12],
-		text.Welcome[13],
-		"",
-		titleStyle.Render(text.Welcome[14]),
-		text.Welcome[15],
-		"",
-		mutedStyle.Render(text.Welcome[16]+" Version "+version),
+
+	header := lipgloss.JoinVertical(lipgloss.Left,
+		heroStyle.Render(text.Welcome[0]),
+		mutedStyle.Render(wrapLine(text.Welcome[1], width)),
 	)
-	return strings.Join(lines, "\n")
+	exampleBlock := renderHomeSection(text.Welcome[2], examples, ">", width)
+	promiseBlock := renderHomeSection(text.Welcome[6], promise, "+", width)
+	if wide {
+		columnWidth := max(28, (width-4)/2)
+		exampleBlock = renderHomeSection(text.Welcome[2], examples, ">", columnWidth)
+		promiseBlock = renderHomeSection(text.Welcome[6], promise, "+", columnWidth)
+	}
+
+	blocks := []string{header, ""}
+	if wide {
+		blocks = append(blocks, lipgloss.JoinHorizontal(lipgloss.Top,
+			lipgloss.NewStyle().Width((width-4)/2).Render(exampleBlock),
+			"    ",
+			lipgloss.NewStyle().Width((width-4)/2).Render(promiseBlock),
+		))
+	} else {
+		blocks = append(blocks, exampleBlock, "", promiseBlock)
+	}
+	if !compact {
+		blocks = append(blocks, "", mutedStyle.Render(text.Welcome[12]))
+	}
+	blocks = append(blocks, "", faintStyle.Render("v"+version))
+	return strings.Join(blocks, "\n")
 }
 
 func researchingContent(query string, text uiText) string {
@@ -415,6 +447,9 @@ func errorContent(err error, output string, text uiText) string {
 func renderHeader(width int, version string) string {
 	left := brandStyle.Render(" GACHA ")
 	right := mutedStyle.Render("v" + version)
+	if width < 58 {
+		right = ""
+	}
 	line := strings.Repeat("─", max(1, width-lipgloss.Width(left)-lipgloss.Width(right)-2))
 	return lipgloss.JoinHorizontal(lipgloss.Center, left, mutedStyle.Render(line), right)
 }
@@ -424,13 +459,7 @@ func renderStatus(width int, status string, runtime string, mode string, busy bo
 	if busy {
 		indicator = spin
 	}
-	items := []string{
-		accentStyle.Render(indicator + " " + status),
-		text.StatusMode + mode,
-		text.StatusRuntime + runtime,
-		text.StatusFreshData,
-		text.StatusNoTrading,
-	}
+	items := []string{accentStyle.Render(indicator + " " + status), text.StatusFreshData, text.StatusNoTrading}
 	return statusStyle.Width(width - 2).Render(strings.Join(items, "   "))
 }
 
@@ -438,8 +467,55 @@ func renderInput(width int, input string) string {
 	return inputStyle.Width(width - 2).Render(input)
 }
 
+func renderFooter(width int, text uiText) string {
+	footer := text.Footer
+	if width < 86 {
+		footer = text.FooterShort
+	}
+	return faintStyle.Render(footer)
+}
+
+func renderHomeSection(title string, items []string, marker string, width int) string {
+	lines := []string{sectionStyle.Render(title)}
+	for _, item := range items {
+		lines = append(lines, bulletStyle.Render(marker)+" "+wrapLine(item, max(16, width-3)))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func wrapLine(value string, width int) string {
+	value = strings.TrimSpace(value)
+	if width <= 0 || lipgloss.Width(value) <= width {
+		return value
+	}
+	words := strings.Fields(value)
+	if len(words) == 0 {
+		return value
+	}
+	var lines []string
+	current := words[0]
+	for _, word := range words[1:] {
+		next := current + " " + word
+		if lipgloss.Width(next) > width {
+			lines = append(lines, current)
+			current = word
+			continue
+		}
+		current = next
+	}
+	lines = append(lines, current)
+	return strings.Join(lines, "\n")
+}
+
 func max(a, b int) int {
 	if a > b {
+		return a
+	}
+	return b
+}
+
+func min(a, b int) int {
+	if a < b {
 		return a
 	}
 	return b
@@ -469,9 +545,17 @@ var (
 			Foreground(lipgloss.Color("230")).
 			Background(lipgloss.Color("62")).
 			Bold(true)
-	accentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
-	titleStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
+	accentStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
+	titleStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
+	heroStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("87")).Bold(true)
+	sectionStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("230")).
+			Background(lipgloss.Color("62")).
+			Bold(true).
+			Padding(0, 1)
 	mutedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	faintStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
+	bulletStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
 	chipStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("238")).Padding(0, 1)
 	statusStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
