@@ -571,6 +571,7 @@ func TestTUIStatusBarRendersBelowWorkspace(t *testing.T) {
 	got := stripANSI(model.View())
 	promptLine := -1
 	statusLine := -1
+	panelBottomLine := -1
 	for i, line := range strings.Split(got, "\n") {
 		if strings.Contains(line, "Ask:") {
 			promptLine = i
@@ -578,12 +579,21 @@ func TestTUIStatusBarRendersBelowWorkspace(t *testing.T) {
 		if strings.Contains(line, "Ready") && strings.Contains(line, "Mode") {
 			statusLine = i
 		}
+		if strings.Contains(line, "╰") && statusLine < 0 {
+			panelBottomLine = i
+		}
 	}
 	if promptLine < 0 {
 		t.Fatalf("missing prompt input:\n%s", got)
 	}
 	if statusLine <= promptLine {
 		t.Fatalf("status bar did not render below workspace; prompt line %d status line %d:\n%s", promptLine, statusLine, got)
+	}
+	if panelBottomLine < 0 {
+		t.Fatalf("missing split panel bottom border:\n%s", got)
+	}
+	if panelBottomLine-promptLine > 5 {
+		t.Fatalf("prompt input is too far above right panel bottom; prompt line %d panel bottom line %d:\n%s", promptLine, panelBottomLine, got)
 	}
 }
 

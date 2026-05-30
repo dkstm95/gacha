@@ -387,7 +387,10 @@ func (m tuiModel) renderSplitMain(bodyWidth int, height int, workspace string, i
 	gap := 2
 	railWidth, workspaceWidth := splitLayoutWidths(bodyWidth)
 	rail := panelStyle.Width(railWidth - 2).Height(height).Render(m.contextRail(railWidth - 4))
-	mainContent := lipgloss.JoinVertical(lipgloss.Left, workspace, "", renderInput(workspaceWidth-8, input))
+	inputBlock := renderInput(workspaceWidth-8, input)
+	innerHeight := max(1, height-4)
+	spacerHeight := max(1, innerHeight-lipgloss.Height(workspace)-lipgloss.Height(inputBlock))
+	mainContent := lipgloss.JoinVertical(lipgloss.Left, workspace, strings.Repeat("\n", spacerHeight-1), inputBlock)
 	main := panelStyle.Width(workspaceWidth - 2).Height(height).Render(mainContent)
 	return lipgloss.JoinHorizontal(lipgloss.Top, rail, strings.Repeat(" ", gap), main)
 }

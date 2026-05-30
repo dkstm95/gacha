@@ -7,7 +7,7 @@ import (
 	"github.com/dkstm95/gacha/internal/app"
 )
 
-var version = "0.1.31"
+var version = "0.1.32"
 
 func main() {
 	application := app.New(version)
