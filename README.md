@@ -58,25 +58,25 @@ Windows automatic OpenCode setup is not supported yet. Install OpenCode from its
 gch
 ```
 
-You will see a terminal workspace with a left-side context rail and a main research area:
+You will see a terminal workspace with a left context rail, a right research area, and a thin global status bar:
 
 ![Gacha TUI home screen](docs/assets/gacha-home.png)
 
-Type a question:
+Type a question in the right-side prompt:
 
 ```text
-Ask > Should I buy NVDA now?
+Ask: "Should I buy NVDA now?"
 ```
 
-You do not need to pick a model or choose an AI platform. `gacha` handles routing through OpenCode. On wide terminals, the context rail shows recent state and decision types; on smaller terminals, it collapses so the workspace and prompt stay focused.
+You do not need to pick a model or choose an AI platform. `gacha` handles routing through OpenCode. On wide terminals, the left rail stays focused on context and decision types while the prompt stays inside the right workspace; on smaller terminals, the layout collapses around the workspace and prompt.
 
 ## Example Questions
 
 ```text
-Ask > What should I invest in for the next 6 to 12 months?
-Ask > I want exposure to AI infrastructure. Which stocks or ETFs should I compare?
-Ask > I own TSLA. When should I trim, sell, or stop out?
-Ask > Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
+Ask: What should I invest in for the next 6 to 12 months?
+Ask: I want exposure to AI infrastructure. Which stocks or ETFs should I compare?
+Ask: I own TSLA. When should I trim, sell, or stop out?
+Ask: Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
 ```
 
 You can also ask one question without opening the app:

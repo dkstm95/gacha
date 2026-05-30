@@ -108,8 +108,6 @@ type uiText struct {
 	HomeOutcomes          []string
 	HomeNote              string
 	ContextTitle          string
-	ContextRecentTitle    string
-	ContextNoRecent       string
 	ContextTypesTitle     string
 	ContextRequestTitle   string
 	ContextResearchTitle  string
@@ -214,8 +212,6 @@ func englishText() uiText {
 		},
 		HomeNote:              "Fresh data before recommendations. No automatic trading.",
 		ContextTitle:          "Context",
-		ContextRecentTitle:    "Recent",
-		ContextNoRecent:       "No saved reports yet",
 		ContextTypesTitle:     "Decision types",
 		ContextRequestTitle:   "Current request",
 		ContextResearchTitle:  "Research",
@@ -355,8 +351,6 @@ func koreanText() uiText {
 		},
 		HomeNote:              "추천 전 최신 데이터를 확인합니다. 거래는 실행하지 않습니다.",
 		ContextTitle:          "맥락",
-		ContextRecentTitle:    "최근",
-		ContextNoRecent:       "저장된 리포트 없음",
 		ContextTypesTitle:     "결정 유형",
 		ContextRequestTitle:   "현재 질문",
 		ContextResearchTitle:  "조사",

@@ -500,17 +500,90 @@ func TestTUIViewFitsCommonTerminalSizes(t *testing.T) {
 			if strings.Contains(got, "Checks fresh data") {
 				t.Fatalf("status bar repeated safety copy:\n%s", got)
 			}
-			if strings.Contains(got, "Mode Auto") || strings.Contains(got, "OpenCode runtime") || strings.Contains(got, "Ready") {
-				t.Fatalf("home showed normal status chrome:\n%s", got)
-			}
 			if tc.name == "full" {
-				for _, expected := range []string{"Context", "Recent", "Decision types", "Decision desk"} {
+				for _, expected := range []string{"Context", "Decision types", "Decision desk", "Ready"} {
 					if !strings.Contains(got, expected) {
 						t.Fatalf("full layout missing %q:\n%s", expected, got)
 					}
 				}
+				if strings.Contains(got, "No saved reports yet") {
+					t.Fatalf("home context showed empty recent state:\n%s", got)
+				}
+				railWidth, _ := splitLayoutWidths(max(40, tc.width-4))
+				foundPrompt := false
+				for _, line := range strings.Split(got, "\n") {
+					promptColumn := strings.Index(line, "Ask:")
+					if promptColumn < 0 {
+						continue
+					}
+					foundPrompt = true
+					if promptColumn < railWidth {
+						t.Fatalf("full layout prompt crossed into the context rail at column %d before rail width %d:\n%s", promptColumn, railWidth, got)
+					}
+				}
+				if !foundPrompt {
+					t.Fatalf("full layout missing prompt input:\n%s", got)
+				}
 			}
 		})
+	}
+}
+
+func TestTUIFullLayoutKeepsLocalizedPromptInRightPanel(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		text       uiText
+		promptText string
+	}{
+		{name: "english", text: englishText(), promptText: "Ask:"},
+		{name: "korean", text: koreanText(), promptText: "예:"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			model := newTUIModel("0.1.27")
+			model.text = tc.text
+			model.input.Placeholder = tc.text.InputPlaceholder
+			model.width = 180
+			model.height = 36
+			got := stripANSI(model.View())
+			railWidth, _ := splitLayoutWidths(max(40, model.width-4))
+			foundPrompt := false
+			for _, line := range strings.Split(got, "\n") {
+				promptColumn := strings.Index(line, tc.promptText)
+				if promptColumn < 0 {
+					continue
+				}
+				foundPrompt = true
+				if promptColumn < railWidth {
+					t.Fatalf("localized prompt crossed into the context rail at column %d before rail width %d:\n%s", promptColumn, railWidth, got)
+				}
+			}
+			if !foundPrompt {
+				t.Fatalf("missing localized prompt %q:\n%s", tc.promptText, got)
+			}
+		})
+	}
+}
+
+func TestTUIStatusBarRendersBelowWorkspace(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	model.width = 180
+	model.height = 36
+	got := stripANSI(model.View())
+	promptLine := -1
+	statusLine := -1
+	for i, line := range strings.Split(got, "\n") {
+		if strings.Contains(line, "Ask:") {
+			promptLine = i
+		}
+		if strings.Contains(line, "Ready") && strings.Contains(line, "Mode") {
+			statusLine = i
+		}
+	}
+	if promptLine < 0 {
+		t.Fatalf("missing prompt input:\n%s", got)
+	}
+	if statusLine <= promptLine {
+		t.Fatalf("status bar did not render below workspace; prompt line %d status line %d:\n%s", promptLine, statusLine, got)
 	}
 }
 
@@ -522,10 +595,13 @@ func TestContextRailReflectsTUIState(t *testing.T) {
 	model.view.Height = 28
 
 	home := stripANSI(model.View())
-	for _, expected := range []string{"Context", "Recent", "Decision types"} {
+	for _, expected := range []string{"Context", "Decision types"} {
 		if !strings.Contains(home, expected) {
 			t.Fatalf("home context missing %q:\n%s", expected, home)
 		}
+	}
+	if strings.Contains(home, "No saved reports yet") {
+		t.Fatalf("home context showed empty recent state:\n%s", home)
 	}
 
 	model.busy = true

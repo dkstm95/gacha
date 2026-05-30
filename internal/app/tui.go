@@ -86,11 +86,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.view.Width = max(32, msg.Width-4)
 		m.view.Height = max(6, msg.Height-8)
 		m.input.Width = max(16, msg.Width-8)
-		if msg.Width < 72 {
-			m.input.Placeholder = m.text.InputPlaceholderShort
-		} else {
-			m.input.Placeholder = m.text.InputPlaceholder
-		}
+		m.input.Placeholder = inputPlaceholderForWidth(m.text, msg.Width)
 		if m.mode == m.text.Auto && !m.busy {
 			m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
 		}
@@ -344,60 +340,55 @@ func (m tuiModel) View() string {
 		outerPadding = 2
 	}
 	bodyWidth := max(40, width-outerPadding)
-	contentHeight := max(6, m.height-8)
+	contentHeight := max(6, m.height-7)
 	fullLayout := bodyWidth >= 132 && m.height >= 22
 	_, workspaceWidth := splitLayoutWidths(bodyWidth)
 	if fullLayout {
-		m.view.Width = max(30, workspaceWidth-4)
+		m.view.Width = max(30, workspaceWidth-8)
+		m.input.Width = max(16, workspaceWidth-12)
 	} else {
 		m.view.Width = max(30, bodyWidth-4)
+		m.input.Width = max(16, bodyWidth-8)
 	}
-	m.view.Height = contentHeight
+	m.input.Placeholder = inputPlaceholderForWidth(m.text, m.input.Width)
+	workspaceHeight := contentHeight
+	if fullLayout {
+		workspaceHeight = max(6, contentHeight-4)
+	}
+	m.view.Height = workspaceHeight
 
 	content := m.view.View()
 	if m.mode == m.text.Auto && !m.busy {
-		content = welcomeContent(m.version, m.text, m.view.Width, contentHeight)
+		content = welcomeContentWithColumns(m.version, m.text, m.view.Width, workspaceHeight, !fullLayout)
 		if !fullLayout {
 			homeHeight := lipgloss.Height(content) + 2
 			contentHeight = min(contentHeight, max(8, homeHeight))
+			workspaceHeight = contentHeight
 		}
-		m.view.Height = contentHeight
+		m.view.Height = workspaceHeight
 	}
 
 	header := renderHeader(bodyWidth, m.version)
-	var status string
-	if m.showStatus() {
-		status = renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text)
-	}
 	panel := panelStyle.Width(bodyWidth - 2).Height(contentHeight).Render(content)
 	if fullLayout {
-		panel = m.renderSplitMain(bodyWidth, contentHeight, content)
+		panel = m.renderSplitMain(bodyWidth, contentHeight, content, m.input.View())
 	}
-	input := renderInput(bodyWidth, m.input.View())
-	footer := renderFooter(bodyWidth, m.text)
+	status := renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text)
 	parts := []string{header}
-	if status != "" {
-		parts = append(parts, status)
+	parts = append(parts, panel)
+	if !fullLayout {
+		parts = append(parts, renderInput(bodyWidth, m.input.View()))
 	}
-	parts = append(parts, panel, input, footer)
+	parts = append(parts, status)
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
 
-func (m tuiModel) showStatus() bool {
-	if m.busy {
-		return true
-	}
-	if m.mode == m.text.Auto && m.status == m.text.Ready {
-		return false
-	}
-	return true
-}
-
-func (m tuiModel) renderSplitMain(bodyWidth int, height int, workspace string) string {
+func (m tuiModel) renderSplitMain(bodyWidth int, height int, workspace string, input string) string {
 	gap := 2
 	railWidth, workspaceWidth := splitLayoutWidths(bodyWidth)
 	rail := panelStyle.Width(railWidth - 2).Height(height).Render(m.contextRail(railWidth - 4))
-	main := panelStyle.Width(workspaceWidth - 2).Height(height).Render(workspace)
+	mainContent := lipgloss.JoinVertical(lipgloss.Left, workspace, "", renderInput(workspaceWidth-8, input))
+	main := panelStyle.Width(workspaceWidth - 2).Height(height).Render(mainContent)
 	return lipgloss.JoinHorizontal(lipgloss.Top, rail, strings.Repeat(" ", gap), main)
 }
 
@@ -409,6 +400,13 @@ func splitLayoutWidths(bodyWidth int) (int, int) {
 		workspaceWidth = max(40, bodyWidth-railWidth-gap)
 	}
 	return railWidth, workspaceWidth
+}
+
+func inputPlaceholderForWidth(text uiText, width int) string {
+	if width < 72 {
+		return text.InputPlaceholderShort
+	}
+	return text.InputPlaceholder
 }
 
 func runPromptCmd(query string) tea.Cmd {
@@ -480,8 +478,12 @@ func runDetailedPrompt(query string, basicReport string) promptRunResult {
 }
 
 func welcomeContent(version string, text uiText, width int, height int) string {
+	return welcomeContentWithColumns(version, text, width, height, true)
+}
+
+func welcomeContentWithColumns(version string, text uiText, width int, height int, allowColumns bool) string {
 	compact := width < 72 || height < 14
-	wide := width >= 104 && height >= 16
+	wide := allowColumns && width >= 104 && height >= 16
 	actions := text.HomeActions
 	outcomes := text.HomeOutcomes
 	if compact {
@@ -704,9 +706,6 @@ func (m tuiModel) homeContext(width int) string {
 	actions := actionNames(m.text.HomeActions)
 	lines := []string{
 		sectionStyle.Render(m.text.ContextTitle),
-		titleStyle.Render(m.text.ContextRecentTitle),
-		mutedStyle.Render(m.text.ContextNoRecent),
-		"",
 		titleStyle.Render(m.text.ContextTypesTitle),
 	}
 	for _, action := range actions {
@@ -817,7 +816,17 @@ func renderStatus(width int, status string, runtime string, mode string, busy bo
 	if width >= 92 {
 		items = append(items, mutedStyle.Render(text.StatusRuntime+runtime))
 	}
-	return statusStyle.Width(width - 2).Render(strings.Join(items, "   "))
+	left := strings.Join(items, "   ")
+	right := renderFooter(width, text)
+	gap := width - 4 - lipgloss.Width(left) - lipgloss.Width(right)
+	if gap < 3 {
+		right = renderFooter(72, text)
+		gap = width - 4 - lipgloss.Width(left) - lipgloss.Width(right)
+	}
+	if gap < 3 {
+		return statusStyle.Width(width - 2).Render(left)
+	}
+	return statusStyle.Width(width - 2).Render(left + strings.Repeat(" ", gap) + right)
 }
 
 func renderInput(width int, input string) string {
