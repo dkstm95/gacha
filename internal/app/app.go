@@ -57,9 +57,6 @@ Usage:
   gch update                               Update gacha to the latest release
   gch "question"                           Analyze with automatic request classification
 
-Debug:
-  gacha prompt "question"                  Print the composed agent prompt
-
 Examples:
   gch "NVDA 지금 사도 될까?"
   gch "AAPL 현재 매수 구간 분석"

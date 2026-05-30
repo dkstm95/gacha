@@ -563,6 +563,34 @@ func TestReportActionsExposeNextChoices(t *testing.T) {
 	}
 }
 
+func TestTUIHelpExposesOnlyUserFacingCommands(t *testing.T) {
+	got := stripANSI(helpContent(englishText()))
+	for _, expected := range []string{"/home", "/help", "/settings", "/model", "/language", "/theme", "/quit"} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("help content missing %q:\n%s", expected, got)
+		}
+	}
+	for _, hidden := range []string{"/doctor", "/setup", "/update"} {
+		if strings.Contains(got, hidden) {
+			t.Fatalf("help content exposed operational command %q:\n%s", hidden, got)
+		}
+	}
+}
+
+func TestFooterKeepsPrimaryCommandsVisible(t *testing.T) {
+	got := stripANSI(renderFooter(120, englishText()))
+	for _, expected := range []string{"/help", "/settings", "/theme", "/quit"} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("footer missing %q:\n%s", expected, got)
+		}
+	}
+	for _, hidden := range []string{"/doctor", "/setup", "/update"} {
+		if strings.Contains(got, hidden) {
+			t.Fatalf("footer exposed operational command %q:\n%s", hidden, got)
+		}
+	}
+}
+
 func TestParseOpenCodeModels(t *testing.T) {
 	output := "\x1b[0m\nopenai/gpt-5.5\nopenai/gpt-5.5-pro\nnot a model\nopenai/gpt-5.5\n"
 	got := parseOpenCodeModels(output)

@@ -104,6 +104,7 @@ To view settings in the app, type:
 Inside the app, you can set model mode, language, and theme:
 
 ```text
+/settings
 /model auto
 /model opencode-default
 /model provider/model
@@ -118,6 +119,14 @@ Inside the app, you can set model mode, language, and theme:
 ```
 
 `/theme` shows each available theme with an in-app preview. `system` adapts to your terminal background, while `dark`, `light`, and `gacha` use fixed palettes.
+
+Runtime setup, diagnostics, and updates stay outside the app:
+
+```bash
+gch setup
+gch doctor
+gch update
+```
 
 For scripts, use non-interactive config commands:
 
