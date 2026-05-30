@@ -4,17 +4,19 @@ Ask investment questions through a local AI runtime.
 
 `gacha` opens a terminal app for investment research. It uses OpenCode as the local AI runtime, so you can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another supported provider without choosing a platform for every question.
 
-If the runtime is missing, `gacha` can install it for you on first run. If no runtime is ready, it still gives you a complete prompt you can paste into any AI with web browsing.
+If the runtime is missing, `gacha` can install it for you on first run on macOS and Linux. On Windows, install OpenCode separately first. If no runtime is ready, `gacha` still gives you a complete prompt you can paste into any AI with web browsing.
 
 Korean: [docs/ko/README.md](docs/ko/README.md)
 
 ## Install
 
+### macOS and Linux
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 ```
 
-The installer adds the main command and a short alias:
+The macOS/Linux installer adds the main command and a short alias:
 
 - `gacha`
 - `gch`
@@ -23,9 +25,32 @@ Use `gch` for day-to-day use. Use `gacha` when you want the full command name.
 
 No Node, npm, Python, or Go setup is needed for `gacha`.
 
-On first run, `gacha` may ask to install OpenCode runtime and connect an AI provider. This runtime runs behind the Gacha UI.
+On first run, `gacha` may ask to install OpenCode runtime and connect an AI provider on macOS and Linux. This runtime runs behind the Gacha UI.
 
 If the installer prints an `export PATH=...` line, run it once in your terminal.
+
+### Windows
+
+Download `gacha-windows-amd64.zip` from the latest release:
+
+```text
+https://github.com/dkstm95/gacha/releases/latest
+```
+
+Unzip it, move `gacha.exe` into a folder on your `PATH`, then open a new PowerShell or Windows Terminal window and verify it:
+
+```powershell
+gacha version
+gacha setup
+```
+
+If you want the short `gch` command too, copy `gacha.exe` as `gch.exe` in the same folder:
+
+```powershell
+Copy-Item gacha.exe gch.exe
+```
+
+Windows automatic OpenCode setup is not supported yet. Install OpenCode from its Windows documentation, make sure `opencode` is on your `PATH`, then run `gacha setup` to connect a provider.
 
 ## Start
 
@@ -33,19 +58,9 @@ If the installer prints an `export PATH=...` line, run it once in your terminal.
 gch
 ```
 
-You will see:
+You will see a terminal workspace with a left-side context rail and a main research area:
 
-```text
-GACHA
-Fresh-data investment research for your AI tools
-
-+------------------------------------------------------------+
-| Ask a question. gacha will classify it automatically.      |
-| It always asks the AI to use current web or market data.   |
-+------------------------------------------------------------+
-
-Ask >
-```
+![Gacha TUI home screen](docs/assets/gacha-home.png)
 
 Type a question:
 
@@ -53,7 +68,7 @@ Type a question:
 Ask > Should I buy NVDA now?
 ```
 
-You do not need to pick a mode or choose an AI platform. `gacha` handles that for you.
+You do not need to pick a model or choose an AI platform. `gacha` handles routing through OpenCode. On wide terminals, the context rail shows recent state and decision types; on smaller terminals, it collapses so the workspace and prompt stay focused.
 
 ## Example Questions
 
@@ -170,6 +185,8 @@ gch setup
 
 `gch setup` installs the runtime if needed, then starts provider login. You can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another OpenCode-supported provider.
 
+On Windows, `gch setup` does not install OpenCode automatically. Install OpenCode separately, make sure `opencode` is on your `PATH`, then run `gacha setup` or `gch setup`.
+
 The interactive home screen also shows a setup callout when OpenCode or provider login is missing. After setup, return to `gch` and ask your first investment question.
 
 After setup, `gacha` keeps the investment workflow and results inside the Gacha UI.
@@ -182,7 +199,9 @@ If the runtime fails, `gacha` falls back to a prompt you can paste into a web AI
 gch update
 ```
 
-This downloads the right binary for your computer and replaces the old one.
+On macOS and Linux, this downloads the right binary for your computer and replaces the old one.
+
+On Windows, self-update is disabled to avoid replacing a running `.exe`. Download the latest `gacha-windows-amd64.zip` or `gacha-windows-arm64.zip`, replace `gacha.exe` in your `PATH`, and open a new terminal.
 
 ## Fresh Data
 

@@ -21,6 +21,11 @@ type GitHubRelease struct {
 }
 
 func (a *App) updateSelf() error {
+	if !selfUpdateSupported(runtime.GOOS) {
+		fmt.Println(windowsUpdateUnsupportedMessage())
+		return nil
+	}
+
 	latest, err := a.latestReleaseTag()
 	if err != nil {
 		return err
@@ -48,7 +53,7 @@ func (a *App) updateSelf() error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	archivePath := filepath.Join(tmpDir, "gacha.tar.gz")
+	archivePath := filepath.Join(tmpDir, releaseAssetName(runtime.GOOS, runtime.GOARCH))
 	url := releaseAssetURL(latest)
 	if err := a.downloadFile(url, archivePath); err != nil {
 		return err
@@ -108,7 +113,32 @@ func normalizeVersion(value string) string {
 }
 
 func releaseAssetURL(tag string) string {
-	return fmt.Sprintf("https://github.com/dkstm95/gacha/releases/download/%s/gacha-%s.tar.gz", tag, targetTriple())
+	return releaseAssetURLFor(tag, runtime.GOOS, runtime.GOARCH)
+}
+
+func releaseAssetURLFor(tag string, goos string, goarch string) string {
+	return fmt.Sprintf("https://github.com/dkstm95/gacha/releases/download/%s/%s", tag, releaseAssetName(goos, goarch))
+}
+
+func releaseAssetName(goos string, goarch string) string {
+	extension := ".tar.gz"
+	if goos == "windows" {
+		extension = ".zip"
+	}
+	return "gacha-" + targetTripleFor(goos, goarch) + extension
+}
+
+func selfUpdateSupported(goos string) bool {
+	return goos != "windows"
+}
+
+func windowsUpdateUnsupportedMessage() string {
+	return strings.Join([]string{
+		"Windows self-update is not supported yet.",
+		"Download the latest gacha-windows-amd64.zip or gacha-windows-arm64.zip from:",
+		"https://github.com/dkstm95/gacha/releases/latest",
+		"Then replace gacha.exe in your PATH and open a new terminal.",
+	}, "\n")
 }
 
 func (a *App) downloadFile(url string, destination string) error {
@@ -205,5 +235,9 @@ func copyFile(source string, destination string, mode fs.FileMode) error {
 }
 
 func targetTriple() string {
-	return runtime.GOOS + "-" + runtime.GOARCH
+	return targetTripleFor(runtime.GOOS, runtime.GOARCH)
+}
+
+func targetTripleFor(goos string, goarch string) string {
+	return goos + "-" + goarch
 }

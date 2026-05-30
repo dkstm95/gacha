@@ -548,3 +548,32 @@ func TestUnsupportedChatGPTModelErrorDetection(t *testing.T) {
 		t.Fatal("expected unsupported ChatGPT model error")
 	}
 }
+
+func TestReleaseAssetNameUsesWindowsZip(t *testing.T) {
+	if got := releaseAssetName("windows", "amd64"); got != "gacha-windows-amd64.zip" {
+		t.Fatalf("unexpected Windows asset: %s", got)
+	}
+	if got := releaseAssetName("linux", "amd64"); got != "gacha-linux-amd64.tar.gz" {
+		t.Fatalf("unexpected Linux asset: %s", got)
+	}
+}
+
+func TestReleaseAssetURLForUsesTargetArchive(t *testing.T) {
+	got := releaseAssetURLFor("v0.1.27", "windows", "arm64")
+	want := "https://github.com/dkstm95/gacha/releases/download/v0.1.27/gacha-windows-arm64.zip"
+	if got != want {
+		t.Fatalf("unexpected URL:\n got: %s\nwant: %s", got, want)
+	}
+}
+
+func TestSelfUpdateUnsupportedOnWindows(t *testing.T) {
+	if selfUpdateSupported("windows") {
+		t.Fatal("expected Windows self-update to be disabled")
+	}
+	if !selfUpdateSupported("linux") || !selfUpdateSupported("darwin") {
+		t.Fatal("expected Unix self-update to stay enabled")
+	}
+	if !strings.Contains(windowsUpdateUnsupportedMessage(), "gacha-windows-amd64.zip") {
+		t.Fatal("Windows update message should point users to Windows ZIP artifacts")
+	}
+}

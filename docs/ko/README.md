@@ -4,17 +4,19 @@
 
 `gacha`는 터미널에서 실행되는 투자 리서치 앱입니다. 내부 AI 런타임으로 OpenCode를 사용하므로, 사용자는 매번 플랫폼을 고르지 않고 ChatGPT, GitHub Copilot, Gemini, OpenAI API 또는 다른 지원 provider를 연결해 사용할 수 있습니다.
 
-런타임이 없으면 첫 실행 시 `gacha`가 설치를 도와줍니다. 런타임을 사용할 수 없는 경우에도 ChatGPT, Claude, Gemini 같은 웹 AI에 붙여넣을 수 있는 프롬프트를 만들어 줍니다.
+런타임이 없으면 macOS와 Linux에서는 첫 실행 시 `gacha`가 설치를 도와줍니다. Windows에서는 OpenCode를 별도로 설치해야 합니다. 런타임을 사용할 수 없는 경우에도 ChatGPT, Claude, Gemini 같은 웹 AI에 붙여넣을 수 있는 프롬프트를 만들어 줍니다.
 
 English: [../../README.md](../../README.md)
 
 ## 설치
 
+### macOS와 Linux
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 ```
 
-설치하면 기본 명령어와 짧은 별칭이 생깁니다.
+macOS/Linux 설치 스크립트를 실행하면 기본 명령어와 짧은 별칭이 생깁니다.
 
 - `gacha`
 - `gch`
@@ -23,9 +25,32 @@ curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 
 `gacha` 자체를 사용하기 위해 Node, npm, Python, Go를 따로 설치할 필요는 없습니다.
 
-첫 실행 시 OpenCode runtime 설치와 AI provider 연결을 물어볼 수 있습니다. 이 runtime은 Gacha UI 뒤에서 AI를 실행하는 역할을 합니다.
+macOS와 Linux에서는 첫 실행 시 OpenCode runtime 설치와 AI provider 연결을 물어볼 수 있습니다. 이 runtime은 Gacha UI 뒤에서 AI를 실행하는 역할을 합니다.
 
 설치 중 `export PATH=...` 문구가 나오면 터미널에 한 번 실행하세요.
+
+### Windows
+
+최신 릴리스에서 `gacha-windows-amd64.zip`을 내려받으세요.
+
+```text
+https://github.com/dkstm95/gacha/releases/latest
+```
+
+압축을 풀고 `gacha.exe`를 `PATH`에 포함된 폴더로 옮긴 뒤, 새 PowerShell 또는 Windows Terminal 창을 열어 확인합니다.
+
+```powershell
+gacha version
+gacha setup
+```
+
+짧은 `gch` 명령도 원한다면 같은 폴더에서 `gacha.exe`를 `gch.exe`로 복사하세요.
+
+```powershell
+Copy-Item gacha.exe gch.exe
+```
+
+Windows에서는 OpenCode 자동 설치를 아직 지원하지 않습니다. OpenCode의 Windows 문서에 따라 별도로 설치하고, `opencode`가 `PATH`에서 실행되는지 확인한 뒤 `gacha setup`으로 provider를 연결하세요.
 
 ## 시작하기
 
@@ -33,19 +58,9 @@ curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 gch
 ```
 
-다음 화면이 열립니다.
+좌측 context rail과 메인 리서치 영역이 있는 터미널 workspace가 열립니다.
 
-```text
-GACHA
-Fresh-data investment research for your AI tools
-
-+------------------------------------------------------------+
-| Ask a question. gacha will classify it automatically.      |
-| It always asks the AI to use current web or market data.   |
-+------------------------------------------------------------+
-
-Ask >
-```
+![Gacha TUI 홈 화면](../assets/gacha-home.png)
 
 질문을 입력하면 됩니다.
 
@@ -53,7 +68,7 @@ Ask >
 Ask > NVDA 지금 사도 될까?
 ```
 
-사용자가 모드나 AI 플랫폼을 고를 필요는 없습니다. `gacha`가 내부적으로 처리합니다.
+사용자가 모델이나 AI 플랫폼을 고를 필요는 없습니다. `gacha`가 OpenCode를 통해 내부적으로 라우팅합니다. 넓은 터미널에서는 좌측 context rail에 최근 상태와 결정 유형을 보여주고, 작은 터미널에서는 workspace와 입력창 중심으로 접힙니다.
 
 ## 질문 예시
 
@@ -170,6 +185,8 @@ gch setup
 
 `gch setup`은 필요한 경우 runtime을 설치한 뒤 provider login을 시작합니다. ChatGPT, GitHub Copilot, Gemini, OpenAI API 또는 OpenCode가 지원하는 다른 provider를 연결할 수 있습니다.
 
+Windows에서는 `gch setup`이 OpenCode를 자동 설치하지 않습니다. OpenCode를 별도로 설치하고 `opencode`가 `PATH`에서 실행되는지 확인한 뒤 `gacha setup` 또는 `gch setup`을 실행하세요.
+
 인터랙티브 홈 화면도 OpenCode 또는 provider 로그인이 없으면 설정 안내를 보여줍니다. 설정 후 다시 `gch`로 돌아와 첫 투자 질문을 입력하세요.
 
 설정 후 투자 리서치 흐름과 결과 표시는 계속 Gacha UI 안에서 처리됩니다.
@@ -182,7 +199,9 @@ runtime 실행에 실패하면 웹 AI에 붙여넣을 수 있는 프롬프트로
 gch update
 ```
 
-현재 컴퓨터에 맞는 바이너리를 내려받아 기존 파일을 교체합니다.
+macOS와 Linux에서는 현재 컴퓨터에 맞는 바이너리를 내려받아 기존 파일을 교체합니다.
+
+Windows에서는 실행 중인 `.exe` 교체 문제를 피하기 위해 self-update를 비활성화했습니다. 최신 `gacha-windows-amd64.zip` 또는 `gacha-windows-arm64.zip`을 내려받아 `PATH`에 있는 `gacha.exe`를 교체한 뒤 새 터미널을 여세요.
 
 ## 최신 데이터
 

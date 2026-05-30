@@ -318,7 +318,12 @@ func (m tuiModel) View() string {
 	bodyWidth := max(40, width-outerPadding)
 	contentHeight := max(6, m.height-8)
 	fullLayout := bodyWidth >= 132 && m.height >= 22
-	m.view.Width = max(30, bodyWidth-4)
+	_, workspaceWidth := splitLayoutWidths(bodyWidth)
+	if fullLayout {
+		m.view.Width = max(30, workspaceWidth-4)
+	} else {
+		m.view.Width = max(30, bodyWidth-4)
+	}
 	m.view.Height = contentHeight
 
 	content := m.view.View()
@@ -362,14 +367,20 @@ func (m tuiModel) showStatus() bool {
 
 func (m tuiModel) renderSplitMain(bodyWidth int, height int, workspace string) string {
 	gap := 2
+	railWidth, workspaceWidth := splitLayoutWidths(bodyWidth)
+	rail := panelStyle.Width(railWidth - 2).Height(height).Render(m.contextRail(railWidth - 4))
+	main := panelStyle.Width(workspaceWidth - 2).Height(height).Render(workspace)
+	return lipgloss.JoinHorizontal(lipgloss.Top, rail, strings.Repeat(" ", gap), main)
+}
+
+func splitLayoutWidths(bodyWidth int) (int, int) {
+	gap := 2
 	railWidth := max(34, bodyWidth/3)
 	workspaceWidth := max(58, bodyWidth-railWidth-gap)
 	if railWidth+workspaceWidth+gap > bodyWidth {
 		workspaceWidth = max(40, bodyWidth-railWidth-gap)
 	}
-	rail := panelStyle.Width(railWidth - 2).Height(height).Render(m.contextRail(railWidth - 4))
-	main := panelStyle.Width(workspaceWidth - 2).Height(height).Render(workspace)
-	return lipgloss.JoinHorizontal(lipgloss.Top, rail, strings.Repeat(" ", gap), main)
+	return railWidth, workspaceWidth
 }
 
 func runPromptCmd(query string) tea.Cmd {
