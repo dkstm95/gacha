@@ -101,7 +101,7 @@ To view settings in the app, type:
 /settings
 ```
 
-Inside the app, you can set model mode and language:
+Inside the app, you can set model mode, language, and theme:
 
 ```text
 /model auto
@@ -110,7 +110,14 @@ Inside the app, you can set model mode and language:
 /language auto
 /language en
 /language ko
+/theme
+/theme system
+/theme dark
+/theme light
+/theme gacha
 ```
+
+`/theme` shows each available theme with an in-app preview. `system` adapts to your terminal background, while `dark`, `light`, and `gacha` use fixed palettes.
 
 For scripts, use non-interactive config commands:
 
@@ -120,6 +127,7 @@ gch config set model auto
 gch config set model opencode-default
 gch config set model provider/model
 gch config set language ko
+gch config set theme system
 ```
 
 In auto mode, Gacha asks OpenCode for the connected provider's current model list, then chooses a strong research model from that list. For OpenAI, it prefers the newest base frontier model pattern, such as `gpt-N` or `gpt-N.M`, instead of hard-coding a specific model name. It pushes small/fast variants such as `mini`, `nano`, `lite`, `flash`, `fast`, `spark`, and coding-specialized variants behind the frontier base model.
@@ -139,11 +147,12 @@ Or create `~/.config/gacha/config.json`:
 ```json
 {
   "model": "auto",
-  "language": "auto"
+  "language": "auto",
+  "theme": "system"
 }
 ```
 
-Supported values are `auto`, `opencode-default`, or a custom `provider/model`.
+Supported model values are `auto`, `opencode-default`, or a custom `provider/model`. Supported theme values are `system`, `dark`, `light`, and `gacha`.
 
 ## Saved Reports
 

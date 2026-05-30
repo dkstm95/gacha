@@ -272,7 +272,7 @@ func TestResolveOpenCodeModelUsesConfigDefault(t *testing.T) {
 func TestSaveGachaConfigWritesModelAndLanguage(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	want := gachaConfig{Model: "opencode-default", Language: "ko"}
+	want := gachaConfig{Model: "opencode-default", Language: "ko", Theme: "dark"}
 	if err := saveGachaConfig(want); err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ func TestSaveGachaConfigWritesModelAndLanguage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Model != want.Model || got.Language != want.Language {
+	if got.Model != want.Model || got.Language != want.Language || got.Theme != want.Theme {
 		t.Fatalf("unexpected config: %#v", got)
 	}
 }
@@ -294,11 +294,14 @@ func TestRunConfigCommandSetsModelAndLanguage(t *testing.T) {
 	if err := runConfigCommand([]string{"set", "language", "ko"}); err != nil {
 		t.Fatal(err)
 	}
+	if err := runConfigCommand([]string{"set", "theme", "light"}); err != nil {
+		t.Fatal(err)
+	}
 	got, err := loadGachaConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Model != "opencode-default" || got.Language != "ko" {
+	if got.Model != "opencode-default" || got.Language != "ko" || got.Theme != "light" {
 		t.Fatalf("unexpected config: %#v", got)
 	}
 }
@@ -311,6 +314,9 @@ func TestRunConfigCommandRejectsInvalidValues(t *testing.T) {
 	if err := runConfigCommand([]string{"set", "language", "fr"}); err == nil {
 		t.Fatal("expected invalid language error")
 	}
+	if err := runConfigCommand([]string{"set", "theme", "neon"}); err == nil {
+		t.Fatal("expected invalid theme error")
+	}
 }
 
 func TestConfigWithDefaults(t *testing.T) {
@@ -319,8 +325,90 @@ func TestConfigWithDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.Model != modelSettingAuto || config.Language != languageSettingAuto {
+	if config.Model != modelSettingAuto || config.Language != languageSettingAuto || config.Theme != themeSettingSystem {
 		t.Fatalf("unexpected default config: %#v", config)
+	}
+}
+
+func TestThemeContentShowsPreviewsAndCommands(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		text     uiText
+		expected []string
+	}{
+		{
+			name: "english",
+			text: englishText(),
+			expected: []string{
+				"Themes",
+				"Active: System",
+				"/theme system",
+				"/theme dark",
+				"/theme light",
+				"/theme gacha",
+				"Preview",
+			},
+		},
+		{
+			name: "korean",
+			text: koreanText(),
+			expected: []string{
+				"테마",
+				"현재: 시스템",
+				"/theme system",
+				"/theme dark",
+				"/theme light",
+				"/theme gacha",
+				"예시",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+			got := stripANSI(themeContent(tc.text))
+			for _, expected := range tc.expected {
+				if !strings.Contains(got, expected) {
+					t.Fatalf("theme content missing %q:\n%s", expected, got)
+				}
+			}
+			for _, line := range strings.Split(got, "\n") {
+				if lipgloss.Width(line) > 80 {
+					t.Fatalf("line width %d exceeds 80: %q\n%s", lipgloss.Width(line), line, got)
+				}
+			}
+		})
+	}
+}
+
+func TestThemeContentReflectsSavedTheme(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if err := updateConfigTheme(themeSettingLight); err != nil {
+		t.Fatal(err)
+	}
+	got := stripANSI(themeContent(englishText()))
+	if !strings.Contains(got, "Active: Light") {
+		t.Fatalf("theme content did not reflect saved theme:\n%s", got)
+	}
+}
+
+func TestTUIThemeCommandSavesAndAppliesTheme(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	model := newTUIModel("0.1.27")
+	next, cmd := model.handleThemeSetting("/theme light")
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	updated := next.(tuiModel)
+	got, err := loadGachaConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Theme != themeSettingLight {
+		t.Fatalf("unexpected theme config: %#v", got)
+	}
+	if !strings.Contains(stripANSI(updated.view.View()), "Active: Light") {
+		t.Fatalf("theme view did not show previews:\n%s", stripANSI(updated.view.View()))
 	}
 }
 

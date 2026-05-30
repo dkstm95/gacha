@@ -42,6 +42,7 @@ type tuiModel struct {
 }
 
 func newTUIModel(version string) tuiModel {
+	setThemeStyles(configuredTheme())
 	lang := detectLanguage()
 	text := textFor(lang)
 	input := textinput.New()
@@ -172,6 +173,12 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 		m.view.SetContent(settingsContent(m.text))
 		m.view.GotoTop()
 		return m, nil
+	case "/theme", "theme", "/themes", "themes":
+		m.status = m.text.ThemeTitle
+		m.mode = m.text.System
+		m.view.SetContent(themeContent(m.text))
+		m.view.GotoTop()
+		return m, nil
 	case "/home", "home":
 		m.status = m.text.Ready
 		m.mode = m.text.Auto
@@ -205,6 +212,9 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	}
 	if strings.HasPrefix(value, "/language ") || strings.HasPrefix(value, "language ") || strings.HasPrefix(value, "/lang ") || strings.HasPrefix(value, "lang ") {
 		return m.handleLanguageSetting(value)
+	}
+	if strings.HasPrefix(value, "/theme ") || strings.HasPrefix(value, "theme ") {
+		return m.handleThemeSetting(value)
 	}
 
 	m.busy = true
@@ -243,6 +253,24 @@ func (m tuiModel) handleLanguageSetting(value string) (tea.Model, tea.Cmd) {
 	m.text = textFor(m.lang)
 	m.input.Placeholder = m.text.InputPlaceholder
 	return m.showSettingsSaved()
+}
+
+func (m tuiModel) handleThemeSetting(value string) (tea.Model, tea.Cmd) {
+	theme := settingValue(value)
+	normalized, ok := normalizeThemeSetting(theme)
+	if !ok {
+		return m.showSettingsError(m.text.SettingsInvalidTheme)
+	}
+	if err := updateConfigTheme(normalized); err != nil {
+		return m.showError(err)
+	}
+	setThemeStyles(normalized)
+	m.spin.Style = accentStyle
+	m.status = m.text.SettingsSaved
+	m.mode = m.text.System
+	m.view.SetContent(m.text.SettingsSaved + "\n\n" + themeContent(m.text))
+	m.view.GotoTop()
+	return m, nil
 }
 
 func (m tuiModel) showSettingsSaved() (tea.Model, tea.Cmd) {
@@ -617,6 +645,7 @@ func settingsContent(text uiText) string {
 		fmt.Sprintf("Config:   %s", gachaConfigPath()),
 		fmt.Sprintf("Model:    %s", configuredModelSummary(config.Model)),
 		fmt.Sprintf("Language: %s", config.Language),
+		fmt.Sprintf("Theme:    %s", configuredThemeSummary(config.Theme)),
 		fmt.Sprintf("Active:   %s", detectLanguage()),
 		"",
 		sectionStyle.Render("Commands"),
@@ -626,6 +655,10 @@ func settingsContent(text uiText) string {
 		"/language auto",
 		"/language en",
 		"/language ko",
+		"/theme system",
+		"/theme dark",
+		"/theme light",
+		"/theme gacha",
 	}
 	if envModel := strings.TrimSpace(os.Getenv("GACHA_OPENCODE_MODEL")); envModel != "" {
 		lines = append(lines, "", mutedStyle.Render("GACHA_OPENCODE_MODEL is currently overriding the model setting."))
@@ -851,6 +884,14 @@ func configuredModelSummary(model string) string {
 	}
 }
 
+func configuredThemeSummary(theme string) string {
+	normalized, ok := normalizeThemeSetting(theme)
+	if !ok {
+		return themeSettingSystem
+	}
+	return normalized
+}
+
 func wrapLine(value string, width int) string {
 	value = strings.TrimSpace(value)
 	if width <= 0 || lipgloss.Width(value) <= width {
@@ -924,43 +965,3 @@ func stripANSI(value string) string {
 	}
 	return builder.String()
 }
-
-var (
-	brandStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("230")).
-			Background(lipgloss.Color("62")).
-			Bold(true)
-	accentStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
-	titleStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
-	heroStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("87")).Bold(true)
-	sectionStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("230")).
-			Background(lipgloss.Color("62")).
-			Bold(true).
-			Padding(0, 1)
-	mutedStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-	faintStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-	warningStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("230")).
-			Bold(true)
-	bulletStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
-	keyStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("62")).Bold(true).Padding(0, 1)
-	actionNameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("238")).Bold(true).Padding(0, 1)
-	noteStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Border(lipgloss.NormalBorder(), false, false, false, true).BorderForeground(lipgloss.Color("238")).PaddingLeft(1)
-	statusStyle     = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("238")).
-			Padding(0, 1)
-	panelStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("62")).
-			Padding(1, 2)
-	inputStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("81")).
-			Padding(0, 1)
-	calloutStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("214")).
-			Padding(0, 1)
-)

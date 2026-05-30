@@ -140,6 +140,15 @@ type uiText struct {
 	SettingsSaved         string
 	SettingsInvalidModel  string
 	SettingsInvalidLang   string
+	SettingsInvalidTheme  string
+	ThemeTitle            string
+	ThemeIntro            string
+	ThemeActive           string
+	ThemeCommandHint      string
+	ThemePreviewTitle     string
+	ThemeSelectLabel      string
+	ThemeLabels           map[string]string
+	ThemeDescriptions     map[string]string
 }
 
 type homeAction struct {
@@ -245,6 +254,7 @@ func englishText() uiText {
 			"/settings show model and language settings",
 			"/model    set model: /model auto, /model opencode-default, or /model provider/model",
 			"/language set UI/report language: /language auto, /language en, /language ko",
+			"/theme    choose a theme and preview each option",
 			"/doctor   inspect OpenCode runtime and provider auth",
 			"/setup    show setup instructions",
 			"/update   show update instructions",
@@ -280,6 +290,25 @@ func englishText() uiText {
 		SettingsSaved:        "Settings saved.",
 		SettingsInvalidModel: "Use `/model auto`, `/model opencode-default`, or `/model provider/model`.",
 		SettingsInvalidLang:  "Use `/language auto`, `/language en`, or `/language ko`.",
+		SettingsInvalidTheme: "Use `/theme system`, `/theme dark`, `/theme light`, or `/theme gacha`.",
+		ThemeTitle:           "Themes",
+		ThemeIntro:           "Choose how Gacha should look in your terminal.",
+		ThemeActive:          "Active:",
+		ThemeCommandHint:     "Use /theme <name> to save and apply a theme.",
+		ThemePreviewTitle:    "Preview",
+		ThemeSelectLabel:     "select this theme",
+		ThemeLabels: map[string]string{
+			themeSettingSystem: "System",
+			themeSettingDark:   "Dark",
+			themeSettingLight:  "Light",
+			themeSettingGacha:  "Gacha",
+		},
+		ThemeDescriptions: map[string]string{
+			themeSettingSystem: "Adapts to light and dark terminal backgrounds.",
+			themeSettingDark:   "Quiet teal accents for dark terminals.",
+			themeSettingLight:  "Deeper accents and darker muted text for light terminals.",
+			themeSettingGacha:  "The original fixed palette from earlier Gacha releases.",
+		},
 	}
 }
 
@@ -369,6 +398,7 @@ func koreanText() uiText {
 			"/settings 모델과 언어 설정 보기",
 			"/model    모델 설정: /model auto, /model opencode-default, /model provider/model",
 			"/language UI/리포트 언어: /language auto, /language en, /language ko",
+			"/theme    테마 선택과 예시 보기",
 			"/doctor   OpenCode 런타임과 provider 인증 점검",
 			"/setup    설정 안내 보기",
 			"/update   업데이트 안내 보기",
@@ -404,5 +434,24 @@ func koreanText() uiText {
 		SettingsSaved:        "설정을 저장했습니다.",
 		SettingsInvalidModel: "`/model auto`, `/model opencode-default`, 또는 `/model provider/model` 형식으로 입력하세요.",
 		SettingsInvalidLang:  "`/language auto`, `/language en`, 또는 `/language ko`를 입력하세요.",
+		SettingsInvalidTheme: "`/theme system`, `/theme dark`, `/theme light`, 또는 `/theme gacha`를 입력하세요.",
+		ThemeTitle:           "테마",
+		ThemeIntro:           "터미널에 맞는 Gacha 화면 스타일을 선택하세요.",
+		ThemeActive:          "현재:",
+		ThemeCommandHint:     "/theme <이름>을 입력하면 저장 후 바로 적용됩니다.",
+		ThemePreviewTitle:    "예시",
+		ThemeSelectLabel:     "이 테마 선택",
+		ThemeLabels: map[string]string{
+			themeSettingSystem: "시스템",
+			themeSettingDark:   "다크",
+			themeSettingLight:  "라이트",
+			themeSettingGacha:  "Gacha",
+		},
+		ThemeDescriptions: map[string]string{
+			themeSettingSystem: "터미널의 밝은/어두운 배경에 맞춰 조정됩니다.",
+			themeSettingDark:   "어두운 터미널에 맞춘 차분한 틸 계열 강조색입니다.",
+			themeSettingLight:  "밝은 터미널용으로 강조색과 보조 텍스트 대비를 높입니다.",
+			themeSettingGacha:  "이전 Gacha 릴리스의 고정 팔레트입니다.",
+		},
 	}
 }

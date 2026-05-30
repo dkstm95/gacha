@@ -14,11 +14,16 @@ const (
 	languageSettingAuto         = "auto"
 	languageSettingEnglish      = "en"
 	languageSettingKorean       = "ko"
+	themeSettingSystem          = "system"
+	themeSettingDark            = "dark"
+	themeSettingLight           = "light"
+	themeSettingGacha           = "gacha"
 )
 
 type gachaConfig struct {
 	Model    string `json:"model"`
 	Language string `json:"language"`
+	Theme    string `json:"theme"`
 }
 
 func runConfigCommand(args []string) error {
@@ -26,10 +31,10 @@ func runConfigCommand(args []string) error {
 		return printConfig()
 	}
 	if args[0] != "set" {
-		return fmt.Errorf("usage: gch config get | gch config set model <value> | gch config set language <auto|en|ko>")
+		return fmt.Errorf("usage: gch config get | gch config set model <value> | gch config set language <auto|en|ko> | gch config set theme <system|dark|light|gacha>")
 	}
 	if len(args) < 3 {
-		return fmt.Errorf("usage: gch config set model <value> | gch config set language <auto|en|ko>")
+		return fmt.Errorf("usage: gch config set model <value> | gch config set language <auto|en|ko> | gch config set theme <system|dark|light|gacha>")
 	}
 	key := strings.ToLower(strings.TrimSpace(args[1]))
 	value := strings.TrimSpace(strings.Join(args[2:], " "))
@@ -40,6 +45,10 @@ func runConfigCommand(args []string) error {
 		}
 	case "language", "lang":
 		if err := updateConfigLanguage(value); err != nil {
+			return err
+		}
+	case "theme":
+		if err := updateConfigTheme(value); err != nil {
 			return err
 		}
 	default:
@@ -88,6 +97,19 @@ func updateConfigLanguage(value string) error {
 	return saveGachaConfig(config)
 }
 
+func updateConfigTheme(value string) error {
+	theme, ok := normalizeThemeSetting(value)
+	if !ok {
+		return fmt.Errorf("theme must be system, dark, light, or gacha")
+	}
+	config, err := loadGachaConfig()
+	if err != nil {
+		return err
+	}
+	config.Theme = theme
+	return saveGachaConfig(config)
+}
+
 func configWithDefaults() (gachaConfig, error) {
 	config, err := loadGachaConfig()
 	if err != nil {
@@ -98,6 +120,9 @@ func configWithDefaults() (gachaConfig, error) {
 	}
 	if strings.TrimSpace(config.Language) == "" {
 		config.Language = languageSettingAuto
+	}
+	if strings.TrimSpace(config.Theme) == "" {
+		config.Theme = themeSettingSystem
 	}
 	return config, nil
 }
@@ -169,4 +194,19 @@ func normalizeModelSetting(value string) (string, bool) {
 func validModelSetting(value string) bool {
 	_, ok := normalizeModelSetting(value)
 	return ok
+}
+
+func normalizeThemeSetting(value string) (string, bool) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", themeSettingSystem, "auto":
+		return themeSettingSystem, true
+	case themeSettingDark:
+		return themeSettingDark, true
+	case themeSettingLight:
+		return themeSettingLight, true
+	case themeSettingGacha, "classic", "original":
+		return themeSettingGacha, true
+	default:
+		return "", false
+	}
 }

@@ -101,7 +101,7 @@ gch doctor
 /settings
 ```
 
-앱 안에서 모델 모드와 언어를 설정할 수 있습니다.
+앱 안에서 모델 모드, 언어, 테마를 설정할 수 있습니다.
 
 ```text
 /model auto
@@ -110,7 +110,14 @@ gch doctor
 /language auto
 /language en
 /language ko
+/theme
+/theme system
+/theme dark
+/theme light
+/theme gacha
 ```
+
+`/theme`은 사용할 수 있는 각 테마의 예시를 앱 안에서 함께 보여줍니다. `system`은 터미널 배경에 맞춰 적응하고, `dark`, `light`, `gacha`는 고정 팔레트를 사용합니다.
 
 스크립트나 터미널 명령으로도 설정할 수 있습니다.
 
@@ -120,6 +127,7 @@ gch config set model auto
 gch config set model opencode-default
 gch config set model provider/model
 gch config set language ko
+gch config set theme system
 ```
 
 auto 모드에서 Gacha는 연결된 provider의 현재 모델 목록을 OpenCode에 물어본 뒤, 그 목록 안에서 리서치에 적합한 모델을 고릅니다. OpenAI에서는 특정 모델명을 하드코딩하지 않고 `gpt-N` 또는 `gpt-N.M` 형태의 가장 최신 base frontier 모델을 우선합니다. `mini`, `nano`, `lite`, `flash`, `fast`, `spark`처럼 작고 빠른 변형과 코딩 특화 변형은 base frontier 모델보다 뒤로 보냅니다.
@@ -139,11 +147,12 @@ GACHA_OPENCODE_MODEL=provider/model gch
 ```json
 {
   "model": "auto",
-  "language": "auto"
+  "language": "auto",
+  "theme": "system"
 }
 ```
 
-지원 값은 `auto`, `opencode-default`, 직접 지정한 `provider/model`입니다.
+모델 지원 값은 `auto`, `opencode-default`, 직접 지정한 `provider/model`입니다. 테마 지원 값은 `system`, `dark`, `light`, `gacha`입니다.
 
 ## 저장된 리포트
 
