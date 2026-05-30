@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,6 +28,39 @@ func saveReport(query string, report string) (string, error) {
 		return "", err
 	}
 	return path, nil
+}
+
+func askToSaveReport(query string, report string, text uiText) (string, bool, error) {
+	if !isInteractiveTerminal() {
+		return "", false, nil
+	}
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprint(os.Stderr, text.SavePrompt+" ")
+	reader := bufio.NewReader(os.Stdin)
+	answer, err := reader.ReadString('\n')
+	if err != nil {
+		return "", false, err
+	}
+	answer = strings.TrimSpace(answer)
+	if !wantsSaveReport(answer) {
+		fmt.Fprintln(os.Stderr, text.SkippedSave)
+		return "", false, nil
+	}
+	path, err := saveReport(query, report)
+	if err != nil {
+		return "", false, err
+	}
+	return path, true, nil
+}
+
+func wantsSaveReport(answer string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(answer))
+	return normalized == "y" || normalized == "yes" || normalized == "ㅛ" || normalized == "예" || normalized == "네"
+}
+
+func refusesSaveReport(answer string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(answer))
+	return normalized == "n" || normalized == "no" || normalized == "ㅜ" || normalized == "아니오" || normalized == "아니요"
 }
 
 func reportsDir() string {

@@ -13,8 +13,10 @@ import (
 )
 
 type runResultMsg struct {
-	output string
-	err    error
+	query     string
+	output    string
+	completed bool
+	err       error
 }
 
 type researchPhaseMsg struct{}
@@ -30,6 +32,7 @@ type tuiModel struct {
 	height  int
 	busy    bool
 	phase   int
+	save    *pendingSave
 	status  string
 	runtime string
 	mode    string
@@ -90,6 +93,9 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			m.input.SetValue("")
+			if m.save != nil {
+				return m.handleSaveAnswer(value)
+			}
 			return m.handleSubmit(value)
 		}
 	case runResultMsg:
@@ -102,7 +108,13 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.view.SetContent(errorContent(msg.err, msg.output, m.text))
 		} else {
 			m.status = m.text.Complete
-			m.view.SetContent(msg.output)
+			if msg.completed && strings.TrimSpace(msg.output) != "" {
+				m.save = &pendingSave{query: msg.query, report: strings.TrimSpace(msg.output)}
+				m.view.SetContent(msg.output + "\n\n---\n" + m.text.SavePrompt)
+			} else {
+				m.save = nil
+				m.view.SetContent(msg.output)
+			}
 		}
 		m.view.GotoTop()
 	case researchPhaseMsg:
@@ -128,6 +140,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
+	m.save = nil
 	switch value {
 	case "/q", "/quit", "quit", "exit":
 		return m, tea.Quit
@@ -176,6 +189,37 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(m.spin.Tick, researchPhaseTick(), runPromptCmd(value))
 }
 
+func (m tuiModel) handleSaveAnswer(value string) (tea.Model, tea.Cmd) {
+	pending := m.save
+	m.save = nil
+	if pending == nil {
+		return m, nil
+	}
+	if wantsSaveReport(value) {
+		path, err := saveReport(pending.query, pending.report)
+		if err != nil {
+			m.status = m.text.Fallback
+			m.view.SetContent(pending.report + "\n\n---\n" + errorContent(err, "", m.text))
+			m.view.GotoBottom()
+			return m, nil
+		}
+		m.status = m.text.Complete
+		m.view.SetContent(pending.report + "\n\n---\n" + m.text.SavedReport + " " + path)
+		m.view.GotoBottom()
+		return m, nil
+	}
+	if refusesSaveReport(value) {
+		m.status = m.text.Complete
+		m.view.SetContent(pending.report + "\n\n---\n" + m.text.SkippedSave)
+		m.view.GotoBottom()
+		return m, nil
+	}
+	m.save = pending
+	m.view.SetContent(pending.report + "\n\n---\n" + m.text.SavePrompt)
+	m.view.GotoBottom()
+	return m, nil
+}
+
 func (m tuiModel) View() string {
 	width := max(72, m.width)
 	bodyWidth := max(64, width-4)
@@ -193,8 +237,8 @@ func (m tuiModel) View() string {
 
 func runPromptCmd(query string) tea.Cmd {
 	return func() tea.Msg {
-		output, err := runPrompt(query)
-		return runResultMsg{output: output, err: err}
+		result := runPrompt(query)
+		return runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
 	}
 }
 
@@ -204,28 +248,32 @@ func researchPhaseTick() tea.Cmd {
 	})
 }
 
-func runPrompt(query string) (string, error) {
+type promptRunResult struct {
+	output    string
+	completed bool
+	err       error
+}
+
+type pendingSave struct {
+	query  string
+	report string
+}
+
+func runPrompt(query string) promptRunResult {
 	prompt, err := buildPrompt([]string{query})
 	if err != nil {
-		return "", err
+		return promptRunResult{err: err}
 	}
 	commandPath, ok := resolveCommand(openCodeCommand)
 	if !ok || !hasOpenCodeAuth() {
-		return prompt, nil
+		return promptRunResult{output: prompt}
 	}
 	output, err := runOpenCodeWithResolution(commandPath, prompt, resolveOpenCodeModel(), false)
 	if err != nil {
-		return output, err
+		return promptRunResult{output: output, err: err}
 	}
 	report := strings.TrimSpace(output)
-	if report == "" {
-		return report, nil
-	}
-	path, err := saveReport(query, report)
-	if err != nil {
-		return report, nil
-	}
-	return report + "\n\n---\nSaved report: " + path, nil
+	return promptRunResult{output: report, completed: report != ""}
 }
 
 func welcomeContent(version string, text uiText) string {

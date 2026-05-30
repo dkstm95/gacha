@@ -109,6 +109,22 @@ func TestReportFileNameUsesReadableSlug(t *testing.T) {
 	}
 }
 
+func TestReportSaveAnswerParsing(t *testing.T) {
+	for _, answer := range []string{"y", "yes", "Y", "예", "네"} {
+		if !wantsSaveReport(answer) {
+			t.Fatalf("expected %q to save", answer)
+		}
+	}
+	for _, answer := range []string{"n", "no", "N", "아니요", "아니오"} {
+		if !refusesSaveReport(answer) {
+			t.Fatalf("expected %q to refuse save", answer)
+		}
+	}
+	if wantsSaveReport("maybe") || refusesSaveReport("maybe") {
+		t.Fatal("unexpected parse for ambiguous answer")
+	}
+}
+
 func TestDetectLanguageFromLocale(t *testing.T) {
 	lang := detectLanguageFromEnv(func(key string) string {
 		if key == "LANG" {

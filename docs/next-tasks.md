@@ -17,6 +17,7 @@ This file is a handoff note for future sessions.
    - Require tables for candidates, price zones, scenarios, action conditions, monitoring, and provenance.
 
 3. Save completed reports as Markdown under a local Gacha data directory.
+   - Ask before saving and save only when the user agrees.
    - Save only completed AI reports, not dry-run prompts or paste-fallback prompts.
    - Store reports under the user's Gacha data directory.
    - Include the original question at the bottom of each report.

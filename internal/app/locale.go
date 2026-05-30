@@ -79,6 +79,9 @@ type uiText struct {
 	StatusRuntime    string
 	StatusFreshData  string
 	StatusNoTrading  string
+	SavePrompt       string
+	SavedReport      string
+	SkippedSave      string
 }
 
 func textFor(lang language) uiText {
@@ -171,6 +174,9 @@ func englishText() uiText {
 		StatusRuntime:   "Runtime ",
 		StatusFreshData: "Fresh data required",
 		StatusNoTrading: "No trading",
+		SavePrompt:      "Save this report as Markdown? Type y or n.",
+		SavedReport:     "Saved report:",
+		SkippedSave:     "Report was not saved.",
 	}
 }
 
@@ -257,5 +263,8 @@ func koreanText() uiText {
 		StatusRuntime:   "런타임 ",
 		StatusFreshData: "최신 데이터 필수",
 		StatusNoTrading: "거래 실행 안 함",
+		SavePrompt:      "이 리포트를 Markdown으로 저장할까요? y 또는 n을 입력하세요.",
+		SavedReport:     "리포트 저장:",
+		SkippedSave:     "리포트를 저장하지 않았습니다.",
 	}
 }

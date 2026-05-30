@@ -104,7 +104,7 @@ Supported values are `auto`, `opencode-default`, or a custom `provider/model`.
 
 ## Saved Reports
 
-When the AI runtime completes a report, `gacha` saves it as Markdown.
+When the AI runtime completes a report, `gacha` asks whether you want to save it as Markdown.
 
 Default location:
 
@@ -118,7 +118,7 @@ If `XDG_DATA_HOME` is set, reports are saved under:
 $XDG_DATA_HOME/gacha/reports
 ```
 
-Paste-fallback prompts and dry runs are not saved as reports.
+Reports are saved only when you answer yes. Paste-fallback prompts and dry runs are not saved as reports.
 
 ## Language
 

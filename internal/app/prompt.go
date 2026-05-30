@@ -47,12 +47,14 @@ func runQuery(args []string) error {
 		return nil
 	}
 	if completed {
-		path, err := saveReport(strings.Join(query, " "), output)
+		path, saved, err := askToSaveReport(strings.Join(query, " "), output, textFor(responseLanguage(strings.Join(query, " "))))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not save report: %v\n", err)
 			return nil
 		}
-		fmt.Fprintf(os.Stderr, "\nSaved report: %s\n", path)
+		if saved {
+			fmt.Fprintf(os.Stderr, "\nSaved report: %s\n", path)
+		}
 	}
 	return nil
 }
