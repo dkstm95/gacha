@@ -37,6 +37,8 @@ type tuiModel struct {
 	status  string
 	runtime string
 	mode    string
+	query   string
+	report  string
 }
 
 func newTUIModel(version string) tuiModel {
@@ -112,16 +114,21 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.phase = 0
 		m.runtime = routeLabelFor(m.lang)
 		m.mode = m.text.Report
+		m.query = msg.query
 		if msg.err != nil {
 			m.status = m.text.Fallback
+			m.report = ""
 			m.view.SetContent(errorContent(msg.err, msg.output, m.text))
 		} else {
 			m.status = m.text.Complete
 			if msg.completed && strings.TrimSpace(msg.output) != "" {
-				m.save = &pendingSave{query: msg.query, report: strings.TrimSpace(msg.output)}
-				m.view.SetContent(msg.output + "\n\n" + renderReportActions(m.text))
+				report := strings.TrimSpace(msg.output)
+				m.report = report
+				m.save = &pendingSave{query: msg.query, report: report}
+				m.view.SetContent(report + "\n\n" + renderReportActions(m.text))
 			} else {
 				m.save = nil
+				m.report = strings.TrimSpace(msg.output)
 				m.view.SetContent(msg.output)
 			}
 		}
@@ -168,6 +175,8 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	case "/home", "home":
 		m.status = m.text.Ready
 		m.mode = m.text.Auto
+		m.query = ""
+		m.report = ""
 		m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
 		m.view.GotoTop()
 		return m, nil
@@ -200,6 +209,8 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 
 	m.busy = true
 	m.phase = 0
+	m.query = value
+	m.report = ""
 	if len(m.text.ResearchPhases) > 0 {
 		m.status = m.text.ResearchPhases[0]
 	} else {
@@ -306,23 +317,59 @@ func (m tuiModel) View() string {
 	}
 	bodyWidth := max(40, width-outerPadding)
 	contentHeight := max(6, m.height-8)
+	fullLayout := bodyWidth >= 132 && m.height >= 22
 	m.view.Width = max(30, bodyWidth-4)
 	m.view.Height = contentHeight
 
 	content := m.view.View()
 	if m.mode == m.text.Auto && !m.busy {
 		content = welcomeContent(m.version, m.text, m.view.Width, contentHeight)
-		homeHeight := lipgloss.Height(content) + 2
-		contentHeight = min(contentHeight, max(8, homeHeight))
+		if !fullLayout {
+			homeHeight := lipgloss.Height(content) + 2
+			contentHeight = min(contentHeight, max(8, homeHeight))
+		}
 		m.view.Height = contentHeight
 	}
 
 	header := renderHeader(bodyWidth, m.version)
-	status := renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text)
+	var status string
+	if m.showStatus() {
+		status = renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text)
+	}
 	panel := panelStyle.Width(bodyWidth - 2).Height(contentHeight).Render(content)
+	if fullLayout {
+		panel = m.renderSplitMain(bodyWidth, contentHeight, content)
+	}
 	input := renderInput(bodyWidth, m.input.View())
 	footer := renderFooter(bodyWidth, m.text)
-	return lipgloss.JoinVertical(lipgloss.Left, header, status, panel, input, footer)
+	parts := []string{header}
+	if status != "" {
+		parts = append(parts, status)
+	}
+	parts = append(parts, panel, input, footer)
+	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+}
+
+func (m tuiModel) showStatus() bool {
+	if m.busy {
+		return true
+	}
+	if m.mode == m.text.Auto && m.status == m.text.Ready {
+		return false
+	}
+	return true
+}
+
+func (m tuiModel) renderSplitMain(bodyWidth int, height int, workspace string) string {
+	gap := 2
+	railWidth := max(34, bodyWidth/3)
+	workspaceWidth := max(58, bodyWidth-railWidth-gap)
+	if railWidth+workspaceWidth+gap > bodyWidth {
+		workspaceWidth = max(40, bodyWidth-railWidth-gap)
+	}
+	rail := panelStyle.Width(railWidth - 2).Height(height).Render(m.contextRail(railWidth - 4))
+	main := panelStyle.Width(workspaceWidth - 2).Height(height).Render(workspace)
+	return lipgloss.JoinHorizontal(lipgloss.Top, rail, strings.Repeat(" ", gap), main)
 }
 
 func runPromptCmd(query string) tea.Cmd {
@@ -596,6 +643,115 @@ func renderReportActions(text uiText) string {
 		sectionStyle.Render(text.ReportActionsTitle),
 		strings.Join(parts, "   "),
 	}, "\n")
+}
+
+func (m tuiModel) contextRail(width int) string {
+	switch {
+	case m.busy:
+		return m.researchContext(width)
+	case m.mode == m.text.Report:
+		return m.reportContext(width)
+	default:
+		return m.homeContext(width)
+	}
+}
+
+func (m tuiModel) homeContext(width int) string {
+	actions := actionNames(m.text.HomeActions)
+	lines := []string{
+		sectionStyle.Render(m.text.ContextTitle),
+		titleStyle.Render(m.text.ContextRecentTitle),
+		mutedStyle.Render(m.text.ContextNoRecent),
+		"",
+		titleStyle.Render(m.text.ContextTypesTitle),
+	}
+	for _, action := range actions {
+		lines = append(lines, bulletStyle.Render("›")+" "+wrapLine(action, max(12, width-3)))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (m tuiModel) researchContext(width int) string {
+	lines := []string{
+		sectionStyle.Render(m.text.ContextTitle),
+		titleStyle.Render(m.text.ContextRequestTitle),
+		wrapLine(m.query, max(16, width)),
+		"",
+		titleStyle.Render(m.text.ContextResearchTitle),
+	}
+	for i, phase := range m.text.ResearchPhases {
+		marker := " "
+		switch {
+		case i < m.phase:
+			marker = "✓"
+		case i == m.phase:
+			marker = "•"
+		}
+		lines = append(lines, mutedStyle.Render(marker)+" "+wrapLine(phase, max(12, width-3)))
+		if i >= 4 {
+			break
+		}
+	}
+	lines = append(lines, "", titleStyle.Render(m.text.ContextSourcesTitle), mutedStyle.Render(m.text.ContextSourcesPending))
+	return strings.Join(lines, "\n")
+}
+
+func (m tuiModel) reportContext(width int) string {
+	context := reportContextFromMarkdown(m.report, m.text.ContextReportFallback)
+	lines := []string{
+		sectionStyle.Render(m.text.ContextTitle),
+		titleStyle.Render(m.text.ContextRequestTitle),
+		wrapLine(m.query, max(16, width)),
+		"",
+		titleStyle.Render(m.text.ContextReportTitle),
+	}
+	for _, item := range context {
+		lines = append(lines, bulletStyle.Render("•")+" "+wrapLine(item, max(12, width-3)))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func actionNames(actions []homeAction) []string {
+	names := make([]string, 0, len(actions))
+	for _, action := range actions {
+		names = append(names, action.Name)
+	}
+	return names
+}
+
+func reportContextFromMarkdown(report string, fallback string) []string {
+	if strings.TrimSpace(report) == "" {
+		return []string{fallback}
+	}
+	candidates := []struct {
+		match string
+		label string
+	}{
+		{match: "bottom line", label: "Bottom line"},
+		{match: "decision rules", label: "Decision rules"},
+		{match: "biggest risks", label: "Risks"},
+		{match: "risks", label: "Risks"},
+		{match: "data check", label: "Data check"},
+		{match: "source", label: "Sources"},
+	}
+	var found []string
+	seen := map[string]bool{}
+	for _, line := range strings.Split(stripANSI(report), "\n") {
+		normalized := strings.ToLower(strings.TrimSpace(strings.TrimLeft(line, "#0123456789. ")))
+		for _, candidate := range candidates {
+			if strings.Contains(normalized, candidate.match) && !seen[candidate.label] {
+				found = append(found, candidate.label)
+				seen[candidate.label] = true
+			}
+		}
+		if len(found) >= 4 {
+			break
+		}
+	}
+	if len(found) == 0 {
+		return []string{fallback}
+	}
+	return found
 }
 
 func renderHeader(width int, version string) string {

@@ -338,13 +338,15 @@ func TestOnboardingContentReflectsSetupState(t *testing.T) {
 }
 
 func TestWelcomeContentIsDecisionDesk(t *testing.T) {
-	got := stripANSI(welcomeContent("0.1.25", englishText(), 80, 16))
+	got := stripANSI(welcomeContent("0.1.27", englishText(), 80, 16))
 	for _, expected := range []string{
 		"What are you deciding?",
 		"Decision desk",
-		"Buy Check",
-		"Idea Scout",
-		"Holding Review",
+		"Buy",
+		"Find",
+		"Hold",
+		"Exit",
+		"Portfolio",
 		"You'll get",
 	} {
 		if !strings.Contains(got, expected) {
@@ -375,7 +377,7 @@ func TestWelcomeContentFitsCommonTerminalSizes(t *testing.T) {
 		{name: "half korean", width: 170, height: 24, text: koreanText()},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := stripANSI(welcomeContent("0.1.25", tc.text, tc.width, tc.height))
+			got := stripANSI(welcomeContent("0.1.27", tc.text, tc.width, tc.height))
 			for _, line := range strings.Split(got, "\n") {
 				if lipgloss.Width(line) > tc.width {
 					t.Fatalf("line width %d exceeds %d: %q\n%s", lipgloss.Width(line), tc.width, line, got)
@@ -391,11 +393,12 @@ func TestTUIViewFitsCommonTerminalSizes(t *testing.T) {
 		width  int
 		height int
 	}{
-		{name: "quarter", width: 100, height: 28},
-		{name: "half", width: 170, height: 34},
+		{name: "quarter", width: 80, height: 24},
+		{name: "half", width: 120, height: 30},
+		{name: "full", width: 180, height: 36},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			model := newTUIModel("0.1.25")
+			model := newTUIModel("0.1.27")
 			model.width = tc.width
 			model.height = tc.height
 			model.view.Width = max(30, tc.width-8)
@@ -409,7 +412,56 @@ func TestTUIViewFitsCommonTerminalSizes(t *testing.T) {
 			if strings.Contains(got, "Checks fresh data") {
 				t.Fatalf("status bar repeated safety copy:\n%s", got)
 			}
+			if strings.Contains(got, "Mode Auto") || strings.Contains(got, "OpenCode runtime") || strings.Contains(got, "Ready") {
+				t.Fatalf("home showed normal status chrome:\n%s", got)
+			}
+			if tc.name == "full" {
+				for _, expected := range []string{"Context", "Recent", "Decision types", "Decision desk"} {
+					if !strings.Contains(got, expected) {
+						t.Fatalf("full layout missing %q:\n%s", expected, got)
+					}
+				}
+			}
 		})
+	}
+}
+
+func TestContextRailReflectsTUIState(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	model.width = 180
+	model.height = 36
+	model.view.Width = 172
+	model.view.Height = 28
+
+	home := stripANSI(model.View())
+	for _, expected := range []string{"Context", "Recent", "Decision types"} {
+		if !strings.Contains(home, expected) {
+			t.Fatalf("home context missing %q:\n%s", expected, home)
+		}
+	}
+
+	model.busy = true
+	model.query = "Should I buy NVDA now?"
+	model.phase = 1
+	model.status = model.text.ResearchPhases[1]
+	model.view.SetContent(researchingContent(model.query, model.text))
+	research := stripANSI(model.View())
+	for _, expected := range []string{"Current request", "Should I buy NVDA now?", "Research", "Sources"} {
+		if !strings.Contains(research, expected) {
+			t.Fatalf("research context missing %q:\n%s", expected, research)
+		}
+	}
+
+	model.busy = false
+	model.mode = model.text.Report
+	model.status = model.text.Complete
+	model.report = "## Easy Basic Report\n\n### 1. Bottom Line\nWait.\n\n### 3. Decision Rules\nBuy if...\n\n### 4. Biggest Risks\nValuation.\n\n### 5. Data Check\nCurrent price checked."
+	model.view.SetContent(model.report)
+	report := stripANSI(model.View())
+	for _, expected := range []string{"Current request", "Report", "Bottom line", "Decision rules", "Risks", "Data check"} {
+		if !strings.Contains(report, expected) {
+			t.Fatalf("report context missing %q:\n%s", expected, report)
+		}
 	}
 }
 

@@ -107,6 +107,16 @@ type uiText struct {
 	HomeOutcomesTitle     string
 	HomeOutcomes          []string
 	HomeNote              string
+	ContextTitle          string
+	ContextRecentTitle    string
+	ContextNoRecent       string
+	ContextTypesTitle     string
+	ContextRequestTitle   string
+	ContextResearchTitle  string
+	ContextSourcesTitle   string
+	ContextSourcesPending string
+	ContextReportTitle    string
+	ContextReportFallback string
 	Onboarding            []string
 	Research              func(string) []string
 	HelpLines             []string
@@ -179,11 +189,11 @@ func englishText() uiText {
 		HomeSubtitle:     "Choose a starting point or ask in plain language.",
 		HomeActionsTitle: "Decision desk",
 		HomeActions: []homeAction{
-			{Name: "Buy Check", Prompt: "Should I buy NVDA now?"},
-			{Name: "Idea Scout", Prompt: "What should I invest in for the next 6 to 12 months?"},
-			{Name: "Holding Review", Prompt: "I own TSLA. Should I trim, hold, or sell?"},
-			{Name: "Exit Plan", Prompt: "Where should I stop out or sell?"},
-			{Name: "Portfolio Check", Prompt: "Is my portfolio too concentrated?"},
+			{Name: "Buy", Prompt: "Should I buy NVDA now?"},
+			{Name: "Find", Prompt: "What should I invest in for the next 6 to 12 months?"},
+			{Name: "Hold", Prompt: "I own TSLA. Should I trim, hold, or sell?"},
+			{Name: "Exit", Prompt: "Where should I stop out or sell?"},
+			{Name: "Portfolio", Prompt: "Is my portfolio too concentrated?"},
 		},
 		HomeOutcomesTitle: "You'll get",
 		HomeOutcomes: []string{
@@ -193,7 +203,17 @@ func englishText() uiText {
 			"Checked data",
 			"Optional detailed analysis",
 		},
-		HomeNote: "Fresh data before recommendations. No automatic trading.",
+		HomeNote:              "Fresh data before recommendations. No automatic trading.",
+		ContextTitle:          "Context",
+		ContextRecentTitle:    "Recent",
+		ContextNoRecent:       "No saved reports yet",
+		ContextTypesTitle:     "Decision types",
+		ContextRequestTitle:   "Current request",
+		ContextResearchTitle:  "Research",
+		ContextSourcesTitle:   "Sources",
+		ContextSourcesPending: "Collected during research",
+		ContextReportTitle:    "Report",
+		ContextReportFallback: "Report output on the right",
 		Onboarding: []string{
 			"Setup needed",
 			"OpenCode is not installed yet.",
@@ -293,11 +313,11 @@ func koreanText() uiText {
 		HomeSubtitle:     "아래에서 시작하거나 평소 말처럼 질문하세요.",
 		HomeActionsTitle: "결정 데스크",
 		HomeActions: []homeAction{
-			{Name: "매수 점검", Prompt: "NVDA 지금 사도 될까?"},
-			{Name: "아이디어 찾기", Prompt: "앞으로 6~12개월 관점에서 무엇에 투자하면 좋을까?"},
-			{Name: "보유 종목 리뷰", Prompt: "TSLA를 보유 중인데 줄일까, 유지할까, 팔까?"},
-			{Name: "매도 기준", Prompt: "어디서 손절하거나 매도해야 할까?"},
-			{Name: "포트폴리오 점검", Prompt: "내 포트폴리오가 너무 집중되어 있을까?"},
+			{Name: "매수", Prompt: "NVDA 지금 사도 될까?"},
+			{Name: "탐색", Prompt: "앞으로 6~12개월 관점에서 무엇에 투자하면 좋을까?"},
+			{Name: "보유", Prompt: "TSLA를 보유 중인데 줄일까, 유지할까, 팔까?"},
+			{Name: "매도", Prompt: "어디서 손절하거나 매도해야 할까?"},
+			{Name: "포트폴리오", Prompt: "내 포트폴리오가 너무 집중되어 있을까?"},
 		},
 		HomeOutcomesTitle: "받게 되는 답변",
 		HomeOutcomes: []string{
@@ -307,7 +327,17 @@ func koreanText() uiText {
 			"확인한 데이터",
 			"선택 상세 분석",
 		},
-		HomeNote: "추천 전 최신 데이터를 확인합니다. 거래는 실행하지 않습니다.",
+		HomeNote:              "추천 전 최신 데이터를 확인합니다. 거래는 실행하지 않습니다.",
+		ContextTitle:          "맥락",
+		ContextRecentTitle:    "최근",
+		ContextNoRecent:       "저장된 리포트 없음",
+		ContextTypesTitle:     "결정 유형",
+		ContextRequestTitle:   "현재 질문",
+		ContextResearchTitle:  "조사",
+		ContextSourcesTitle:   "출처",
+		ContextSourcesPending: "조사 중 수집",
+		ContextReportTitle:    "리포트",
+		ContextReportFallback: "오른쪽 리포트 참고",
 		Onboarding: []string{
 			"설정 필요",
 			"OpenCode가 아직 설치되어 있지 않습니다.",
