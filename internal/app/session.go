@@ -19,11 +19,16 @@ func (a *App) startSession() error {
 }
 
 func (a *App) startLineSession() error {
+	text := textFor(detectLanguage())
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("gacha")
-	fmt.Println("Type a question, or /quit to exit.")
+	if detectLanguage() == languageKorean {
+		fmt.Println("질문을 입력하세요. 종료하려면 /quit을 입력하세요.")
+	} else {
+		fmt.Println("Type a question, or /quit to exit.")
+	}
 	for {
-		fmt.Print("\nAsk > ")
+		fmt.Print("\n" + strings.TrimSuffix(text.InputPlaceholder, "...") + " > ")
 		line, err := reader.ReadString('\n')
 		if err != nil && strings.TrimSpace(line) == "" {
 			fmt.Println()
@@ -35,7 +40,11 @@ func (a *App) startLineSession() error {
 		}
 		switch input {
 		case "/q", "/quit", "quit", "exit":
-			fmt.Println("Goodbye.")
+			if detectLanguage() == languageKorean {
+				fmt.Println("종료합니다.")
+			} else {
+				fmt.Println("Goodbye.")
+			}
 			return nil
 		case "/doctor", "doctor":
 			if err := doctor(); err != nil {

@@ -18,6 +18,8 @@ type runResultMsg struct {
 
 type tuiModel struct {
 	version string
+	lang    language
+	text    uiText
 	input   textinput.Model
 	view    viewport.Model
 	spin    spinner.Model
@@ -30,8 +32,10 @@ type tuiModel struct {
 }
 
 func newTUIModel(version string) tuiModel {
+	lang := detectLanguage()
+	text := textFor(lang)
 	input := textinput.New()
-	input.Placeholder = "Ask about an investment..."
+	input.Placeholder = text.InputPlaceholder
 	input.Focus()
 	input.CharLimit = 2000
 	input.Prompt = " "
@@ -41,18 +45,20 @@ func newTUIModel(version string) tuiModel {
 	spin.Style = accentStyle
 
 	view := viewport.New(80, 16)
-	view.SetContent(welcomeContent(version))
+	view.SetContent(welcomeContent(version, text))
 
 	return tuiModel{
 		version: version,
+		lang:    lang,
+		text:    text,
 		input:   input,
 		view:    view,
 		spin:    spin,
 		width:   100,
 		height:  34,
-		status:  "Ready",
-		runtime: routeLabel(),
-		mode:    "Auto",
+		status:  text.Ready,
+		runtime: routeLabelFor(lang),
+		mode:    text.Auto,
 	}
 }
 
@@ -84,13 +90,13 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case runResultMsg:
 		m.busy = false
-		m.runtime = routeLabel()
-		m.mode = "Report"
+		m.runtime = routeLabelFor(m.lang)
+		m.mode = m.text.Report
 		if msg.err != nil {
-			m.status = "Fallback"
-			m.view.SetContent(errorContent(msg.err, msg.output))
+			m.status = m.text.Fallback
+			m.view.SetContent(errorContent(msg.err, msg.output, m.text))
 		} else {
-			m.status = "Complete"
+			m.status = m.text.Complete
 			m.view.SetContent(msg.output)
 		}
 		m.view.GotoTop()
@@ -115,42 +121,42 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	case "/q", "/quit", "quit", "exit":
 		return m, tea.Quit
 	case "/h", "/help", "help":
-		m.status = "Help"
-		m.mode = "Command"
-		m.view.SetContent(helpContent())
+		m.status = m.text.Help
+		m.mode = m.text.Command
+		m.view.SetContent(helpContent(m.text))
 		m.view.GotoTop()
 		return m, nil
 	case "/home", "home":
-		m.status = "Ready"
-		m.mode = "Auto"
-		m.view.SetContent(welcomeContent(m.version))
+		m.status = m.text.Ready
+		m.mode = m.text.Auto
+		m.view.SetContent(welcomeContent(m.version, m.text))
 		m.view.GotoTop()
 		return m, nil
 	case "/doctor", "doctor":
 		m.status = "Doctor"
-		m.runtime = routeLabel()
-		m.mode = "Runtime"
-		m.view.SetContent(doctorContent())
+		m.runtime = routeLabelFor(m.lang)
+		m.mode = m.text.Runtime
+		m.view.SetContent(doctorContent(m.text))
 		m.view.GotoTop()
 		return m, nil
 	case "/setup", "setup":
-		m.status = "Setup"
-		m.mode = "Runtime"
-		m.view.SetContent(setupContent())
+		m.status = m.text.Setup
+		m.mode = m.text.Runtime
+		m.view.SetContent(setupContent(m.text))
 		m.view.GotoTop()
 		return m, nil
 	case "/update", "update":
-		m.status = "Update"
-		m.mode = "System"
-		m.view.SetContent("Run `gacha update` outside the interactive UI to update the binary.")
+		m.status = m.text.Update
+		m.mode = m.text.System
+		m.view.SetContent(m.text.UpdateMessage)
 		m.view.GotoTop()
 		return m, nil
 	}
 
 	m.busy = true
-	m.status = "Researching"
-	m.mode = "Auto"
-	m.view.SetContent(researchingContent(value))
+	m.status = m.text.Researching
+	m.mode = m.text.Auto
+	m.view.SetContent(researchingContent(value, m.text))
 	return m, tea.Batch(m.spin.Tick, runPromptCmd(value))
 }
 
@@ -162,10 +168,10 @@ func (m tuiModel) View() string {
 	m.view.Height = contentHeight
 
 	header := renderHeader(bodyWidth, m.version)
-	status := renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View())
+	status := renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text)
 	panel := panelStyle.Width(bodyWidth - 2).Height(contentHeight).Render(m.view.View())
 	input := renderInput(bodyWidth, m.input.View())
-	footer := mutedStyle.Render(" /help  /doctor  /setup  /update  /quit   •   enter to run   •   esc to exit")
+	footer := mutedStyle.Render(m.text.Footer)
 	return lipgloss.JoinVertical(lipgloss.Left, header, status, panel, input, footer)
 }
 
@@ -192,71 +198,67 @@ func runPrompt(query string) (string, error) {
 	return strings.TrimSpace(output), nil
 }
 
-func welcomeContent(version string) string {
+func welcomeContent(version string, text uiText) string {
+	lines := []string{
+		titleStyle.Render(text.Welcome[0]),
+		text.Welcome[1],
+		text.Welcome[2],
+		"",
+		titleStyle.Render(text.Welcome[3]),
+	}
+	for _, item := range text.Welcome[4:10] {
+		parts := strings.SplitN(item, "|", 2)
+		lines = append(lines, chipStyle.Render(parts[0])+"  "+parts[1])
+	}
+	lines = append(lines,
+		"",
+		titleStyle.Render(text.Welcome[10]),
+		text.Welcome[11],
+		text.Welcome[12],
+		text.Welcome[13],
+		"",
+		titleStyle.Render(text.Welcome[14]),
+		text.Welcome[15],
+		"",
+		mutedStyle.Render(text.Welcome[16]+" Version "+version),
+	)
+	return strings.Join(lines, "\n")
+}
+
+func researchingContent(query string, text uiText) string {
+	lines := text.Research(query)
 	return strings.Join([]string{
-		titleStyle.Render("Investment research cockpit"),
-		"Ask one question. Gacha routes it through the right research workflow.",
-		"Every workflow requires current web or market data before analysis.",
+		titleStyle.Render(lines[0]),
+		lines[1],
+		lines[2],
 		"",
-		titleStyle.Render("Workflow rail"),
-		chipStyle.Render("Discover") + "  find opportunities when you do not know what to buy",
-		chipStyle.Render("Select") + "    rank concrete assets inside a sector or theme",
-		chipStyle.Render("Entry") + "     decide whether the current price is attractive",
-		chipStyle.Render("Exit") + "      define trim, sell, stop-loss, and thesis-break zones",
-		chipStyle.Render("Portfolio") + " review concentration, exposure, and rebalancing risks",
-		chipStyle.Render("Journal") + "   record thesis, decision rules, and postmortems",
+		titleStyle.Render(lines[3]),
+		lines[4],
+		lines[5],
+		lines[6],
+		lines[7],
+		lines[8],
 		"",
-		titleStyle.Render("Try"),
-		"NVDA 지금 사도 될까?",
-		"What should I invest in for the next 6 to 12 months?",
-		"I own TSLA. When should I trim, sell, or stop out?",
-		"",
-		titleStyle.Render("Report contract"),
-		"Data freshness • Sources • Thesis • Valuation • Risks • Devil's Advocate • Action conditions",
-		"",
-		mutedStyle.Render("No fresh data, no recommendation. Trading is disabled. Version " + version),
+		mutedStyle.Render(lines[9]),
 	}, "\n")
 }
 
-func researchingContent(query string) string {
-	return strings.Join([]string{
-		titleStyle.Render("Research run"),
-		"Query:",
-		"  " + query,
-		"",
-		titleStyle.Render("Pipeline"),
-		"1. Classify request: discover, select, entry, exit, portfolio, or journal",
-		"2. Require current web or market data",
-		"3. Build thesis, valuation, and scenario analysis",
-		"4. Run risk review and Devil's Advocate",
-		"5. Produce action conditions and provenance",
-		"",
-		mutedStyle.Render("Waiting for the local AI runtime..."),
-	}, "\n")
+func helpContent(text uiText) string {
+	lines := append([]string(nil), text.HelpLines...)
+	lines[0] = titleStyle.Render(lines[0])
+	return strings.Join(lines, "\n")
 }
 
-func helpContent() string {
-	return strings.Join([]string{
-		titleStyle.Render("Command palette"),
-		"/home     return to the dashboard",
-		"/help     show this command palette",
-		"/doctor   inspect OpenCode runtime and provider auth",
-		"/setup    show setup instructions",
-		"/update   show update instructions",
-		"/quit     exit",
-	}, "\n")
-}
-
-func doctorContent() string {
-	status := "missing"
+func doctorContent(text uiText) string {
+	status := text.Missing
 	if hasRunnableCommand(openCodeCommand) {
-		status = "ready"
+		status = text.Ready
 		if !hasOpenCodeAuth() {
-			status = "login required"
+			status = text.LoginRequired
 		}
 	}
 	lines := []string{
-		titleStyle.Render("Runtime"),
+		titleStyle.Render(text.RuntimeTitle),
 		fmt.Sprintf("OpenCode: %s", status),
 		fmt.Sprintf("Command:  %s", openCodeCommand),
 		fmt.Sprintf("Auth:     %s", openCodeAuthPath()),
@@ -270,25 +272,25 @@ func doctorContent() string {
 			lines = append(lines, "", titleStyle.Render("Providers"), strings.TrimSpace(stripANSI(providers)))
 		}
 	} else {
-		lines = append(lines, "", "Run `gch setup` outside this screen to connect ChatGPT, Copilot, Gemini, or an API provider.")
+		lines = append(lines, "", text.RunSetupHint)
 	}
 	return strings.Join(lines, "\n")
 }
 
-func setupContent() string {
+func setupContent(text uiText) string {
 	return strings.Join([]string{
-		titleStyle.Render("Setup"),
-		"Run this command in your shell:",
+		titleStyle.Render(text.SetupLines[0]),
+		text.SetupLines[1],
 		"",
-		"  gch setup",
+		text.SetupLines[2],
 		"",
-		"That flow installs OpenCode if needed and starts provider login.",
-		"Interactive provider login is intentionally handled outside this screen so your terminal can hand control to OpenCode safely.",
+		text.SetupLines[3],
+		text.SetupLines[4],
 	}, "\n")
 }
 
-func errorContent(err error, output string) string {
-	parts := []string{titleStyle.Render("OpenCode failed"), err.Error()}
+func errorContent(err error, output string, text uiText) string {
+	parts := []string{titleStyle.Render(text.ErrorTitle), err.Error()}
 	if strings.TrimSpace(output) != "" {
 		parts = append(parts, "", strings.TrimSpace(output))
 	}
@@ -302,17 +304,17 @@ func renderHeader(width int, version string) string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, left, mutedStyle.Render(line), right)
 }
 
-func renderStatus(width int, status string, runtime string, mode string, busy bool, spin string) string {
+func renderStatus(width int, status string, runtime string, mode string, busy bool, spin string, text uiText) string {
 	indicator := "●"
 	if busy {
 		indicator = spin
 	}
 	items := []string{
 		accentStyle.Render(indicator + " " + status),
-		"Mode " + mode,
-		"Runtime " + runtime,
-		"Fresh data required",
-		"No trading",
+		text.StatusMode + mode,
+		text.StatusRuntime + runtime,
+		text.StatusFreshData,
+		text.StatusNoTrading,
 	}
 	return statusStyle.Width(width - 2).Render(strings.Join(items, "   "))
 }

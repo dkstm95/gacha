@@ -44,6 +44,38 @@ func TestBuildPromptAutoClassifiesAndRequiresFreshData(t *testing.T) {
 	}
 }
 
+func TestBuildPromptUsesKoreanForKoreanQuestion(t *testing.T) {
+	prompt, err := buildPrompt([]string{"NVDA", "지금", "사도", "될까?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(prompt, "Write the final report in Korean") {
+		t.Fatalf("prompt did not request Korean response")
+	}
+}
+
+func TestDetectLanguageFromLocale(t *testing.T) {
+	lang := detectLanguageFromEnv(func(key string) string {
+		if key == "LANG" {
+			return "ko_KR.UTF-8"
+		}
+		return ""
+	})
+	if lang != languageKorean {
+		t.Fatalf("unexpected language: %s", lang)
+	}
+}
+
+func TestResponseLanguageFallsBackToDetectedLocale(t *testing.T) {
+	t.Setenv("LANG", "en_US.UTF-8")
+	if got := responseLanguage("Should I buy NVDA now?"); got != languageEnglish {
+		t.Fatalf("unexpected language: %s", got)
+	}
+	if got := responseLanguage("NVDA 지금 사도 될까?"); got != languageKorean {
+		t.Fatalf("unexpected language: %s", got)
+	}
+}
+
 func TestShellQuote(t *testing.T) {
 	got := shellQuote("can't")
 	if got != "'can'\\''t'" {

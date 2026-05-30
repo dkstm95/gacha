@@ -102,6 +102,12 @@ Or create `~/.config/gacha/config.json`:
 
 Supported values are `auto`, `opencode-default`, or a custom `provider/model`.
 
+## Language
+
+`gacha` detects your terminal language from `GACHA_LANG`, `LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, or `LANG`.
+
+If the language is Korean, the interactive UI is shown in Korean. Reports are also requested in the detected language. If your question contains Korean text, Gacha asks the AI to answer in Korean even when your terminal locale is English.
+
 `gacha` uses this route:
 
 ```text

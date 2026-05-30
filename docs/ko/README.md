@@ -102,6 +102,12 @@ GACHA_OPENCODE_MODEL=provider/model gch
 
 지원 값은 `auto`, `opencode-default`, 직접 지정한 `provider/model`입니다.
 
+## 언어
+
+`gacha`는 `GACHA_LANG`, `LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, `LANG` 값을 보고 터미널 언어를 감지합니다.
+
+언어가 한국어이면 인터랙티브 UI를 한국어로 표시합니다. 리포트도 감지된 언어로 작성하도록 AI에 요청합니다. 질문에 한국어가 포함되어 있으면 터미널 locale이 영어여도 한국어 답변을 요청합니다.
+
 `gacha`는 다음 경로를 사용합니다.
 
 ```text

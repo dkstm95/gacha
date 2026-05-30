@@ -67,16 +67,19 @@ Classify the user's request into discover, select, entry, exit, portfolio, or jo
 	if query == "" {
 		query = "(No additional user request supplied.)"
 	}
+	lang := responseLanguage(query)
 	sections := []string{
 		strings.TrimSpace(system),
 		strings.TrimSpace(workflow),
 		"Workflow library:\n" + strings.TrimSpace(workflows),
 		"User request:\n" + query,
+		"Response language:\nWrite the final report in " + string(lang) + ". Keep source names, ticker symbols, numbers, and URLs unchanged.",
 		"Report template:\n" + strings.TrimSpace(template),
 		`Hard requirements:
 - Always use current web search or current market-data tools before analysis, even if the user does not ask for latest/current/recent data.
 - If fresh data cannot be verified, do not make a recommendation.
 - Include data freshness, source links, risks, Devil's Advocate, action conditions, monitoring plan, and provenance.
+- Write user-facing explanations, headings, and action conditions in the response language above.
 - Do not execute trades. The final decision remains with the user.`,
 	}
 	return strings.Join(sections, "\n\n"), nil

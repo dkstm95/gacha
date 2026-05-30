@@ -45,3 +45,13 @@ func routeLabel() string {
 	}
 	return "Copy/paste prompt"
 }
+
+func routeLabelFor(lang language) string {
+	if lang != languageKorean {
+		return routeLabel()
+	}
+	if hasRunnableCommand(openCodeCommand) && hasOpenCodeAuth() {
+		return "OpenCode 런타임"
+	}
+	return "복사/붙여넣기 프롬프트"
+}
