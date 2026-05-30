@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestBuildPromptIncludesWorkflowAndRequirements(t *testing.T) {
@@ -332,6 +334,92 @@ func TestOnboardingContentReflectsSetupState(t *testing.T) {
 	}
 	if got := onboardingContent(text, 80, setupProviderMissing); !strings.Contains(stripANSI(got), "no AI provider") {
 		t.Fatalf("unexpected provider onboarding: %q", got)
+	}
+}
+
+func TestWelcomeContentIsDecisionDesk(t *testing.T) {
+	got := stripANSI(welcomeContent("0.1.25", englishText(), 80, 16))
+	for _, expected := range []string{
+		"What are you deciding?",
+		"Decision desk",
+		"Buy Check",
+		"Idea Scout",
+		"Holding Review",
+		"You'll get",
+	} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("welcome content missing %q:\n%s", expected, got)
+		}
+	}
+	for _, unwanted := range []string{
+		"Ask -> Fresh data",
+		"[Fresh data required]",
+		"[No trading]",
+	} {
+		if strings.Contains(got, unwanted) {
+			t.Fatalf("welcome content kept decorative element %q:\n%s", unwanted, got)
+		}
+	}
+}
+
+func TestWelcomeContentFitsCommonTerminalSizes(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		width  int
+		height int
+		text   uiText
+	}{
+		{name: "quarter english", width: 80, height: 16, text: englishText()},
+		{name: "half english", width: 170, height: 24, text: englishText()},
+		{name: "quarter korean", width: 80, height: 16, text: koreanText()},
+		{name: "half korean", width: 170, height: 24, text: koreanText()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := stripANSI(welcomeContent("0.1.25", tc.text, tc.width, tc.height))
+			for _, line := range strings.Split(got, "\n") {
+				if lipgloss.Width(line) > tc.width {
+					t.Fatalf("line width %d exceeds %d: %q\n%s", lipgloss.Width(line), tc.width, line, got)
+				}
+			}
+		})
+	}
+}
+
+func TestTUIViewFitsCommonTerminalSizes(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		width  int
+		height int
+	}{
+		{name: "quarter", width: 100, height: 28},
+		{name: "half", width: 170, height: 34},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			model := newTUIModel("0.1.25")
+			model.width = tc.width
+			model.height = tc.height
+			model.view.Width = max(30, tc.width-8)
+			model.view.Height = max(6, tc.height-8)
+			got := stripANSI(model.View())
+			for _, line := range strings.Split(got, "\n") {
+				if lipgloss.Width(line) > tc.width {
+					t.Fatalf("line width %d exceeds %d: %q\n%s", lipgloss.Width(line), tc.width, line, got)
+				}
+			}
+			if strings.Contains(got, "Checks fresh data") {
+				t.Fatalf("status bar repeated safety copy:\n%s", got)
+			}
+		})
+	}
+}
+
+func TestReportActionsExposeNextChoices(t *testing.T) {
+	got := stripANSI(renderReportActions(englishText()))
+	normalized := strings.Join(strings.Fields(got), " ")
+	for _, expected := range []string{"Next", "d detailed analysis", "y save", "n skip", "ask a new question"} {
+		if !strings.Contains(normalized, expected) {
+			t.Fatalf("report actions missing %q:\n%s", expected, got)
+		}
 	}
 }
 

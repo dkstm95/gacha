@@ -14,6 +14,14 @@ Before the final response, review the changed diff for:
 
 Keep follow-up refactors small and directly related to the touched area. Prefer deleting, moving, or simplifying code over adding new abstractions. Do not add features unless the user explicitly asks.
 
+## Product UI Philosophy
+
+For UI work, follow the product-level guidance in:
+
+```text
+docs/product-principles.md
+```
+
 ## Verification
 
 Run the standard project check after code changes:

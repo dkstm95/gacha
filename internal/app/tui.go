@@ -119,7 +119,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status = m.text.Complete
 			if msg.completed && strings.TrimSpace(msg.output) != "" {
 				m.save = &pendingSave{query: msg.query, report: strings.TrimSpace(msg.output)}
-				m.view.SetContent(msg.output + "\n\n---\n" + m.text.SavePrompt)
+				m.view.SetContent(msg.output + "\n\n" + renderReportActions(m.text))
 			} else {
 				m.save = nil
 				m.view.SetContent(msg.output)
@@ -396,43 +396,53 @@ func runDetailedPrompt(query string, basicReport string) promptRunResult {
 func welcomeContent(version string, text uiText, width int, height int) string {
 	compact := width < 72 || height < 14
 	wide := width >= 104 && height >= 16
-	examples := text.Welcome[3:6]
-	promise := text.Welcome[7:12]
+	actions := text.HomeActions
+	outcomes := text.HomeOutcomes
 	if compact {
-		examples = examples[:min(2, len(examples))]
-		promise = promise[:min(4, len(promise))]
+		actions = actions[:min(3, len(actions))]
+		outcomes = outcomes[:min(3, len(outcomes))]
 	}
 
-	header := lipgloss.JoinVertical(lipgloss.Left,
-		heroStyle.Render(text.Welcome[0]),
-		mutedStyle.Render(wrapLine(text.Welcome[1], width)),
-	)
-	exampleBlock := renderHomeSection(text.Welcome[2], examples, ">", width)
-	promiseBlock := renderHomeSection(text.Welcome[6], promise, "+", width)
+	header := renderHomeHero(text, width, compact)
+	actionBlock := renderHomeActions(text.HomeActionsTitle, actions, width)
+	outcomeBlock := renderHomeSection(text.HomeOutcomesTitle, outcomes, "•", width)
 	if wide {
-		columnWidth := max(28, (width-4)/2)
-		exampleBlock = renderHomeSection(text.Welcome[2], examples, ">", columnWidth)
-		promiseBlock = renderHomeSection(text.Welcome[6], promise, "+", columnWidth)
+		leftWidth := max(38, (width*54)/100)
+		rightWidth := max(30, width-leftWidth-4)
+		actionBlock = renderHomeActions(text.HomeActionsTitle, actions, leftWidth)
+		outcomeBlock = renderHomeSection(text.HomeOutcomesTitle, outcomes, "•", rightWidth)
 	}
 
-	blocks := []string{header, ""}
+	blocks := []string{header}
 	if onboarding := onboardingContent(text, width, setupReadiness()); onboarding != "" {
-		blocks = append(blocks, onboarding, "")
+		blocks = append(blocks, "", onboarding)
 	}
 	if wide {
-		blocks = append(blocks, lipgloss.JoinHorizontal(lipgloss.Top,
-			lipgloss.NewStyle().Width((width-4)/2).Render(exampleBlock),
+		leftWidth := max(38, (width*54)/100)
+		rightWidth := max(30, width-leftWidth-4)
+		blocks = append(blocks, "", lipgloss.JoinHorizontal(lipgloss.Top,
+			lipgloss.NewStyle().Width(leftWidth).Render(actionBlock),
 			"    ",
-			lipgloss.NewStyle().Width((width-4)/2).Render(promiseBlock),
+			lipgloss.NewStyle().Width(rightWidth).Render(outcomeBlock),
 		))
 	} else {
-		blocks = append(blocks, exampleBlock, "", promiseBlock)
+		blocks = append(blocks, "", actionBlock, "", outcomeBlock)
 	}
 	if !compact {
-		blocks = append(blocks, "", mutedStyle.Render(text.Welcome[12]))
+		blocks = append(blocks, "", renderHomeNote(text.HomeNote, width))
 	}
 	blocks = append(blocks, "", faintStyle.Render("v"+version))
 	return strings.Join(blocks, "\n")
+}
+
+func renderHomeHero(text uiText, width int, compact bool) string {
+	title := heroStyle.Render(text.HomeTitle)
+	bodyWidth := width
+	if !compact {
+		bodyWidth = max(40, width-6)
+	}
+	subtitle := mutedStyle.Render(wrapLine(text.HomeSubtitle, bodyWidth))
+	return lipgloss.JoinVertical(lipgloss.Left, title, subtitle)
 }
 
 func onboardingContent(text uiText, width int, state setupState) string {
@@ -576,6 +586,18 @@ func errorContent(err error, output string, text uiText) string {
 	return strings.Join(parts, "\n")
 }
 
+func renderReportActions(text uiText) string {
+	var parts []string
+	for _, action := range text.ReportActions {
+		parts = append(parts, keyStyle.Render(action.Key)+" "+action.Label)
+	}
+	parts = append(parts, mutedStyle.Render(text.NewQuestionAction))
+	return strings.Join([]string{
+		sectionStyle.Render(text.ReportActionsTitle),
+		strings.Join(parts, "   "),
+	}, "\n")
+}
+
 func renderHeader(width int, version string) string {
 	left := brandStyle.Render(" GACHA ")
 	right := mutedStyle.Render("v" + version)
@@ -591,7 +613,10 @@ func renderStatus(width int, status string, runtime string, mode string, busy bo
 	if busy {
 		indicator = spin
 	}
-	items := []string{accentStyle.Render(indicator + " " + status), text.StatusFreshData, text.StatusNoTrading}
+	items := []string{accentStyle.Render(indicator + " " + status), mutedStyle.Render(text.StatusMode + mode)}
+	if width >= 92 {
+		items = append(items, mutedStyle.Render(text.StatusRuntime+runtime))
+	}
 	return statusStyle.Width(width - 2).Render(strings.Join(items, "   "))
 }
 
@@ -610,9 +635,29 @@ func renderFooter(width int, text uiText) string {
 func renderHomeSection(title string, items []string, marker string, width int) string {
 	lines := []string{sectionStyle.Render(title)}
 	for _, item := range items {
-		lines = append(lines, bulletStyle.Render(marker)+" "+wrapLine(item, max(16, width-3)))
+		wrapped := wrapIndented(item, max(16, width-4), "  ")
+		lines = append(lines, bulletStyle.Render(marker)+" "+wrapped)
 	}
 	return strings.Join(lines, "\n")
+}
+
+func renderHomeActions(title string, actions []homeAction, width int) string {
+	lines := []string{sectionStyle.Render(title)}
+	nameWidth := 0
+	for _, action := range actions {
+		nameWidth = max(nameWidth, lipgloss.Width(action.Name))
+	}
+	for _, action := range actions {
+		name := actionNameStyle.Render(padRight(action.Name, nameWidth))
+		promptWidth := max(18, width-nameWidth-4)
+		prompt := wrapIndented(action.Prompt, promptWidth, strings.Repeat(" ", nameWidth+3))
+		lines = append(lines, bulletStyle.Render("›")+" "+name+" "+prompt)
+	}
+	return strings.Join(lines, "\n")
+}
+
+func renderHomeNote(value string, width int) string {
+	return noteStyle.Width(max(24, width-2)).Render(wrapLine(value, max(20, width-6)))
 }
 
 func settingValue(value string) string {
@@ -661,6 +706,23 @@ func wrapLine(value string, width int) string {
 	}
 	lines = append(lines, current)
 	return strings.Join(lines, "\n")
+}
+
+func wrapIndented(value string, width int, indent string) string {
+	wrapped := wrapLine(value, width)
+	lines := strings.Split(wrapped, "\n")
+	for i := 1; i < len(lines); i++ {
+		lines[i] = indent + lines[i]
+	}
+	return strings.Join(lines, "\n")
+}
+
+func padRight(value string, width int) string {
+	padding := width - lipgloss.Width(value)
+	if padding <= 0 {
+		return value
+	}
+	return value + strings.Repeat(" ", padding)
 }
 
 func max(a, b int) int {
@@ -714,9 +776,11 @@ var (
 	warningStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("230")).
 			Bold(true)
-	bulletStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
-	chipStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("238")).Padding(0, 1)
-	statusStyle = lipgloss.NewStyle().
+	bulletStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
+	keyStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("62")).Bold(true).Padding(0, 1)
+	actionNameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("238")).Bold(true).Padding(0, 1)
+	noteStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Border(lipgloss.NormalBorder(), false, false, false, true).BorderForeground(lipgloss.Color("238")).PaddingLeft(1)
+	statusStyle     = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("238")).
 			Padding(0, 1)

@@ -100,7 +100,13 @@ type uiText struct {
 	Researching           string
 	ResearchPhases        []string
 	Footer                string
-	Welcome               []string
+	HomeTitle             string
+	HomeSubtitle          string
+	HomeActionsTitle      string
+	HomeActions           []homeAction
+	HomeOutcomesTitle     string
+	HomeOutcomes          []string
+	HomeNote              string
 	Onboarding            []string
 	Research              func(string) []string
 	HelpLines             []string
@@ -114,15 +120,26 @@ type uiText struct {
 	RunSetupHint          string
 	StatusMode            string
 	StatusRuntime         string
-	StatusFreshData       string
-	StatusNoTrading       string
 	FooterShort           string
 	SavePrompt            string
+	ReportActionsTitle    string
+	ReportActions         []reportChoice
+	NewQuestionAction     string
 	SavedReport           string
 	SkippedSave           string
 	SettingsSaved         string
 	SettingsInvalidModel  string
 	SettingsInvalidLang   string
+}
+
+type homeAction struct {
+	Name   string
+	Prompt string
+}
+
+type reportChoice struct {
+	Key   string
+	Label string
 }
 
 func textFor(lang language) uiText {
@@ -156,23 +173,27 @@ func englishText() uiText {
 			"Reviewing risks",
 			"Writing report",
 		},
-		Footer:      " /help  /doctor  /setup  /update  /quit   •   enter to run   •   esc to exit",
-		FooterShort: " /help  /quit   •   enter run   •   esc exit",
-		Welcome: []string{
-			"What investment decision are you working on?",
-			"Ask in plain language. Gacha checks fresh data and turns it into decision rules.",
-			"Try one",
-			"Should I buy NVDA now?",
-			"What should I invest in for the next 6 to 12 months?",
-			"I own TSLA. When should I trim or sell?",
-			"You'll get",
+		Footer:           " /help  /doctor  /setup  /update  /quit   •   enter to run   •   esc to exit",
+		FooterShort:      " /help  /quit   •   enter run   •   esc exit",
+		HomeTitle:        "What are you deciding?",
+		HomeSubtitle:     "Choose a starting point or ask in plain language.",
+		HomeActionsTitle: "Decision desk",
+		HomeActions: []homeAction{
+			{Name: "Buy Check", Prompt: "Should I buy NVDA now?"},
+			{Name: "Idea Scout", Prompt: "What should I invest in for the next 6 to 12 months?"},
+			{Name: "Holding Review", Prompt: "I own TSLA. Should I trim, hold, or sell?"},
+			{Name: "Exit Plan", Prompt: "Where should I stop out or sell?"},
+			{Name: "Portfolio Check", Prompt: "Is my portfolio too concentrated?"},
+		},
+		HomeOutcomesTitle: "You'll get",
+		HomeOutcomes: []string{
 			"Bottom line",
 			"Decision rules",
 			"Biggest risks",
 			"Checked data",
 			"Optional detailed analysis",
-			"Fresh data is required before recommendations. Gacha never places trades.",
 		},
+		HomeNote: "Fresh data before recommendations. No automatic trading.",
 		Onboarding: []string{
 			"Setup needed",
 			"OpenCode is not installed yet.",
@@ -217,18 +238,23 @@ func englishText() uiText {
 			"2. Connect ChatGPT, Copilot, Gemini, OpenAI API, or another provider.",
 			"3. Return here and ask your first investment question.",
 		},
-		UpdateMessage:        "Run `gacha update` outside the interactive UI to update the binary.",
-		ErrorTitle:           "OpenCode failed",
-		RuntimeTitle:         "Runtime",
-		SettingsTitle:        "Settings",
-		LoginRequired:        "login required",
-		Missing:              "missing",
-		RunSetupHint:         "Run `gch setup` outside this screen to connect ChatGPT, Copilot, Gemini, or an API provider.",
-		StatusMode:           "Mode ",
-		StatusRuntime:        "Runtime ",
-		StatusFreshData:      "Checks fresh data",
-		StatusNoTrading:      "No trades placed",
-		SavePrompt:           "Next: type d for detailed analysis, y to save, n to skip, or ask a new question.",
+		UpdateMessage:      "Run `gacha update` outside the interactive UI to update the binary.",
+		ErrorTitle:         "OpenCode failed",
+		RuntimeTitle:       "Runtime",
+		SettingsTitle:      "Settings",
+		LoginRequired:      "login required",
+		Missing:            "missing",
+		RunSetupHint:       "Run `gch setup` outside this screen to connect ChatGPT, Copilot, Gemini, or an API provider.",
+		StatusMode:         "Mode ",
+		StatusRuntime:      "Runtime ",
+		SavePrompt:         "Next: type d for detailed analysis, y to save, n to skip, or ask a new question.",
+		ReportActionsTitle: "Next",
+		ReportActions: []reportChoice{
+			{Key: "d", Label: "detailed analysis"},
+			{Key: "y", Label: "save"},
+			{Key: "n", Label: "skip"},
+		},
+		NewQuestionAction:    "or ask a new question",
 		SavedReport:          "Saved report:",
 		SkippedSave:          "Report was not saved.",
 		SettingsSaved:        "Settings saved.",
@@ -261,23 +287,27 @@ func koreanText() uiText {
 			"리스크 검토 중",
 			"리포트 작성 중",
 		},
-		Footer:      " /help  /doctor  /setup  /update  /quit   •   enter 실행   •   esc 종료",
-		FooterShort: " /help  /quit   •   enter 실행   •   esc 종료",
-		Welcome: []string{
-			"어떤 투자 결정을 도와드릴까요?",
-			"평소 말처럼 질문하세요. Gacha가 최신 데이터를 확인하고 행동 기준으로 정리합니다.",
-			"바로 물어보기",
-			"NVDA 지금 사도 될까?",
-			"앞으로 6~12개월 관점에서 무엇에 투자하면 좋을까?",
-			"TSLA를 보유 중인데 언제 줄이거나 팔아야 할까?",
-			"받게 되는 답변",
+		Footer:           " /help  /doctor  /setup  /update  /quit   •   enter 실행   •   esc 종료",
+		FooterShort:      " /help  /quit   •   enter 실행   •   esc 종료",
+		HomeTitle:        "어떤 결정을 도와드릴까요?",
+		HomeSubtitle:     "아래에서 시작하거나 평소 말처럼 질문하세요.",
+		HomeActionsTitle: "결정 데스크",
+		HomeActions: []homeAction{
+			{Name: "매수 점검", Prompt: "NVDA 지금 사도 될까?"},
+			{Name: "아이디어 찾기", Prompt: "앞으로 6~12개월 관점에서 무엇에 투자하면 좋을까?"},
+			{Name: "보유 종목 리뷰", Prompt: "TSLA를 보유 중인데 줄일까, 유지할까, 팔까?"},
+			{Name: "매도 기준", Prompt: "어디서 손절하거나 매도해야 할까?"},
+			{Name: "포트폴리오 점검", Prompt: "내 포트폴리오가 너무 집중되어 있을까?"},
+		},
+		HomeOutcomesTitle: "받게 되는 답변",
+		HomeOutcomes: []string{
 			"쉬운 결론",
 			"행동 기준",
 			"가장 큰 리스크",
 			"확인한 데이터",
 			"선택 상세 분석",
-			"최신 데이터가 확인되어야 추천합니다. Gacha는 거래를 실행하지 않습니다.",
 		},
+		HomeNote: "추천 전 최신 데이터를 확인합니다. 거래는 실행하지 않습니다.",
 		Onboarding: []string{
 			"설정 필요",
 			"OpenCode가 아직 설치되어 있지 않습니다.",
@@ -322,18 +352,23 @@ func koreanText() uiText {
 			"2. ChatGPT, Copilot, Gemini, OpenAI API 또는 다른 provider를 연결합니다.",
 			"3. 다시 돌아와 첫 투자 질문을 입력합니다.",
 		},
-		UpdateMessage:        "바이너리를 업데이트하려면 인터랙티브 UI 밖에서 `gacha update`를 실행하세요.",
-		ErrorTitle:           "OpenCode 실행 실패",
-		RuntimeTitle:         "런타임",
-		SettingsTitle:        "설정",
-		LoginRequired:        "로그인 필요",
-		Missing:              "없음",
-		RunSetupHint:         "ChatGPT, Copilot, Gemini 또는 API provider를 연결하려면 이 화면 밖에서 `gch setup`을 실행하세요.",
-		StatusMode:           "모드 ",
-		StatusRuntime:        "런타임 ",
-		StatusFreshData:      "최신 데이터 확인",
-		StatusNoTrading:      "거래 실행 안 함",
-		SavePrompt:           "다음: d=상세 분석, y=저장, n=건너뛰기, 또는 새 질문을 입력하세요.",
+		UpdateMessage:      "바이너리를 업데이트하려면 인터랙티브 UI 밖에서 `gacha update`를 실행하세요.",
+		ErrorTitle:         "OpenCode 실행 실패",
+		RuntimeTitle:       "런타임",
+		SettingsTitle:      "설정",
+		LoginRequired:      "로그인 필요",
+		Missing:            "없음",
+		RunSetupHint:       "ChatGPT, Copilot, Gemini 또는 API provider를 연결하려면 이 화면 밖에서 `gch setup`을 실행하세요.",
+		StatusMode:         "모드 ",
+		StatusRuntime:      "런타임 ",
+		SavePrompt:         "다음: d=상세 분석, y=저장, n=건너뛰기, 또는 새 질문을 입력하세요.",
+		ReportActionsTitle: "다음",
+		ReportActions: []reportChoice{
+			{Key: "d", Label: "상세 분석"},
+			{Key: "y", Label: "저장"},
+			{Key: "n", Label: "건너뛰기"},
+		},
+		NewQuestionAction:    "또는 새 질문 입력",
 		SavedReport:          "리포트 저장:",
 		SkippedSave:          "리포트를 저장하지 않았습니다.",
 		SettingsSaved:        "설정을 저장했습니다.",

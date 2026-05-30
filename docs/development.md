@@ -15,8 +15,8 @@ ln -sf gacha gch
 ## Release
 
 ```bash
-VERSION=0.1.24 sh scripts/build-release.sh
-gh release create v0.1.24 dist/*.tar.gz dist/checksums.txt --title "v0.1.24"
+VERSION=0.1.25 sh scripts/build-release.sh
+gh release create v0.1.25 dist/*.tar.gz dist/checksums.txt --title "v0.1.25"
 ```
 
 GitHub Actions templates are available in:
