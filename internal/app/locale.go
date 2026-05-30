@@ -14,6 +14,14 @@ const (
 )
 
 func detectLanguage() language {
+	if lang, ok := languageFromSetting(os.Getenv("GACHA_LANG")); ok {
+		return lang
+	}
+	if config, err := loadGachaConfig(); err == nil {
+		if lang, ok := languageFromSetting(config.Language); ok {
+			return lang
+		}
+	}
 	return detectLanguageFromEnv(os.Getenv)
 }
 
@@ -31,6 +39,32 @@ func detectLanguageFromEnv(getenv func(string) string) language {
 		}
 	}
 	return languageEnglish
+}
+
+func languageFromSetting(value string) (language, bool) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case languageSettingKorean, "kr", "kor", "korean", "한국어":
+		return languageKorean, true
+	case languageSettingEnglish, "eng", "english":
+		return languageEnglish, true
+	case "", languageSettingAuto:
+		return "", false
+	default:
+		return "", false
+	}
+}
+
+func normalizeLanguageSetting(value string) (string, bool) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", languageSettingAuto:
+		return languageSettingAuto, true
+	case languageSettingEnglish, "eng", "english":
+		return languageSettingEnglish, true
+	case languageSettingKorean, "kr", "kor", "korean", "한국어":
+		return languageSettingKorean, true
+	default:
+		return "", false
+	}
 }
 
 func responseLanguage(query string) language {
@@ -67,12 +101,14 @@ type uiText struct {
 	ResearchPhases        []string
 	Footer                string
 	Welcome               []string
+	Onboarding            []string
 	Research              func(string) []string
 	HelpLines             []string
 	SetupLines            []string
 	UpdateMessage         string
 	ErrorTitle            string
 	RuntimeTitle          string
+	SettingsTitle         string
 	LoginRequired         string
 	Missing               string
 	RunSetupHint          string
@@ -84,6 +120,9 @@ type uiText struct {
 	SavePrompt            string
 	SavedReport           string
 	SkippedSave           string
+	SettingsSaved         string
+	SettingsInvalidModel  string
+	SettingsInvalidLang   string
 }
 
 func textFor(lang language) uiText {
@@ -134,6 +173,16 @@ func englishText() uiText {
 			"Optional detailed analysis",
 			"Fresh data is required before recommendations. Gacha never places trades.",
 		},
+		Onboarding: []string{
+			"Setup needed",
+			"OpenCode is not installed yet.",
+			"Run `gch setup`, connect a provider, then ask your first question.",
+			"Provider login needed",
+			"OpenCode is installed, but no AI provider is connected yet.",
+			"Run `gch setup`, finish provider login, then come back here.",
+			"Ready to research",
+			"Ask a question below. Gacha will check current data before making a recommendation.",
+		},
 		Research: func(query string) []string {
 			return []string{
 				"Research run",
@@ -152,6 +201,9 @@ func englishText() uiText {
 			"Command palette",
 			"/home     return to the dashboard",
 			"/help     show this command palette",
+			"/settings show model and language settings",
+			"/model    set model: /model auto, /model opencode-default, or /model provider/model",
+			"/language set UI/report language: /language auto, /language en, /language ko",
 			"/doctor   inspect OpenCode runtime and provider auth",
 			"/setup    show setup instructions",
 			"/update   show update instructions",
@@ -159,24 +211,29 @@ func englishText() uiText {
 		},
 		SetupLines: []string{
 			"Setup",
-			"Run this command in your shell:",
+			"Use this one-time setup flow:",
 			"  gch setup",
-			"That flow installs OpenCode if needed and starts provider login.",
-			"Interactive provider login is intentionally handled outside this screen so your terminal can hand control to OpenCode safely.",
+			"1. Install OpenCode if it is missing.",
+			"2. Connect ChatGPT, Copilot, Gemini, OpenAI API, or another provider.",
+			"3. Return here and ask your first investment question.",
 		},
-		UpdateMessage:   "Run `gacha update` outside the interactive UI to update the binary.",
-		ErrorTitle:      "OpenCode failed",
-		RuntimeTitle:    "Runtime",
-		LoginRequired:   "login required",
-		Missing:         "missing",
-		RunSetupHint:    "Run `gch setup` outside this screen to connect ChatGPT, Copilot, Gemini, or an API provider.",
-		StatusMode:      "Mode ",
-		StatusRuntime:   "Runtime ",
-		StatusFreshData: "Checks fresh data",
-		StatusNoTrading: "No trades placed",
-		SavePrompt:      "Next: type d for detailed analysis, y to save, n to skip, or ask a new question.",
-		SavedReport:     "Saved report:",
-		SkippedSave:     "Report was not saved.",
+		UpdateMessage:        "Run `gacha update` outside the interactive UI to update the binary.",
+		ErrorTitle:           "OpenCode failed",
+		RuntimeTitle:         "Runtime",
+		SettingsTitle:        "Settings",
+		LoginRequired:        "login required",
+		Missing:              "missing",
+		RunSetupHint:         "Run `gch setup` outside this screen to connect ChatGPT, Copilot, Gemini, or an API provider.",
+		StatusMode:           "Mode ",
+		StatusRuntime:        "Runtime ",
+		StatusFreshData:      "Checks fresh data",
+		StatusNoTrading:      "No trades placed",
+		SavePrompt:           "Next: type d for detailed analysis, y to save, n to skip, or ask a new question.",
+		SavedReport:          "Saved report:",
+		SkippedSave:          "Report was not saved.",
+		SettingsSaved:        "Settings saved.",
+		SettingsInvalidModel: "Use `/model auto`, `/model opencode-default`, or `/model provider/model`.",
+		SettingsInvalidLang:  "Use `/language auto`, `/language en`, or `/language ko`.",
 	}
 }
 
@@ -221,6 +278,16 @@ func koreanText() uiText {
 			"선택 상세 분석",
 			"최신 데이터가 확인되어야 추천합니다. Gacha는 거래를 실행하지 않습니다.",
 		},
+		Onboarding: []string{
+			"설정 필요",
+			"OpenCode가 아직 설치되어 있지 않습니다.",
+			"`gch setup`을 실행해 provider를 연결한 뒤 첫 질문을 입력하세요.",
+			"provider 로그인 필요",
+			"OpenCode는 설치되어 있지만 AI provider가 아직 연결되지 않았습니다.",
+			"`gch setup`에서 provider 로그인을 마친 뒤 돌아오세요.",
+			"리서치 준비 완료",
+			"아래에 질문을 입력하세요. Gacha는 추천 전에 최신 데이터를 확인합니다.",
+		},
 		Research: func(query string) []string {
 			return []string{
 				"리서치 실행",
@@ -239,6 +306,9 @@ func koreanText() uiText {
 			"명령 팔레트",
 			"/home     대시보드로 돌아가기",
 			"/help     명령 팔레트 보기",
+			"/settings 모델과 언어 설정 보기",
+			"/model    모델 설정: /model auto, /model opencode-default, /model provider/model",
+			"/language UI/리포트 언어: /language auto, /language en, /language ko",
 			"/doctor   OpenCode 런타임과 provider 인증 점검",
 			"/setup    설정 안내 보기",
 			"/update   업데이트 안내 보기",
@@ -246,23 +316,28 @@ func koreanText() uiText {
 		},
 		SetupLines: []string{
 			"설정",
-			"셸에서 다음 명령을 실행하세요:",
+			"처음 한 번 다음 설정 흐름을 실행하세요:",
 			"  gch setup",
-			"필요하면 OpenCode를 설치하고 provider 로그인을 시작합니다.",
-			"provider 로그인은 터미널 제어권을 OpenCode에 안전하게 넘기기 위해 이 화면 밖에서 처리합니다.",
+			"1. OpenCode가 없으면 설치합니다.",
+			"2. ChatGPT, Copilot, Gemini, OpenAI API 또는 다른 provider를 연결합니다.",
+			"3. 다시 돌아와 첫 투자 질문을 입력합니다.",
 		},
-		UpdateMessage:   "바이너리를 업데이트하려면 인터랙티브 UI 밖에서 `gacha update`를 실행하세요.",
-		ErrorTitle:      "OpenCode 실행 실패",
-		RuntimeTitle:    "런타임",
-		LoginRequired:   "로그인 필요",
-		Missing:         "없음",
-		RunSetupHint:    "ChatGPT, Copilot, Gemini 또는 API provider를 연결하려면 이 화면 밖에서 `gch setup`을 실행하세요.",
-		StatusMode:      "모드 ",
-		StatusRuntime:   "런타임 ",
-		StatusFreshData: "최신 데이터 확인",
-		StatusNoTrading: "거래 실행 안 함",
-		SavePrompt:      "다음: d=상세 분석, y=저장, n=건너뛰기, 또는 새 질문을 입력하세요.",
-		SavedReport:     "리포트 저장:",
-		SkippedSave:     "리포트를 저장하지 않았습니다.",
+		UpdateMessage:        "바이너리를 업데이트하려면 인터랙티브 UI 밖에서 `gacha update`를 실행하세요.",
+		ErrorTitle:           "OpenCode 실행 실패",
+		RuntimeTitle:         "런타임",
+		SettingsTitle:        "설정",
+		LoginRequired:        "로그인 필요",
+		Missing:              "없음",
+		RunSetupHint:         "ChatGPT, Copilot, Gemini 또는 API provider를 연결하려면 이 화면 밖에서 `gch setup`을 실행하세요.",
+		StatusMode:           "모드 ",
+		StatusRuntime:        "런타임 ",
+		StatusFreshData:      "최신 데이터 확인",
+		StatusNoTrading:      "거래 실행 안 함",
+		SavePrompt:           "다음: d=상세 분석, y=저장, n=건너뛰기, 또는 새 질문을 입력하세요.",
+		SavedReport:          "리포트 저장:",
+		SkippedSave:          "리포트를 저장하지 않았습니다.",
+		SettingsSaved:        "설정을 저장했습니다.",
+		SettingsInvalidModel: "`/model auto`, `/model opencode-default`, 또는 `/model provider/model` 형식으로 입력하세요.",
+		SettingsInvalidLang:  "`/language auto`, `/language en`, 또는 `/language ko`를 입력하세요.",
 	}
 }

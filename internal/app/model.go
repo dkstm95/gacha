@@ -19,10 +19,14 @@ import (
 const (
 	modelSettingAuto            = "auto"
 	modelSettingOpenCodeDefault = "opencode-default"
+	languageSettingAuto         = "auto"
+	languageSettingEnglish      = "en"
+	languageSettingKorean       = "ko"
 )
 
 type gachaConfig struct {
-	Model string `json:"model"`
+	Model    string `json:"model"`
+	Language string `json:"language"`
 }
 
 type modelResolution struct {
@@ -310,6 +314,22 @@ func loadGachaConfig() (gachaConfig, error) {
 		return gachaConfig{}, err
 	}
 	return config, nil
+}
+
+func saveGachaConfig(config gachaConfig) error {
+	path := gachaConfigPath()
+	if path == "" {
+		return fmt.Errorf("Gacha config path not available")
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+	data = append(data, '\n')
+	return os.WriteFile(path, data, 0o600)
 }
 
 func gachaConfigPath() string {

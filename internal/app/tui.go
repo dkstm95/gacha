@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -158,6 +159,12 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 		m.view.SetContent(helpContent(m.text))
 		m.view.GotoTop()
 		return m, nil
+	case "/settings", "settings":
+		m.status = m.text.SettingsTitle
+		m.mode = m.text.System
+		m.view.SetContent(settingsContent(m.text))
+		m.view.GotoTop()
+		return m, nil
 	case "/home", "home":
 		m.status = m.text.Ready
 		m.mode = m.text.Auto
@@ -184,6 +191,12 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 		m.view.GotoTop()
 		return m, nil
 	}
+	if strings.HasPrefix(value, "/model ") || strings.HasPrefix(value, "model ") {
+		return m.handleModelSetting(value)
+	}
+	if strings.HasPrefix(value, "/language ") || strings.HasPrefix(value, "language ") || strings.HasPrefix(value, "/lang ") || strings.HasPrefix(value, "lang ") {
+		return m.handleLanguageSetting(value)
+	}
 
 	m.busy = true
 	m.phase = 0
@@ -195,6 +208,57 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	m.mode = m.text.Auto
 	m.view.SetContent(researchingContent(value, m.text))
 	return m, tea.Batch(m.spin.Tick, researchPhaseTick(), runPromptCmd(value))
+}
+
+func (m tuiModel) handleModelSetting(value string) (tea.Model, tea.Cmd) {
+	model := settingValue(value)
+	if !validModelSetting(model) {
+		m.status = m.text.SettingsTitle
+		m.mode = m.text.System
+		m.view.SetContent(m.text.SettingsInvalidModel + "\n\n" + settingsContent(m.text))
+		m.view.GotoTop()
+		return m, nil
+	}
+	config, _ := loadGachaConfig()
+	config.Model = model
+	if err := saveGachaConfig(config); err != nil {
+		m.status = m.text.Fallback
+		m.view.SetContent(errorContent(err, "", m.text))
+		m.view.GotoTop()
+		return m, nil
+	}
+	m.status = m.text.SettingsSaved
+	m.mode = m.text.System
+	m.view.SetContent(m.text.SettingsSaved + "\n\n" + settingsContent(m.text))
+	m.view.GotoTop()
+	return m, nil
+}
+
+func (m tuiModel) handleLanguageSetting(value string) (tea.Model, tea.Cmd) {
+	lang, ok := normalizeLanguageSetting(settingValue(value))
+	if !ok {
+		m.status = m.text.SettingsTitle
+		m.mode = m.text.System
+		m.view.SetContent(m.text.SettingsInvalidLang + "\n\n" + settingsContent(m.text))
+		m.view.GotoTop()
+		return m, nil
+	}
+	config, _ := loadGachaConfig()
+	config.Language = lang
+	if err := saveGachaConfig(config); err != nil {
+		m.status = m.text.Fallback
+		m.view.SetContent(errorContent(err, "", m.text))
+		m.view.GotoTop()
+		return m, nil
+	}
+	m.lang = detectLanguage()
+	m.text = textFor(m.lang)
+	m.input.Placeholder = m.text.InputPlaceholder
+	m.status = m.text.SettingsSaved
+	m.mode = m.text.System
+	m.view.SetContent(m.text.SettingsSaved + "\n\n" + settingsContent(m.text))
+	m.view.GotoTop()
+	return m, nil
 }
 
 func (m tuiModel) handleReportAction(value string) (tea.Model, tea.Cmd) {
@@ -356,6 +420,9 @@ func welcomeContent(version string, text uiText, width int, height int) string {
 	}
 
 	blocks := []string{header, ""}
+	if onboarding := onboardingContent(text, width); onboarding != "" {
+		blocks = append(blocks, onboarding, "")
+	}
 	if wide {
 		blocks = append(blocks, lipgloss.JoinHorizontal(lipgloss.Top,
 			lipgloss.NewStyle().Width((width-4)/2).Render(exampleBlock),
@@ -370,6 +437,45 @@ func welcomeContent(version string, text uiText, width int, height int) string {
 	}
 	blocks = append(blocks, "", faintStyle.Render("v"+version))
 	return strings.Join(blocks, "\n")
+}
+
+func onboardingContent(text uiText, width int) string {
+	state := setupReadiness()
+	if state == setupReady {
+		return ""
+	}
+	titleIndex := 0
+	bodyIndex := 1
+	actionIndex := 2
+	if state == setupProviderMissing {
+		titleIndex = 3
+		bodyIndex = 4
+		actionIndex = 5
+	}
+	lines := []string{
+		warningStyle.Render(text.Onboarding[titleIndex]),
+		wrapLine(text.Onboarding[bodyIndex], max(20, width-4)),
+		mutedStyle.Render(wrapLine(text.Onboarding[actionIndex], max(20, width-4))),
+	}
+	return calloutStyle.Width(max(24, width-2)).Render(strings.Join(lines, "\n"))
+}
+
+type setupState int
+
+const (
+	setupReady setupState = iota
+	setupRuntimeMissing
+	setupProviderMissing
+)
+
+func setupReadiness() setupState {
+	if _, ok := resolveCommand(openCodeCommand); !ok {
+		return setupRuntimeMissing
+	}
+	if !hasOpenCodeAuth() {
+		return setupProviderMissing
+	}
+	return setupReady
 }
 
 func researchingContent(query string, text uiText) string {
@@ -425,7 +531,7 @@ func doctorContent(text uiText) string {
 }
 
 func setupContent(text uiText) string {
-	return strings.Join([]string{
+	lines := []string{
 		titleStyle.Render(text.SetupLines[0]),
 		text.SetupLines[1],
 		"",
@@ -433,7 +539,46 @@ func setupContent(text uiText) string {
 		"",
 		text.SetupLines[3],
 		text.SetupLines[4],
-	}, "\n")
+		text.SetupLines[5],
+	}
+	return strings.Join(lines, "\n")
+}
+
+func settingsContent(text uiText) string {
+	config, err := loadGachaConfig()
+	if err != nil {
+		return strings.Join([]string{titleStyle.Render(text.SettingsTitle), err.Error()}, "\n")
+	}
+	model := strings.TrimSpace(config.Model)
+	if model == "" {
+		model = modelSettingAuto
+	}
+	lang := strings.TrimSpace(config.Language)
+	if lang == "" {
+		lang = languageSettingAuto
+	}
+	lines := []string{
+		titleStyle.Render(text.SettingsTitle),
+		fmt.Sprintf("Config:   %s", gachaConfigPath()),
+		fmt.Sprintf("Model:    %s", configuredModelSummary(model)),
+		fmt.Sprintf("Language: %s", lang),
+		fmt.Sprintf("Active:   %s", detectLanguage()),
+		"",
+		sectionStyle.Render("Commands"),
+		"/model auto",
+		"/model opencode-default",
+		"/model provider/model",
+		"/language auto",
+		"/language en",
+		"/language ko",
+	}
+	if envModel := strings.TrimSpace(os.Getenv("GACHA_OPENCODE_MODEL")); envModel != "" {
+		lines = append(lines, "", mutedStyle.Render("GACHA_OPENCODE_MODEL is currently overriding the model setting."))
+	}
+	if envLang := strings.TrimSpace(os.Getenv("GACHA_LANG")); envLang != "" {
+		lines = append(lines, mutedStyle.Render("GACHA_LANG is currently overriding the language setting."))
+	}
+	return strings.Join(lines, "\n")
 }
 
 func errorContent(err error, output string, text uiText) string {
@@ -481,6 +626,41 @@ func renderHomeSection(title string, items []string, marker string, width int) s
 		lines = append(lines, bulletStyle.Render(marker)+" "+wrapLine(item, max(16, width-3)))
 	}
 	return strings.Join(lines, "\n")
+}
+
+func settingValue(value string) string {
+	fields := strings.Fields(value)
+	if len(fields) < 2 {
+		return ""
+	}
+	return strings.TrimSpace(fields[1])
+}
+
+func validModelSetting(value string) bool {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return false
+	}
+	if strings.EqualFold(value, modelSettingAuto) || strings.EqualFold(value, modelSettingOpenCodeDefault) {
+		return true
+	}
+	return !strings.ContainsAny(value, " \t\n\r") && strings.Contains(value, "/")
+}
+
+func configuredModelSummary(model string) string {
+	if envModel := strings.TrimSpace(os.Getenv("GACHA_OPENCODE_MODEL")); envModel != "" {
+		return envModel + " (from GACHA_OPENCODE_MODEL)"
+	}
+	switch {
+	case model == "":
+		return modelSettingAuto
+	case strings.EqualFold(model, modelSettingAuto):
+		return modelSettingAuto
+	case strings.EqualFold(model, modelSettingOpenCodeDefault):
+		return modelSettingOpenCodeDefault
+	default:
+		return model
+	}
 }
 
 func wrapLine(value string, width int) string {
@@ -553,8 +733,11 @@ var (
 			Background(lipgloss.Color("62")).
 			Bold(true).
 			Padding(0, 1)
-	mutedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-	faintStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
+	mutedStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	faintStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
+	warningStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("230")).
+			Bold(true)
 	bulletStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
 	chipStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("238")).Padding(0, 1)
 	statusStyle = lipgloss.NewStyle().
@@ -568,5 +751,9 @@ var (
 	inputStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("81")).
+			Padding(0, 1)
+	calloutStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("214")).
 			Padding(0, 1)
 )

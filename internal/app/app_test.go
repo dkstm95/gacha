@@ -177,11 +177,37 @@ func TestDetectLanguageFromLocale(t *testing.T) {
 }
 
 func TestResponseLanguageFallsBackToDetectedLocale(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("LANG", "en_US.UTF-8")
 	if got := responseLanguage("Should I buy NVDA now?"); got != languageEnglish {
 		t.Fatalf("unexpected language: %s", got)
 	}
 	if got := responseLanguage("NVDA 지금 사도 될까?"); got != languageKorean {
+		t.Fatalf("unexpected language: %s", got)
+	}
+}
+
+func TestDetectLanguageUsesConfigOverride(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("GACHA_LANG", "")
+	t.Setenv("LANG", "en_US.UTF-8")
+	if err := saveGachaConfig(gachaConfig{Language: languageSettingKorean}); err != nil {
+		t.Fatal(err)
+	}
+	if got := detectLanguage(); got != languageKorean {
+		t.Fatalf("unexpected language: %s", got)
+	}
+}
+
+func TestGachaLangEnvOverridesConfigLanguage(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("GACHA_LANG", "en")
+	if err := saveGachaConfig(gachaConfig{Language: languageSettingKorean}); err != nil {
+		t.Fatal(err)
+	}
+	if got := detectLanguage(); got != languageEnglish {
 		t.Fatalf("unexpected language: %s", got)
 	}
 }
@@ -238,6 +264,50 @@ func TestResolveOpenCodeModelUsesConfigDefault(t *testing.T) {
 	got := resolveOpenCodeModel()
 	if got.Model != "" || !strings.Contains(got.Reason, "OpenCode default") {
 		t.Fatalf("unexpected model resolution: %#v", got)
+	}
+}
+
+func TestSaveGachaConfigWritesModelAndLanguage(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	want := gachaConfig{Model: "opencode-default", Language: "ko"}
+	if err := saveGachaConfig(want); err != nil {
+		t.Fatal(err)
+	}
+	got, err := loadGachaConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Model != want.Model || got.Language != want.Language {
+		t.Fatalf("unexpected config: %#v", got)
+	}
+}
+
+func TestRunConfigCommandSetsModelAndLanguage(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	if err := runConfigCommand([]string{"set", "model", "opencode-default"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := runConfigCommand([]string{"set", "language", "ko"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := loadGachaConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Model != "opencode-default" || got.Language != "ko" {
+		t.Fatalf("unexpected config: %#v", got)
+	}
+}
+
+func TestRunConfigCommandRejectsInvalidValues(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if err := runConfigCommand([]string{"set", "model", "bad-model"}); err == nil {
+		t.Fatal("expected invalid model error")
+	}
+	if err := runConfigCommand([]string{"set", "language", "fr"}); err == nil {
+		t.Fatal("expected invalid language error")
 	}
 }
 

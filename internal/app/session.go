@@ -50,6 +50,12 @@ func (a *App) startLineSession() error {
 			if err := doctor(); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
+		case "/setup", "setup":
+			if err := ensureRuntime(true); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+		case "/settings", "settings":
+			fmt.Println(settingsContent(text))
 		default:
 			if err := runQuery([]string{input}); err != nil {
 				fmt.Fprintln(os.Stderr, err)

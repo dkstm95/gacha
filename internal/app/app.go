@@ -29,6 +29,11 @@ func (a *App) Run(args []string) error {
 		return ensureRuntime(true)
 	case "update":
 		return a.updateSelf()
+	case "settings":
+		fmt.Println(settingsContent(textFor(detectLanguage())))
+		return nil
+	case "config":
+		return runConfigCommand(args[1:])
 	case "prompt":
 		return printPrompt(args[1:])
 	default:
@@ -44,6 +49,10 @@ Usage:
   gch                                      Open the interactive gacha UI
   gch doctor                               Check the local AI runtime
   gch setup                                Install the runtime and connect an AI provider
+  gch settings                             Show model and language settings
+  gch config get                           Print the current config JSON
+  gch config set model auto                Set model mode or provider/model
+  gch config set language ko               Set language: auto, en, or ko
   gch update                               Update gacha to the latest release
   gch "question"                           Analyze with automatic request classification
 

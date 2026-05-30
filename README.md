@@ -80,6 +80,33 @@ gch doctor
 
 The check shows overall readiness, connected provider status, the model Gacha will ask OpenCode to use, and where reports are saved. The default model mode is `auto`.
 
+To view settings in the app, type:
+
+```text
+/settings
+```
+
+Inside the app, you can set model mode and language:
+
+```text
+/model auto
+/model opencode-default
+/model provider/model
+/language auto
+/language en
+/language ko
+```
+
+For scripts, use non-interactive config commands:
+
+```bash
+gch config get
+gch config set model auto
+gch config set model opencode-default
+gch config set model provider/model
+gch config set language ko
+```
+
 In auto mode, Gacha asks OpenCode for the connected provider's current model list, then chooses a strong research model from that list. For OpenAI, it prefers the newest base frontier model pattern, such as `gpt-N` or `gpt-N.M`, instead of hard-coding a specific model name. It pushes small/fast variants such as `mini`, `nano`, `lite`, `flash`, `fast`, `spark`, and coding-specialized variants behind the frontier base model.
 
 For OpenAI OAuth, the ChatGPT subscription route, Gacha treats `pro` models as lower priority because OpenCode can list models that the current ChatGPT account cannot actually run. If OpenCode still rejects a selected model as unsupported for the ChatGPT account, Gacha retries the next discovered candidate.
@@ -96,7 +123,8 @@ Or create `~/.config/gacha/config.json`:
 
 ```json
 {
-  "model": "auto"
+  "model": "auto",
+  "language": "auto"
 }
 ```
 
@@ -126,6 +154,8 @@ Reports are saved only when you answer yes. Paste-fallback prompts and dry runs 
 
 If the language is Korean, the interactive UI is shown in Korean. Reports are also requested in the detected language. If your question contains Korean text, Gacha asks the AI to answer in Korean even when your terminal locale is English.
 
+Set `"language"` in `~/.config/gacha/config.json` to `auto`, `en`, or `ko` to override the terminal language. `GACHA_LANG` still takes precedence.
+
 `gacha` uses this route:
 
 ```text
@@ -139,6 +169,8 @@ gch setup
 ```
 
 `gch setup` installs the runtime if needed, then starts provider login. You can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another OpenCode-supported provider.
+
+The interactive home screen also shows a setup callout when OpenCode or provider login is missing. After setup, return to `gch` and ask your first investment question.
 
 After setup, `gacha` keeps the investment workflow and results inside the Gacha UI.
 
