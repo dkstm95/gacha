@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-VERSION="${VERSION:-0.1.33}"
+VERSION="${VERSION:-0.1.34}"
 OUT_DIR="${OUT_DIR:-dist}"
 TARGETS="${TARGETS:-darwin/arm64 darwin/amd64 linux/arm64 linux/amd64 windows/amd64 windows/arm64}"
 

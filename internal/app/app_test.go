@@ -496,31 +496,15 @@ func TestTUILanguageAndModelCommandsOpenChoices(t *testing.T) {
 	}
 }
 
-func TestTUISettingAliasShowsSettingsWithoutRunningPrompt(t *testing.T) {
-	model := newTUIModel("0.1.27")
-	next, cmd := model.handleSubmit("/setting")
-	if cmd != nil {
-		t.Fatal("setting alias should not run a prompt command")
-	}
-	updated := next.(tuiModel)
-	if updated.status != updated.text.SettingsTitle {
-		t.Fatalf("unexpected status: %q", updated.status)
-	}
-	got := stripANSI(updated.view.View())
-	if !strings.Contains(got, updated.text.SettingsTitle) {
-		t.Fatalf("settings view missing title:\n%s", got)
-	}
-}
-
 func TestTUIUnknownSlashCommandDoesNotRunPrompt(t *testing.T) {
 	model := newTUIModel("0.1.27")
-	next, cmd := model.handleSubmit("/not-a-command")
+	next, cmd := model.handleSubmit("/setting")
 	if cmd != nil {
 		t.Fatal("unknown slash command should not run a prompt command")
 	}
 	updated := next.(tuiModel)
 	got := stripANSI(updated.view.View())
-	for _, expected := range []string{"Unknown command: /not-a-command", "Command palette"} {
+	for _, expected := range []string{"Unknown command: /setting", "Command palette"} {
 		if !strings.Contains(got, expected) {
 			t.Fatalf("unknown command view missing %q:\n%s", expected, got)
 		}

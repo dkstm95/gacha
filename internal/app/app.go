@@ -50,7 +50,7 @@ func (a *App) Run(args []string) error {
 
 func isSettingsCommand(value string) bool {
 	switch value {
-	case "/setting", "setting", "/settings", "settings":
+	case "/settings", "settings":
 		return true
 	default:
 		return false
