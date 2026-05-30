@@ -19,7 +19,7 @@ Keep follow-up refactors small and directly related to the touched area. Prefer 
 For UI work, follow the product-level guidance in:
 
 ```text
-docs/product-principles.md
+docs/principles.md
 ```
 
 ## Verification

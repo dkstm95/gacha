@@ -15,8 +15,8 @@ ln -sf gacha gch
 ## Release
 
 ```bash
-VERSION=0.1.25 sh scripts/build-release.sh
-gh release create v0.1.25 dist/*.tar.gz dist/checksums.txt --title "v0.1.25"
+VERSION=0.1.26 sh scripts/build-release.sh
+gh release create v0.1.26 dist/*.tar.gz dist/checksums.txt --title "v0.1.26"
 ```
 
 GitHub Actions templates are available in:
@@ -27,10 +27,14 @@ docs/github-actions/
 
 They are kept as templates until the repository token has permission to push workflow files.
 
-## Codex Plugin Assets
+## Agent Assets
 
 ```text
-.agents/plugins/marketplace.json
-plugins/gacha/.codex-plugin/plugin.json
-plugins/gacha/skills/gacha/SKILL.md
+internal/agent/system-prompt.md
+internal/agent/workflows/
+internal/agent/templates/
 ```
+
+These files are embedded into the `gacha` binary with `go:embed`. Treat
+`internal/agent/` as the source of truth for the runtime prompt, workflows, and
+report template.

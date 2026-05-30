@@ -2,17 +2,13 @@ package app
 
 import (
 	"bytes"
-	"embed"
 	"fmt"
 	"io/fs"
 	"os"
 	"strings"
-)
 
-//go:embed assets/plugins/gacha/platforms/generic/system-prompt.md
-//go:embed assets/plugins/gacha/templates/investment-report.md
-//go:embed assets/plugins/gacha/workflows/*.md
-var embedded embed.FS
+	"github.com/dkstm95/gacha/internal/agent"
+)
 
 func printPrompt(query []string) error {
 	prompt, err := buildPrompt(query)
@@ -94,11 +90,11 @@ func handleCompletedReport(query string, output string) error {
 }
 
 func buildPrompt(queryParts []string) (string, error) {
-	system, err := readEmbedded("assets/plugins/gacha/platforms/generic/system-prompt.md")
+	system, err := readEmbedded("system-prompt.md")
 	if err != nil {
 		return "", err
 	}
-	template, err := readEmbedded("assets/plugins/gacha/templates/investment-report.md")
+	template, err := readEmbedded("templates/investment-report.md")
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +157,7 @@ func buildDetailedPrompt(query string, basicReport string) (string, error) {
 }
 
 func readWorkflows() (string, error) {
-	entries, err := fs.ReadDir(embedded, "assets/plugins/gacha/workflows")
+	entries, err := fs.ReadDir(agent.FS, "workflows")
 	if err != nil {
 		return "", err
 	}
@@ -170,7 +166,7 @@ func readWorkflows() (string, error) {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
 			continue
 		}
-		content, err := readEmbedded("assets/plugins/gacha/workflows/" + entry.Name())
+		content, err := readEmbedded("workflows/" + entry.Name())
 		if err != nil {
 			return "", err
 		}
@@ -180,7 +176,7 @@ func readWorkflows() (string, error) {
 }
 
 func readEmbedded(name string) (string, error) {
-	data, err := fs.ReadFile(embedded, name)
+	data, err := fs.ReadFile(agent.FS, name)
 	if err != nil {
 		return "", err
 	}

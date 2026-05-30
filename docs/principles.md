@@ -1,4 +1,4 @@
-# Gacha Product Principles
+# Gacha Principles
 
 ## UI Philosophy
 
