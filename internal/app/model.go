@@ -3,31 +3,16 @@ package app
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 )
-
-const (
-	modelSettingAuto            = "auto"
-	modelSettingOpenCodeDefault = "opencode-default"
-	languageSettingAuto         = "auto"
-	languageSettingEnglish      = "en"
-	languageSettingKorean       = "ko"
-)
-
-type gachaConfig struct {
-	Model    string `json:"model"`
-	Language string `json:"language"`
-}
 
 type modelResolution struct {
 	Model     string
@@ -295,51 +280,4 @@ func modelDescription(resolution modelResolution) string {
 		return fmt.Sprintf("%s (%s; fallback: %s)", resolution.Model, resolution.Reason, strings.Join(resolution.Fallbacks, ", "))
 	}
 	return fmt.Sprintf("%s (%s)", resolution.Model, resolution.Reason)
-}
-
-func loadGachaConfig() (gachaConfig, error) {
-	path := gachaConfigPath()
-	if path == "" {
-		return gachaConfig{}, fmt.Errorf("Gacha config path not available")
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return gachaConfig{}, nil
-		}
-		return gachaConfig{}, err
-	}
-	var config gachaConfig
-	if err := json.Unmarshal(data, &config); err != nil {
-		return gachaConfig{}, err
-	}
-	return config, nil
-}
-
-func saveGachaConfig(config gachaConfig) error {
-	path := gachaConfigPath()
-	if path == "" {
-		return fmt.Errorf("Gacha config path not available")
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return err
-	}
-	data = append(data, '\n')
-	return os.WriteFile(path, data, 0o600)
-}
-
-func gachaConfigPath() string {
-	base := os.Getenv("XDG_CONFIG_HOME")
-	if base == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return ""
-		}
-		base = filepath.Join(home, ".config")
-	}
-	return filepath.Join(base, "gacha", "config.json")
 }

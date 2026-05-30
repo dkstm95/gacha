@@ -212,21 +212,29 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 
 func (m tuiModel) handleModelSetting(value string) (tea.Model, tea.Cmd) {
 	model := settingValue(value)
-	if !validModelSetting(model) {
-		m.status = m.text.SettingsTitle
-		m.mode = m.text.System
-		m.view.SetContent(m.text.SettingsInvalidModel + "\n\n" + settingsContent(m.text))
-		m.view.GotoTop()
-		return m, nil
+	if err := updateConfigModel(model); err != nil {
+		if !validModelSetting(model) {
+			return m.showSettingsError(m.text.SettingsInvalidModel)
+		}
+		return m.showError(err)
 	}
-	config, _ := loadGachaConfig()
-	config.Model = model
-	if err := saveGachaConfig(config); err != nil {
-		m.status = m.text.Fallback
-		m.view.SetContent(errorContent(err, "", m.text))
-		m.view.GotoTop()
-		return m, nil
+	return m.showSettingsSaved()
+}
+
+func (m tuiModel) handleLanguageSetting(value string) (tea.Model, tea.Cmd) {
+	if err := updateConfigLanguage(settingValue(value)); err != nil {
+		if _, ok := normalizeLanguageSetting(settingValue(value)); !ok {
+			return m.showSettingsError(m.text.SettingsInvalidLang)
+		}
+		return m.showError(err)
 	}
+	m.lang = detectLanguage()
+	m.text = textFor(m.lang)
+	m.input.Placeholder = m.text.InputPlaceholder
+	return m.showSettingsSaved()
+}
+
+func (m tuiModel) showSettingsSaved() (tea.Model, tea.Cmd) {
 	m.status = m.text.SettingsSaved
 	m.mode = m.text.System
 	m.view.SetContent(m.text.SettingsSaved + "\n\n" + settingsContent(m.text))
@@ -234,29 +242,17 @@ func (m tuiModel) handleModelSetting(value string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m tuiModel) handleLanguageSetting(value string) (tea.Model, tea.Cmd) {
-	lang, ok := normalizeLanguageSetting(settingValue(value))
-	if !ok {
-		m.status = m.text.SettingsTitle
-		m.mode = m.text.System
-		m.view.SetContent(m.text.SettingsInvalidLang + "\n\n" + settingsContent(m.text))
-		m.view.GotoTop()
-		return m, nil
-	}
-	config, _ := loadGachaConfig()
-	config.Language = lang
-	if err := saveGachaConfig(config); err != nil {
-		m.status = m.text.Fallback
-		m.view.SetContent(errorContent(err, "", m.text))
-		m.view.GotoTop()
-		return m, nil
-	}
-	m.lang = detectLanguage()
-	m.text = textFor(m.lang)
-	m.input.Placeholder = m.text.InputPlaceholder
-	m.status = m.text.SettingsSaved
+func (m tuiModel) showSettingsError(message string) (tea.Model, tea.Cmd) {
+	m.status = m.text.SettingsTitle
 	m.mode = m.text.System
-	m.view.SetContent(m.text.SettingsSaved + "\n\n" + settingsContent(m.text))
+	m.view.SetContent(message + "\n\n" + settingsContent(m.text))
+	m.view.GotoTop()
+	return m, nil
+}
+
+func (m tuiModel) showError(err error) (tea.Model, tea.Cmd) {
+	m.status = m.text.Fallback
+	m.view.SetContent(errorContent(err, "", m.text))
 	m.view.GotoTop()
 	return m, nil
 }
@@ -420,7 +416,7 @@ func welcomeContent(version string, text uiText, width int, height int) string {
 	}
 
 	blocks := []string{header, ""}
-	if onboarding := onboardingContent(text, width); onboarding != "" {
+	if onboarding := onboardingContent(text, width, setupReadiness()); onboarding != "" {
 		blocks = append(blocks, onboarding, "")
 	}
 	if wide {
@@ -439,8 +435,7 @@ func welcomeContent(version string, text uiText, width int, height int) string {
 	return strings.Join(blocks, "\n")
 }
 
-func onboardingContent(text uiText, width int) string {
-	state := setupReadiness()
+func onboardingContent(text uiText, width int, state setupState) string {
 	if state == setupReady {
 		return ""
 	}
@@ -545,23 +540,15 @@ func setupContent(text uiText) string {
 }
 
 func settingsContent(text uiText) string {
-	config, err := loadGachaConfig()
+	config, err := configWithDefaults()
 	if err != nil {
 		return strings.Join([]string{titleStyle.Render(text.SettingsTitle), err.Error()}, "\n")
-	}
-	model := strings.TrimSpace(config.Model)
-	if model == "" {
-		model = modelSettingAuto
-	}
-	lang := strings.TrimSpace(config.Language)
-	if lang == "" {
-		lang = languageSettingAuto
 	}
 	lines := []string{
 		titleStyle.Render(text.SettingsTitle),
 		fmt.Sprintf("Config:   %s", gachaConfigPath()),
-		fmt.Sprintf("Model:    %s", configuredModelSummary(model)),
-		fmt.Sprintf("Language: %s", lang),
+		fmt.Sprintf("Model:    %s", configuredModelSummary(config.Model)),
+		fmt.Sprintf("Language: %s", config.Language),
 		fmt.Sprintf("Active:   %s", detectLanguage()),
 		"",
 		sectionStyle.Render("Commands"),
@@ -634,17 +621,6 @@ func settingValue(value string) string {
 		return ""
 	}
 	return strings.TrimSpace(fields[1])
-}
-
-func validModelSetting(value string) bool {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return false
-	}
-	if strings.EqualFold(value, modelSettingAuto) || strings.EqualFold(value, modelSettingOpenCodeDefault) {
-		return true
-	}
-	return !strings.ContainsAny(value, " \t\n\r") && strings.Contains(value, "/")
 }
 
 func configuredModelSummary(model string) string {

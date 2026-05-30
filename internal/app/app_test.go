@@ -286,7 +286,7 @@ func TestSaveGachaConfigWritesModelAndLanguage(t *testing.T) {
 func TestRunConfigCommandSetsModelAndLanguage(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	if err := runConfigCommand([]string{"set", "model", "opencode-default"}); err != nil {
+	if err := runConfigCommand([]string{"set", "model", "OpenCode-Default"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := runConfigCommand([]string{"set", "language", "ko"}); err != nil {
@@ -308,6 +308,30 @@ func TestRunConfigCommandRejectsInvalidValues(t *testing.T) {
 	}
 	if err := runConfigCommand([]string{"set", "language", "fr"}); err == nil {
 		t.Fatal("expected invalid language error")
+	}
+}
+
+func TestConfigWithDefaults(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	config, err := configWithDefaults()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.Model != modelSettingAuto || config.Language != languageSettingAuto {
+		t.Fatalf("unexpected default config: %#v", config)
+	}
+}
+
+func TestOnboardingContentReflectsSetupState(t *testing.T) {
+	text := englishText()
+	if got := onboardingContent(text, 80, setupReady); got != "" {
+		t.Fatalf("expected no onboarding for ready state, got %q", got)
+	}
+	if got := onboardingContent(text, 80, setupRuntimeMissing); !strings.Contains(stripANSI(got), "OpenCode is not installed yet") {
+		t.Fatalf("unexpected runtime onboarding: %q", got)
+	}
+	if got := onboardingContent(text, 80, setupProviderMissing); !strings.Contains(stripANSI(got), "no AI provider") {
+		t.Fatalf("unexpected provider onboarding: %q", got)
 	}
 }
 
