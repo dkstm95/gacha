@@ -105,9 +105,11 @@ Inside the app, you can set model mode, language, and theme:
 
 ```text
 /settings
+/model
 /model auto
 /model opencode-default
 /model provider/model
+/language
 /language auto
 /language en
 /language ko
@@ -118,7 +120,7 @@ Inside the app, you can set model mode, language, and theme:
 /theme gacha
 ```
 
-`/theme` shows each available theme with an in-app preview. `system` adapts to your terminal background, while `dark`, `light`, and `gacha` use fixed palettes.
+`/model`, `/language`, and `/theme` open an interactive selector. Use ↑/↓ and enter to choose, or type a full command directly. `system` adapts to your terminal background, while `dark`, `light`, and `gacha` use fixed palettes.
 
 Runtime setup, diagnostics, and updates stay outside the app:
 

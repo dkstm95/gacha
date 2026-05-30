@@ -1,6 +1,9 @@
 package app
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type App struct {
 	version string
@@ -18,6 +21,13 @@ func (a *App) Run(args []string) error {
 		printUsage()
 		return nil
 	}
+	if isSettingsCommand(args[0]) {
+		fmt.Println(settingsContent(textFor(detectLanguage())))
+		return nil
+	}
+	if isSlashCommand(args[0]) {
+		return fmt.Errorf(textFor(detectLanguage()).UnknownCommand, args[0])
+	}
 
 	switch args[0] {
 	case "version", "--version", "-v":
@@ -29,9 +39,6 @@ func (a *App) Run(args []string) error {
 		return ensureRuntime(true)
 	case "update":
 		return a.updateSelf()
-	case "settings":
-		fmt.Println(settingsContent(textFor(detectLanguage())))
-		return nil
 	case "config":
 		return runConfigCommand(args[1:])
 	case "prompt":
@@ -39,6 +46,19 @@ func (a *App) Run(args []string) error {
 	default:
 		return runQuery(args)
 	}
+}
+
+func isSettingsCommand(value string) bool {
+	switch value {
+	case "/setting", "setting", "/settings", "settings":
+		return true
+	default:
+		return false
+	}
+}
+
+func isSlashCommand(value string) bool {
+	return strings.HasPrefix(strings.TrimSpace(value), "/")
 }
 
 func printUsage() {

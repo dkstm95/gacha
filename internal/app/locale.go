@@ -131,6 +131,7 @@ type uiText struct {
 	FooterShort           string
 	SavePrompt            string
 	ReportActionsTitle    string
+	ReportChoiceIntro     string
 	ReportActions         []reportChoice
 	NewQuestionAction     string
 	SavedReport           string
@@ -139,6 +140,15 @@ type uiText struct {
 	SettingsInvalidModel  string
 	SettingsInvalidLang   string
 	SettingsInvalidTheme  string
+	UnknownCommand        string
+	ChoiceHint            string
+	ModelTitle            string
+	ModelIntro            string
+	ModelCustomHint       string
+	ModelDescriptions     map[string]string
+	LanguageTitle         string
+	LanguageIntro         string
+	LanguageDescriptions  map[string]string
 	ThemeTitle            string
 	ThemeIntro            string
 	ThemeActive           string
@@ -155,8 +165,9 @@ type homeAction struct {
 }
 
 type reportChoice struct {
-	Key   string
-	Label string
+	Key         string
+	Label       string
+	Description string
 }
 
 func textFor(lang language) uiText {
@@ -272,10 +283,11 @@ func englishText() uiText {
 		StatusRuntime:      "Runtime ",
 		SavePrompt:         "Next: type d for detailed analysis, y to save, n to skip, or ask a new question.",
 		ReportActionsTitle: "Next",
+		ReportChoiceIntro:  "Choose the next step.",
 		ReportActions: []reportChoice{
-			{Key: "d", Label: "detailed analysis"},
-			{Key: "y", Label: "save"},
-			{Key: "n", Label: "skip"},
+			{Key: "d", Label: "d  Detailed analysis", Description: "Extend the report with deeper checks."},
+			{Key: "y", Label: "y  Save", Description: "Write this report to your local reports folder."},
+			{Key: "n", Label: "n  Skip", Description: "Keep reading without saving."},
 		},
 		NewQuestionAction:    "or ask a new question",
 		SavedReport:          "Saved report:",
@@ -284,12 +296,28 @@ func englishText() uiText {
 		SettingsInvalidModel: "Use `/model auto`, `/model opencode-default`, or `/model provider/model`.",
 		SettingsInvalidLang:  "Use `/language auto`, `/language en`, or `/language ko`.",
 		SettingsInvalidTheme: "Use `/theme system`, `/theme dark`, `/theme light`, or `/theme gacha`.",
-		ThemeTitle:           "Themes",
-		ThemeIntro:           "Choose how Gacha should look in your terminal.",
-		ThemeActive:          "Active:",
-		ThemeCommandHint:     "Use /theme <name> to save and apply a theme.",
-		ThemePreviewTitle:    "Preview",
-		ThemeSelectLabel:     "select this theme",
+		UnknownCommand:       "Unknown command: %s",
+		ChoiceHint:           "Use ↑/↓ and enter, or type a command directly.",
+		ModelTitle:           "Model",
+		ModelIntro:           "Choose how Gacha selects the OpenCode model.",
+		ModelCustomHint:      "For a custom model, type `/model provider/model`.",
+		ModelDescriptions: map[string]string{
+			modelSettingAuto:            "Pick the best available model from the current provider list.",
+			modelSettingOpenCodeDefault: "Let OpenCode use its configured default.",
+		},
+		LanguageTitle: "Language",
+		LanguageIntro: "Choose the UI and report language preference.",
+		LanguageDescriptions: map[string]string{
+			languageSettingAuto:    "Follow the terminal locale and the question language.",
+			languageSettingEnglish: "Use English.",
+			languageSettingKorean:  "Use Korean.",
+		},
+		ThemeTitle:        "Themes",
+		ThemeIntro:        "Choose how Gacha should look in your terminal.",
+		ThemeActive:       "Active:",
+		ThemeCommandHint:  "Use /theme <name> to save and apply a theme.",
+		ThemePreviewTitle: "Preview",
+		ThemeSelectLabel:  "select this theme",
 		ThemeLabels: map[string]string{
 			themeSettingSystem: "System",
 			themeSettingDark:   "Dark",
@@ -411,10 +439,11 @@ func koreanText() uiText {
 		StatusRuntime:      "런타임 ",
 		SavePrompt:         "다음: d=상세 분석, y=저장, n=건너뛰기, 또는 새 질문을 입력하세요.",
 		ReportActionsTitle: "다음",
+		ReportChoiceIntro:  "다음 동작을 선택하세요.",
 		ReportActions: []reportChoice{
-			{Key: "d", Label: "상세 분석"},
-			{Key: "y", Label: "저장"},
-			{Key: "n", Label: "건너뛰기"},
+			{Key: "d", Label: "d  상세 분석", Description: "리포트를 더 깊게 검증합니다."},
+			{Key: "y", Label: "y  저장", Description: "이 리포트를 로컬 reports 폴더에 저장합니다."},
+			{Key: "n", Label: "n  건너뛰기", Description: "저장하지 않고 계속 봅니다."},
 		},
 		NewQuestionAction:    "또는 새 질문 입력",
 		SavedReport:          "리포트 저장:",
@@ -423,12 +452,28 @@ func koreanText() uiText {
 		SettingsInvalidModel: "`/model auto`, `/model opencode-default`, 또는 `/model provider/model` 형식으로 입력하세요.",
 		SettingsInvalidLang:  "`/language auto`, `/language en`, 또는 `/language ko`를 입력하세요.",
 		SettingsInvalidTheme: "`/theme system`, `/theme dark`, `/theme light`, 또는 `/theme gacha`를 입력하세요.",
-		ThemeTitle:           "테마",
-		ThemeIntro:           "터미널에 맞는 Gacha 화면 스타일을 선택하세요.",
-		ThemeActive:          "현재:",
-		ThemeCommandHint:     "/theme <이름>을 입력하면 저장 후 바로 적용됩니다.",
-		ThemePreviewTitle:    "예시",
-		ThemeSelectLabel:     "이 테마 선택",
+		UnknownCommand:       "알 수 없는 명령: %s",
+		ChoiceHint:           "↑/↓로 이동하고 enter로 선택하거나, 명령을 직접 입력하세요.",
+		ModelTitle:           "모델",
+		ModelIntro:           "Gacha가 OpenCode 모델을 선택하는 방식을 고르세요.",
+		ModelCustomHint:      "사용자 지정 모델은 `/model provider/model` 형식으로 입력하세요.",
+		ModelDescriptions: map[string]string{
+			modelSettingAuto:            "현재 provider 목록에서 가장 적합한 모델을 고릅니다.",
+			modelSettingOpenCodeDefault: "OpenCode의 기본 설정 모델을 사용합니다.",
+		},
+		LanguageTitle: "언어",
+		LanguageIntro: "UI와 리포트 언어 기본값을 선택하세요.",
+		LanguageDescriptions: map[string]string{
+			languageSettingAuto:    "터미널 locale과 질문 언어를 따릅니다.",
+			languageSettingEnglish: "영어를 사용합니다.",
+			languageSettingKorean:  "한국어를 사용합니다.",
+		},
+		ThemeTitle:        "테마",
+		ThemeIntro:        "터미널에 맞는 Gacha 화면 스타일을 선택하세요.",
+		ThemeActive:       "현재:",
+		ThemeCommandHint:  "/theme <이름>을 입력하면 저장 후 바로 적용됩니다.",
+		ThemePreviewTitle: "예시",
+		ThemeSelectLabel:  "이 테마 선택",
 		ThemeLabels: map[string]string{
 			themeSettingSystem: "시스템",
 			themeSettingDark:   "다크",

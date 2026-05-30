@@ -38,6 +38,16 @@ func (a *App) startLineSession() error {
 		if input == "" {
 			continue
 		}
+		if isSettingsCommand(input) {
+			fmt.Println(settingsContent(text))
+			continue
+		}
+		if isSlashCommand(input) {
+			fmt.Println(fmt.Sprintf(text.UnknownCommand, input))
+			fmt.Println()
+			fmt.Println(helpContent(text))
+			continue
+		}
 		switch input {
 		case "/q", "/quit", "quit", "exit":
 			if detectLanguage() == languageKorean {
@@ -54,8 +64,6 @@ func (a *App) startLineSession() error {
 			if err := ensureRuntime(true); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
-		case "/settings", "settings":
-			fmt.Println(settingsContent(text))
 		default:
 			if err := runQuery([]string{input}); err != nil {
 				fmt.Fprintln(os.Stderr, err)

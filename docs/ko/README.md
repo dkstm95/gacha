@@ -104,9 +104,11 @@ gch doctor
 앱 안에서 모델 모드, 언어, 테마를 설정할 수 있습니다.
 
 ```text
+/model
 /model auto
 /model opencode-default
 /model provider/model
+/language
 /language auto
 /language en
 /language ko
@@ -117,7 +119,7 @@ gch doctor
 /theme gacha
 ```
 
-`/theme`은 사용할 수 있는 각 테마의 예시를 앱 안에서 함께 보여줍니다. `system`은 터미널 배경에 맞춰 적응하고, `dark`, `light`, `gacha`는 고정 팔레트를 사용합니다.
+`/model`, `/language`, `/theme`은 앱 안에서 선택 화면을 엽니다. ↑/↓로 이동하고 enter로 선택하거나, 전체 명령을 직접 입력할 수 있습니다. `system`은 터미널 배경에 맞춰 적응하고, `dark`, `light`, `gacha`는 고정 팔레트를 사용합니다.
 
 스크립트나 터미널 명령으로도 설정할 수 있습니다.
 

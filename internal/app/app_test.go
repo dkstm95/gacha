@@ -6,8 +6,21 @@ import (
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
+
+func keyMsg(value string) tea.KeyMsg {
+	switch value {
+	case "down":
+		return tea.KeyMsg{Type: tea.KeyDown}
+	case "up":
+		return tea.KeyMsg{Type: tea.KeyUp}
+	case "enter":
+		return tea.KeyMsg{Type: tea.KeyEnter}
+	}
+	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(value)}
+}
 
 func TestBuildPromptIncludesWorkflowAndRequirements(t *testing.T) {
 	prompt, err := buildPrompt([]string{"NVDA"})
@@ -330,7 +343,7 @@ func TestConfigWithDefaults(t *testing.T) {
 	}
 }
 
-func TestThemeContentShowsPreviewsAndCommands(t *testing.T) {
+func TestThemeContentShowsInteractivePreviews(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		text     uiText
@@ -342,11 +355,13 @@ func TestThemeContentShowsPreviewsAndCommands(t *testing.T) {
 			expected: []string{
 				"Themes",
 				"Active: System",
-				"/theme system",
-				"/theme dark",
-				"/theme light",
-				"/theme gacha",
+				"Use ↑/↓ and enter",
+				"System",
+				"Dark",
+				"Light",
+				"Gacha",
 				"Preview",
+				"select this theme",
 			},
 		},
 		{
@@ -355,11 +370,13 @@ func TestThemeContentShowsPreviewsAndCommands(t *testing.T) {
 			expected: []string{
 				"테마",
 				"현재: 시스템",
-				"/theme system",
-				"/theme dark",
-				"/theme light",
-				"/theme gacha",
+				"↑/↓로 이동하고 enter로 선택",
+				"시스템",
+				"다크",
+				"라이트",
+				"Gacha",
 				"예시",
+				"이 테마 선택",
 			},
 		},
 	} {
@@ -409,6 +426,104 @@ func TestTUIThemeCommandSavesAndAppliesTheme(t *testing.T) {
 	}
 	if !strings.Contains(stripANSI(updated.view.View()), "Active: Light") {
 		t.Fatalf("theme view did not show previews:\n%s", stripANSI(updated.view.View()))
+	}
+}
+
+func TestTUIThemeCommandOpensSelectableThemeChoice(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	model := newTUIModel("0.1.27")
+
+	next, cmd := model.handleSubmit("/theme")
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	updated := next.(tuiModel)
+	if updated.choice == nil || updated.choice.Kind != choiceTheme {
+		t.Fatalf("expected theme choice, got %#v", updated.choice)
+	}
+
+	next, cmd = updated.Update(keyMsg("down"))
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	updated = next.(tuiModel)
+	if updated.choice.Selected != 1 {
+		t.Fatalf("expected second theme selected, got %d", updated.choice.Selected)
+	}
+
+	next, cmd = updated.Update(keyMsg("enter"))
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	updated = next.(tuiModel)
+	config, err := loadGachaConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.Theme != themeSettingDark {
+		t.Fatalf("unexpected theme config: %#v", config)
+	}
+	if updated.choice == nil || updated.choice.Selected != 1 {
+		t.Fatalf("expected theme choice to stay active after selection: %#v", updated.choice)
+	}
+}
+
+func TestTUILanguageAndModelCommandsOpenChoices(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	for _, tc := range []struct {
+		value string
+		kind  choiceKind
+		title string
+	}{
+		{value: "/language", kind: choiceLanguage, title: "Language"},
+		{value: "/model", kind: choiceModel, title: "Model"},
+	} {
+		t.Run(tc.value, func(t *testing.T) {
+			model := newTUIModel("0.1.27")
+			next, cmd := model.handleSubmit(tc.value)
+			if cmd != nil {
+				t.Fatal("unexpected command")
+			}
+			updated := next.(tuiModel)
+			if updated.choice == nil || updated.choice.Kind != tc.kind {
+				t.Fatalf("expected %s choice, got %#v", tc.kind, updated.choice)
+			}
+			if !strings.Contains(stripANSI(updated.view.View()), tc.title) {
+				t.Fatalf("choice view missing title %q:\n%s", tc.title, stripANSI(updated.view.View()))
+			}
+		})
+	}
+}
+
+func TestTUISettingAliasShowsSettingsWithoutRunningPrompt(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	next, cmd := model.handleSubmit("/setting")
+	if cmd != nil {
+		t.Fatal("setting alias should not run a prompt command")
+	}
+	updated := next.(tuiModel)
+	if updated.status != updated.text.SettingsTitle {
+		t.Fatalf("unexpected status: %q", updated.status)
+	}
+	got := stripANSI(updated.view.View())
+	if !strings.Contains(got, updated.text.SettingsTitle) {
+		t.Fatalf("settings view missing title:\n%s", got)
+	}
+}
+
+func TestTUIUnknownSlashCommandDoesNotRunPrompt(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	next, cmd := model.handleSubmit("/not-a-command")
+	if cmd != nil {
+		t.Fatal("unknown slash command should not run a prompt command")
+	}
+	updated := next.(tuiModel)
+	got := stripANSI(updated.view.View())
+	for _, expected := range []string{"Unknown command: /not-a-command", "Command palette"} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("unknown command view missing %q:\n%s", expected, got)
+		}
 	}
 }
 
@@ -642,7 +757,7 @@ func TestContextRailReflectsTUIState(t *testing.T) {
 func TestReportActionsExposeNextChoices(t *testing.T) {
 	got := stripANSI(renderReportActions(englishText()))
 	normalized := strings.Join(strings.Fields(got), " ")
-	for _, expected := range []string{"Next", "d detailed analysis", "y save", "n skip", "ask a new question"} {
+	for _, expected := range []string{"Next", "Use ↑/↓ and enter", "d Detailed analysis", "y Save", "n Skip", "ask a new question"} {
 		if !strings.Contains(normalized, expected) {
 			t.Fatalf("report actions missing %q:\n%s", expected, got)
 		}

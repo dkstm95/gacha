@@ -39,6 +39,7 @@ type tuiModel struct {
 	mode    string
 	query   string
 	report  string
+	choice  *pendingChoice
 }
 
 func newTUIModel(version string) tuiModel {
@@ -92,15 +93,31 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		key := msg.String()
+		if m.choice != nil {
+			switch key {
+			case "up", "k":
+				m.moveChoice(-1)
+				return m, nil
+			case "down", "j":
+				m.moveChoice(1)
+				return m, nil
+			}
+		}
 		switch key {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
 		case "enter":
 			value := strings.TrimSpace(m.input.Value())
+			if value == "" && m.choice != nil {
+				return m.handleChoiceSelection()
+			}
 			if value == "" {
 				return m, nil
 			}
 			m.input.SetValue("")
+			if m.choice != nil {
+				m.choice = nil
+			}
 			if m.save != nil {
 				return m.handleReportAction(value)
 			}
@@ -122,7 +139,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				report := strings.TrimSpace(msg.output)
 				m.report = report
 				m.save = &pendingSave{query: msg.query, report: report}
-				m.view.SetContent(report + "\n\n" + renderReportActions(m.text))
+				m = m.showReportChoice()
 			} else {
 				m.save = nil
 				m.report = strings.TrimSpace(msg.output)
@@ -154,6 +171,14 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	m.save = nil
+	m.choice = nil
+	if isSettingsCommand(value) {
+		m.status = m.text.SettingsTitle
+		m.mode = m.text.System
+		m.view.SetContent(settingsContent(m.text))
+		m.view.GotoTop()
+		return m, nil
+	}
 	switch value {
 	case "/q", "/quit", "quit", "exit":
 		return m, tea.Quit
@@ -163,18 +188,12 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 		m.view.SetContent(helpContent(m.text))
 		m.view.GotoTop()
 		return m, nil
-	case "/settings", "settings":
-		m.status = m.text.SettingsTitle
-		m.mode = m.text.System
-		m.view.SetContent(settingsContent(m.text))
-		m.view.GotoTop()
-		return m, nil
 	case "/theme", "theme", "/themes", "themes":
-		m.status = m.text.ThemeTitle
-		m.mode = m.text.System
-		m.view.SetContent(themeContent(m.text))
-		m.view.GotoTop()
-		return m, nil
+		return m.showThemeChoice()
+	case "/model", "model":
+		return m.showModelChoice()
+	case "/language", "language", "/lang", "lang":
+		return m.showLanguageChoice()
 	case "/home", "home":
 		m.status = m.text.Ready
 		m.mode = m.text.Auto
@@ -211,6 +230,13 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	}
 	if strings.HasPrefix(value, "/theme ") || strings.HasPrefix(value, "theme ") {
 		return m.handleThemeSetting(value)
+	}
+	if isSlashCommand(value) {
+		m.status = m.text.Help
+		m.mode = m.text.Command
+		m.view.SetContent(unknownCommandContent(value, m.text))
+		m.view.GotoTop()
+		return m, nil
 	}
 
 	m.busy = true
@@ -262,9 +288,116 @@ func (m tuiModel) handleThemeSetting(value string) (tea.Model, tea.Cmd) {
 	}
 	setThemeStyles(normalized)
 	m.spin.Style = accentStyle
+	options := themeChoiceOptions(m.text)
+	m.choice = &pendingChoice{
+		Kind:     choiceTheme,
+		Title:    m.text.ThemeTitle,
+		Intro:    fmt.Sprintf("%s %s", m.text.ThemeActive, themeLabel(themeByName(normalized), m.text)),
+		Options:  options,
+		Selected: selectedChoiceIndex(options, normalized),
+	}
 	m.status = m.text.SettingsSaved
 	m.mode = m.text.System
-	m.view.SetContent(m.text.SettingsSaved + "\n\n" + themeContent(m.text))
+	m.view.SetContent(m.text.SettingsSaved + "\n\n" + m.choice.Render(m.text))
+	m.view.GotoTop()
+	return m, nil
+}
+
+func (m *tuiModel) moveChoice(delta int) {
+	if m.choice == nil || len(m.choice.Options) == 0 {
+		return
+	}
+	next := (m.choice.Selected + delta) % len(m.choice.Options)
+	if next < 0 {
+		next += len(m.choice.Options)
+	}
+	m.choice.Selected = next
+	m.view.SetContent(m.choice.Render(m.text))
+	m.view.GotoTop()
+}
+
+func (m tuiModel) handleChoiceSelection() (tea.Model, tea.Cmd) {
+	if m.choice == nil || len(m.choice.Options) == 0 {
+		return m, nil
+	}
+	choice := m.choice
+	selected := choice.Options[choice.Selected]
+	m.choice = nil
+	switch choice.Kind {
+	case choiceTheme:
+		return m.handleThemeSetting("/theme " + selected.Value)
+	case choiceLanguage:
+		return m.handleLanguageSetting("/language " + selected.Value)
+	case choiceModel:
+		return m.handleModelSetting("/model " + selected.Value)
+	case choiceReport:
+		m.input.SetValue("")
+		return m.handleReportAction(selected.Value)
+	default:
+		return m, nil
+	}
+}
+
+func (m tuiModel) showModelChoice() (tea.Model, tea.Cmd) {
+	config, _ := configWithDefaults()
+	options := []choiceOption{
+		{Label: "Auto", Value: modelSettingAuto, Description: m.text.ModelDescriptions[modelSettingAuto]},
+		{Label: "OpenCode default", Value: modelSettingOpenCodeDefault, Description: m.text.ModelDescriptions[modelSettingOpenCodeDefault]},
+	}
+	selected := selectedChoiceIndex(options, configuredModelSummary(config.Model))
+	m.choice = &pendingChoice{
+		Kind:     choiceModel,
+		Title:    m.text.ModelTitle,
+		Intro:    m.text.ModelIntro,
+		Options:  options,
+		Selected: selected,
+		Footer:   m.text.ModelCustomHint,
+	}
+	m.status = m.text.ModelTitle
+	m.mode = m.text.System
+	m.view.SetContent(m.choice.Render(m.text))
+	m.view.GotoTop()
+	return m, nil
+}
+
+func (m tuiModel) showLanguageChoice() (tea.Model, tea.Cmd) {
+	config, _ := configWithDefaults()
+	active := config.Language
+	if active == "" {
+		active = languageSettingAuto
+	}
+	options := []choiceOption{
+		{Label: "Auto", Value: languageSettingAuto, Description: m.text.LanguageDescriptions[languageSettingAuto]},
+		{Label: "English", Value: languageSettingEnglish, Description: m.text.LanguageDescriptions[languageSettingEnglish]},
+		{Label: "한국어", Value: languageSettingKorean, Description: m.text.LanguageDescriptions[languageSettingKorean]},
+	}
+	m.choice = &pendingChoice{
+		Kind:     choiceLanguage,
+		Title:    m.text.LanguageTitle,
+		Intro:    m.text.LanguageIntro,
+		Options:  options,
+		Selected: selectedChoiceIndex(options, active),
+	}
+	m.status = m.text.LanguageTitle
+	m.mode = m.text.System
+	m.view.SetContent(m.choice.Render(m.text))
+	m.view.GotoTop()
+	return m, nil
+}
+
+func (m tuiModel) showThemeChoice() (tea.Model, tea.Cmd) {
+	active := configuredTheme()
+	options := themeChoiceOptions(m.text)
+	m.choice = &pendingChoice{
+		Kind:     choiceTheme,
+		Title:    m.text.ThemeTitle,
+		Intro:    m.text.ThemeIntro,
+		Options:  options,
+		Selected: selectedChoiceIndex(options, active),
+	}
+	m.status = m.text.ThemeTitle
+	m.mode = m.text.System
+	m.view.SetContent(m.choice.Render(m.text))
 	m.view.GotoTop()
 	return m, nil
 }
@@ -331,6 +464,19 @@ func (m tuiModel) handleReportAction(value string) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(m.spin.Tick, researchPhaseTick(), runDetailPromptCmd(pending.query, pending.report))
 	}
 	return m.handleSubmit(value)
+}
+
+func (m tuiModel) showReportChoice() tuiModel {
+	m.choice = &pendingChoice{
+		Kind:    choiceReport,
+		Title:   m.text.ReportActionsTitle,
+		Intro:   m.text.ReportChoiceIntro,
+		Options: reportChoiceOptions(m.text),
+		Footer:  m.text.NewQuestionAction,
+	}
+	m.view.SetContent(m.report + "\n\n" + m.choice.Render(m.text))
+	m.view.GotoBottom()
+	return m
 }
 
 func (m tuiModel) View() string {
@@ -441,6 +587,56 @@ type promptRunResult struct {
 type pendingSave struct {
 	query  string
 	report string
+}
+
+type choiceKind string
+
+const (
+	choiceModel    choiceKind = "model"
+	choiceLanguage choiceKind = "language"
+	choiceTheme    choiceKind = "theme"
+	choiceReport   choiceKind = "report"
+)
+
+type pendingChoice struct {
+	Kind     choiceKind
+	Title    string
+	Intro    string
+	Options  []choiceOption
+	Selected int
+	Footer   string
+}
+
+type choiceOption struct {
+	Label       string
+	Value       string
+	Description string
+}
+
+func (c pendingChoice) Render(text uiText) string {
+	if c.Kind == choiceTheme {
+		return renderThemeChoice(c, text)
+	}
+	lines := []string{titleStyle.Render(c.Title)}
+	if strings.TrimSpace(c.Intro) != "" {
+		lines = append(lines, wrapLine(c.Intro, 78))
+	}
+	lines = append(lines, mutedStyle.Render(text.ChoiceHint), "")
+	for i, option := range c.Options {
+		marker := " "
+		if i == c.Selected {
+			marker = "›"
+		}
+		line := bulletStyle.Render(marker) + " " + actionNameStyle.Render(option.Label)
+		if strings.TrimSpace(option.Description) != "" {
+			line += " " + mutedStyle.Render(wrapIndented(option.Description, 58, "    "))
+		}
+		lines = append(lines, line)
+	}
+	if strings.TrimSpace(c.Footer) != "" {
+		lines = append(lines, "", mutedStyle.Render(c.Footer))
+	}
+	return strings.Join(lines, "\n")
 }
 
 func runPrompt(query string) promptRunResult {
@@ -598,6 +794,10 @@ func helpContent(text uiText) string {
 	return strings.Join(lines, "\n")
 }
 
+func unknownCommandContent(value string, text uiText) string {
+	return fmt.Sprintf(text.UnknownCommand, value) + "\n\n" + helpContent(text)
+}
+
 func doctorContent(text uiText) string {
 	status := text.Missing
 	if hasRunnableCommand(openCodeCommand) {
@@ -683,15 +883,48 @@ func errorContent(err error, output string, text uiText) string {
 }
 
 func renderReportActions(text uiText) string {
-	var parts []string
-	for _, action := range text.ReportActions {
-		parts = append(parts, keyStyle.Render(action.Key)+" "+action.Label)
+	choice := pendingChoice{
+		Kind:    choiceReport,
+		Title:   text.ReportActionsTitle,
+		Intro:   text.ReportChoiceIntro,
+		Options: reportChoiceOptions(text),
+		Footer:  text.NewQuestionAction,
 	}
-	parts = append(parts, mutedStyle.Render(text.NewQuestionAction))
-	return strings.Join([]string{
-		sectionStyle.Render(text.ReportActionsTitle),
-		strings.Join(parts, "   "),
-	}, "\n")
+	return choice.Render(text)
+}
+
+func reportChoiceOptions(text uiText) []choiceOption {
+	options := make([]choiceOption, 0, len(text.ReportActions))
+	for _, action := range text.ReportActions {
+		options = append(options, choiceOption{
+			Label:       action.Label,
+			Value:       action.Key,
+			Description: action.Description,
+		})
+	}
+	return options
+}
+
+func themeChoiceOptions(text uiText) []choiceOption {
+	themes := availableThemes()
+	options := make([]choiceOption, 0, len(themes))
+	for _, theme := range themes {
+		options = append(options, choiceOption{
+			Label:       themeLabel(theme, text),
+			Value:       theme.Name,
+			Description: themeDescription(theme, text),
+		})
+	}
+	return options
+}
+
+func selectedChoiceIndex(options []choiceOption, value string) int {
+	for i, option := range options {
+		if strings.EqualFold(option.Value, value) || strings.EqualFold(option.Label, value) {
+			return i
+		}
+	}
+	return 0
 }
 
 func (m tuiModel) contextRail(width int) string {

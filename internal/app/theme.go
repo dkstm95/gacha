@@ -226,17 +226,33 @@ func themeByName(name string) uiTheme {
 
 func themeContent(text uiText) string {
 	active := configuredTheme()
-	lines := []string{
-		titleStyle.Render(text.ThemeTitle),
-		text.ThemeIntro,
-		"",
-		fmt.Sprintf("%s %s", text.ThemeActive, themeLabel(themeByName(active), text)),
-		mutedStyle.Render(text.ThemeCommandHint),
-		"",
-		sectionStyle.Render(text.ThemePreviewTitle),
+	choice := pendingChoice{
+		Kind:     choiceTheme,
+		Title:    text.ThemeTitle,
+		Intro:    fmt.Sprintf("%s %s", text.ThemeActive, themeLabel(themeByName(active), text)),
+		Options:  themeChoiceOptions(text),
+		Selected: selectedChoiceIndex(themeChoiceOptions(text), active),
 	}
-	for _, theme := range availableThemes() {
-		lines = append(lines, "", renderThemePreview(theme, active == theme.Name, text))
+	return choice.Render(text)
+}
+
+func renderThemeChoice(choice pendingChoice, text uiText) string {
+	lines := []string{titleStyle.Render(choice.Title)}
+	if strings.TrimSpace(choice.Intro) != "" {
+		lines = append(lines, wrapLine(choice.Intro, 78))
+	}
+	lines = append(lines, mutedStyle.Render(text.ChoiceHint), "")
+	for i, option := range choice.Options {
+		marker := " "
+		if i == choice.Selected {
+			marker = "›"
+		}
+		lines = append(lines, bulletStyle.Render(marker)+" "+actionNameStyle.Render(option.Label)+" "+mutedStyle.Render(wrapIndented(option.Description, 58, "    ")))
+	}
+	lines = append(lines, "", sectionStyle.Render(text.ThemePreviewTitle))
+	if choice.Selected >= 0 && choice.Selected < len(choice.Options) {
+		selected := themeByName(choice.Options[choice.Selected].Value)
+		lines = append(lines, "", renderThemePreview(selected, configuredTheme() == selected.Name, text))
 	}
 	return strings.Join(lines, "\n")
 }
@@ -261,7 +277,7 @@ func renderThemePreview(theme uiTheme, active bool, text uiText) string {
 	sample := strings.Join([]string{
 		styles.section.Render(text.HomeActionsTitle) + " " + styles.actionName.Render(actionName) + " " + actionPrompt,
 		styles.bullet.Render("›") + " " + styles.title.Render(outcome) + " " + styles.faint.Render(text.HomeNote),
-		styles.key.Render("/theme "+theme.Name) + " " + styles.muted.Render(text.ThemeSelectLabel),
+		styles.key.Render("enter") + " " + styles.muted.Render(text.ThemeSelectLabel),
 	}, "\n")
 	return styles.panel.Width(72).Render(marker + " " + header + "\n" + sample)
 }
