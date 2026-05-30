@@ -78,7 +78,7 @@ Run this if you want to see whether the local AI runtime is ready:
 gch doctor
 ```
 
-The check also shows the model Gacha will ask OpenCode to use. The default model mode is `auto`.
+The check shows overall readiness, connected provider status, the model Gacha will ask OpenCode to use, and where reports are saved. The default model mode is `auto`.
 
 In auto mode, Gacha asks OpenCode for the connected provider's current model list, then chooses a strong research model from that list. For OpenAI, it prefers the newest base frontier model pattern, such as `gpt-N` or `gpt-N.M`, instead of hard-coding a specific model name. It pushes small/fast variants such as `mini`, `nano`, `lite`, `flash`, `fast`, `spark`, and coding-specialized variants behind the frontier base model.
 
@@ -101,6 +101,24 @@ Or create `~/.config/gacha/config.json`:
 ```
 
 Supported values are `auto`, `opencode-default`, or a custom `provider/model`.
+
+## Saved Reports
+
+When the AI runtime completes a report, `gacha` saves it as Markdown.
+
+Default location:
+
+```text
+~/.local/share/gacha/reports
+```
+
+If `XDG_DATA_HOME` is set, reports are saved under:
+
+```text
+$XDG_DATA_HOME/gacha/reports
+```
+
+Paste-fallback prompts and dry runs are not saved as reports.
 
 ## Language
 

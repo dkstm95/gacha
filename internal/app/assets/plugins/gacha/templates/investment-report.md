@@ -1,8 +1,12 @@
 # Investment Decision Report
 
+Use this exact 14-section structure for every answer. Keep the section numbers in order. Translate section headings into the response language when needed, but do not drop, merge, or reorder sections. If a section does not apply, write "Not applicable" and explain why.
+
 ## 1. Request Type
 
-Discover / Select / Entry / Exit / Portfolio / Journal
+- Selected workflow: Discover / Select / Entry / Exit / Portfolio / Journal
+- User intent:
+- Assumptions made:
 
 ## 2. Data Freshness
 
@@ -10,53 +14,94 @@ Discover / Select / Entry / Exit / Portfolio / Journal
 - Price timestamp:
 - Data sources:
 - Data gaps:
+- Fresh-data verdict: Verified / Partially verified / Not verified
 
 ## 3. Executive Conclusion
 
-State the conclusion, confidence, and whether the result is Buy / Watch / Avoid / Trim / Sell candidate.
+- Decision label: Buy / Watch / Avoid / Trim / Sell / Hold / Not enough data
+- Confidence: High / Medium / Low
+- One-paragraph conclusion:
+- Why this is the right action now:
 
 ## 4. Ranked Candidates or Price Zones
 
-Provide ranked candidates or price zones with conditions.
+For Discover or Select, provide a ranked candidate table.
+
+| Rank | Candidate | Vehicle | Why now | Key risk | Fit | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+
+For Entry or Exit, provide price zones.
+
+| Zone | Price or range | Meaning | Action | Invalidation trigger |
+| --- | --- | --- | --- | --- |
 
 ## 5. Investment Thesis
 
-Explain why the opportunity may exist.
+- Core thesis:
+- What the market may be underpricing:
+- Time horizon:
+- Required conditions for the thesis to work:
 
 ## 6. Evidence
 
-Include current data, filings, financials, news, macro, and links.
+- Current price or latest observable value:
+- Financials, fund data, or on-chain data:
+- News, filings, or catalyst data:
+- Macro, sector, or peer context:
+- Source links:
 
 ## 7. Valuation and Scenarios
 
-Bull / base / bear assumptions and expected ranges.
+| Scenario | Assumptions | Implied range or outcome | Probability | What would confirm it |
+| --- | --- | --- | --- | --- |
+| Bull | | | | |
+| Base | | | | |
+| Bear | | | | |
 
 ## 8. Risks
 
-List risks, downside paths, and what could go wrong.
+- Thesis risks:
+- Valuation risks:
+- Liquidity, concentration, or currency risks:
+- Event risks:
+- What could go wrong first:
 
 ## 9. Devil's Advocate
 
-Argue against the recommendation.
+- Strongest argument against the recommendation:
+- Data that weakens the thesis:
+- Why the recommendation might be wrong:
 
 ## 10. Portfolio Fit
 
-Explain diversification, concentration, correlation, and sizing implications.
+- Diversification impact:
+- Concentration and correlation:
+- Suggested sizing logic:
+- Who this is not suitable for:
 
 ## 11. Action Conditions
 
-Buy, watch, stop-loss, trim, take-profit, full-exit, or thesis-invalidation conditions.
+| Condition type | Trigger | Action | Review timing |
+| --- | --- | --- | --- |
+| Buy / add | | | |
+| Watch | | | |
+| Stop-loss / thesis break | | | |
+| Trim / take profit | | | |
+| Full exit review | | | |
 
 ## 12. Monitoring Plan
 
-Events, metrics, dates, and trigger conditions to monitor.
+| Monitor | Why it matters | Source | Frequency | Trigger |
+| --- | --- | --- | --- | --- |
 
 ## 13. Confidence and Unknowns
 
-State confidence and unresolved questions.
+- Overall confidence:
+- Main unknowns:
+- Data that would change the recommendation:
+- Questions for the user:
 
 ## 14. Provenance Appendix
 
 | Claim or value | Source | URL | Retrieved at | Data as of | Confidence |
 | --- | --- | --- | --- | --- | --- |
-

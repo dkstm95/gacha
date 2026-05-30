@@ -78,7 +78,7 @@ gch "NVDA 지금 사도 될까?"
 gch doctor
 ```
 
-이 명령은 Gacha가 OpenCode에 요청할 모델도 보여줍니다. 기본 모델 모드는 `auto`입니다.
+이 명령은 전체 준비 상태, 연결된 provider 상태, Gacha가 OpenCode에 요청할 모델, 리포트 저장 위치를 보여줍니다. 기본 모델 모드는 `auto`입니다.
 
 auto 모드에서 Gacha는 연결된 provider의 현재 모델 목록을 OpenCode에 물어본 뒤, 그 목록 안에서 리서치에 적합한 모델을 고릅니다. OpenAI에서는 특정 모델명을 하드코딩하지 않고 `gpt-N` 또는 `gpt-N.M` 형태의 가장 최신 base frontier 모델을 우선합니다. `mini`, `nano`, `lite`, `flash`, `fast`, `spark`처럼 작고 빠른 변형과 코딩 특화 변형은 base frontier 모델보다 뒤로 보냅니다.
 
@@ -101,6 +101,24 @@ GACHA_OPENCODE_MODEL=provider/model gch
 ```
 
 지원 값은 `auto`, `opencode-default`, 직접 지정한 `provider/model`입니다.
+
+## 저장된 리포트
+
+AI 런타임이 리포트 생성을 완료하면 `gacha`는 결과를 Markdown 파일로 저장합니다.
+
+기본 위치:
+
+```text
+~/.local/share/gacha/reports
+```
+
+`XDG_DATA_HOME`이 설정되어 있으면 다음 위치에 저장합니다.
+
+```text
+$XDG_DATA_HOME/gacha/reports
+```
+
+복사/붙여넣기용 프롬프트와 dry run 결과는 리포트로 저장하지 않습니다.
 
 ## 언어
 

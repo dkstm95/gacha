@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -16,6 +17,8 @@ type runResultMsg struct {
 	err    error
 }
 
+type researchPhaseMsg struct{}
+
 type tuiModel struct {
 	version string
 	lang    language
@@ -26,6 +29,7 @@ type tuiModel struct {
 	width   int
 	height  int
 	busy    bool
+	phase   int
 	status  string
 	runtime string
 	mode    string
@@ -90,6 +94,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case runResultMsg:
 		m.busy = false
+		m.phase = 0
 		m.runtime = routeLabelFor(m.lang)
 		m.mode = m.text.Report
 		if msg.err != nil {
@@ -100,6 +105,12 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.view.SetContent(msg.output)
 		}
 		m.view.GotoTop()
+	case researchPhaseMsg:
+		if m.busy && len(m.text.ResearchPhases) > 0 {
+			m.phase++
+			m.status = m.text.ResearchPhases[m.phase%len(m.text.ResearchPhases)]
+			cmds = append(cmds, researchPhaseTick())
+		}
 	}
 
 	if m.busy {
@@ -154,10 +165,15 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	}
 
 	m.busy = true
-	m.status = m.text.Researching
+	m.phase = 0
+	if len(m.text.ResearchPhases) > 0 {
+		m.status = m.text.ResearchPhases[0]
+	} else {
+		m.status = m.text.Researching
+	}
 	m.mode = m.text.Auto
 	m.view.SetContent(researchingContent(value, m.text))
-	return m, tea.Batch(m.spin.Tick, runPromptCmd(value))
+	return m, tea.Batch(m.spin.Tick, researchPhaseTick(), runPromptCmd(value))
 }
 
 func (m tuiModel) View() string {
@@ -182,6 +198,12 @@ func runPromptCmd(query string) tea.Cmd {
 	}
 }
 
+func researchPhaseTick() tea.Cmd {
+	return tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+		return researchPhaseMsg{}
+	})
+}
+
 func runPrompt(query string) (string, error) {
 	prompt, err := buildPrompt([]string{query})
 	if err != nil {
@@ -195,7 +217,15 @@ func runPrompt(query string) (string, error) {
 	if err != nil {
 		return output, err
 	}
-	return strings.TrimSpace(output), nil
+	report := strings.TrimSpace(output)
+	if report == "" {
+		return report, nil
+	}
+	path, err := saveReport(query, report)
+	if err != nil {
+		return report, nil
+	}
+	return report + "\n\n---\nSaved report: " + path, nil
 }
 
 func welcomeContent(version string, text uiText) string {

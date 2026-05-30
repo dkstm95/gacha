@@ -63,6 +63,7 @@ type uiText struct {
 	Update           string
 	System           string
 	Researching      string
+	ResearchPhases   []string
 	Footer           string
 	Welcome          []string
 	Research         func(string) []string
@@ -102,7 +103,15 @@ func englishText() uiText {
 		Update:           "Update",
 		System:           "System",
 		Researching:      "Researching",
-		Footer:           " /help  /doctor  /setup  /update  /quit   •   enter to run   •   esc to exit",
+		ResearchPhases: []string{
+			"Classifying request",
+			"Checking fresh data",
+			"Building thesis",
+			"Testing valuation",
+			"Reviewing risks",
+			"Writing report",
+		},
+		Footer: " /help  /doctor  /setup  /update  /quit   •   enter to run   •   esc to exit",
 		Welcome: []string{
 			"Investment research cockpit",
 			"Ask one question. Gacha routes it through the right research workflow.",
@@ -180,7 +189,15 @@ func koreanText() uiText {
 		Update:           "업데이트",
 		System:           "시스템",
 		Researching:      "조사 중",
-		Footer:           " /help  /doctor  /setup  /update  /quit   •   enter 실행   •   esc 종료",
+		ResearchPhases: []string{
+			"요청 분류 중",
+			"최신 데이터 확인 중",
+			"투자 thesis 구성 중",
+			"밸류에이션 점검 중",
+			"리스크 검토 중",
+			"리포트 작성 중",
+		},
+		Footer: " /help  /doctor  /setup  /update  /quit   •   enter 실행   •   esc 종료",
 		Welcome: []string{
 			"투자 리서치 조종석",
 			"질문 하나를 입력하면 Gacha가 알맞은 리서치 흐름으로 보냅니다.",

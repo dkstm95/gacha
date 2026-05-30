@@ -38,11 +38,21 @@ func runQuery(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := runAgent(prompt, dryRun); err != nil {
+	output, completed, err := runAgent(prompt, dryRun)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not use OpenCode automatically: %v\n", err)
 		fmt.Fprintln(os.Stderr, "Falling back to a prompt you can paste into any web AI.")
 		fmt.Fprintln(os.Stderr)
 		fmt.Println(prompt)
+		return nil
+	}
+	if completed {
+		path, err := saveReport(strings.Join(query, " "), output)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not save report: %v\n", err)
+			return nil
+		}
+		fmt.Fprintf(os.Stderr, "\nSaved report: %s\n", path)
 	}
 	return nil
 }
@@ -75,6 +85,12 @@ Classify the user's request into discover, select, entry, exit, portfolio, or jo
 		"User request:\n" + query,
 		"Response language:\nWrite the final report in " + string(lang) + ". Keep source names, ticker symbols, numbers, and URLs unchanged.",
 		"Report template:\n" + strings.TrimSpace(template),
+		`Report structure contract:
+- The final answer must use the 14 numbered sections from the report template in the same order.
+- Do not drop, merge, or reorder sections.
+- If a section is not applicable to the request, keep the section and write "Not applicable" with a short reason.
+- Use the required tables for candidate ranking, price zones, scenarios, action conditions, monitoring, and provenance.
+- Translate user-facing section headings and labels into the response language, but preserve section numbers and meaning.`,
 		`Hard requirements:
 - Always use current web search or current market-data tools before analysis, even if the user does not ask for latest/current/recent data.
 - If fresh data cannot be verified, do not make a recommendation.

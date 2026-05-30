@@ -18,11 +18,11 @@ type openCodeAuthCredential struct {
 	Type string `json:"type"`
 }
 
-func runAgent(prompt string, dryRun bool) error {
+func runAgent(prompt string, dryRun bool) (string, bool, error) {
 	commandPath, ok := resolveCommand(openCodeCommand)
 	if !ok || !hasOpenCodeAuth() {
 		fmt.Println(prompt)
-		return nil
+		return "", false, nil
 	}
 	resolution := resolveOpenCodeModel()
 	args := openCodeRunArgs(prompt, resolution.Model)
@@ -32,10 +32,10 @@ func runAgent(prompt string, dryRun bool) error {
 			parts = append(parts, shellQuote(arg))
 		}
 		fmt.Println(strings.Join(parts, " "))
-		return nil
+		return "", false, nil
 	}
-	_, err := runOpenCodeWithResolution(commandPath, prompt, resolution, true)
-	return err
+	output, err := runOpenCodeWithResolution(commandPath, prompt, resolution, true)
+	return strings.TrimSpace(output), err == nil && strings.TrimSpace(output) != "", err
 }
 
 func hasCommand(command string) bool {
