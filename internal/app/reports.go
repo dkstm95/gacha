@@ -30,27 +30,40 @@ func saveReport(query string, report string) (string, error) {
 	return path, nil
 }
 
-func askToSaveReport(query string, report string, text uiText) (string, bool, error) {
+type reportAction int
+
+const (
+	reportActionNone reportAction = iota
+	reportActionSave
+	reportActionSkip
+	reportActionDetail
+	reportActionNewQuestion
+)
+
+func askReportAction(text uiText) (reportAction, string, error) {
 	if !isInteractiveTerminal() {
-		return "", false, nil
+		return reportActionNone, "", nil
 	}
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprint(os.Stderr, text.SavePrompt+" ")
 	reader := bufio.NewReader(os.Stdin)
 	answer, err := reader.ReadString('\n')
 	if err != nil {
-		return "", false, err
+		return reportActionNone, "", err
 	}
 	answer = strings.TrimSpace(answer)
-	if !wantsSaveReport(answer) {
-		fmt.Fprintln(os.Stderr, text.SkippedSave)
-		return "", false, nil
+	switch {
+	case wantsSaveReport(answer):
+		return reportActionSave, "", nil
+	case refusesSaveReport(answer):
+		return reportActionSkip, "", nil
+	case wantsDetailedAnalysis(answer):
+		return reportActionDetail, "", nil
+	case answer != "":
+		return reportActionNewQuestion, answer, nil
+	default:
+		return reportActionNone, "", nil
 	}
-	path, err := saveReport(query, report)
-	if err != nil {
-		return "", false, err
-	}
-	return path, true, nil
 }
 
 func wantsSaveReport(answer string) bool {
@@ -61,6 +74,16 @@ func wantsSaveReport(answer string) bool {
 func refusesSaveReport(answer string) bool {
 	normalized := strings.ToLower(strings.TrimSpace(answer))
 	return normalized == "n" || normalized == "no" || normalized == "ㅜ" || normalized == "아니오" || normalized == "아니요"
+}
+
+func wantsDetailedAnalysis(answer string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(answer))
+	switch normalized {
+	case "d", "detail", "details", "more", "deep", "detailed analysis", "상세", "상세분석", "자세히", "더 자세히", "깊게":
+		return true
+	default:
+		return false
+	}
 }
 
 func reportsDir() string {

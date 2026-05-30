@@ -18,5 +18,4 @@ Minimum output:
 - full exit review zone
 - conditions to keep holding
 - monitoring plan
-- provenance appendix
-
+- source log

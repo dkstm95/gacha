@@ -17,5 +17,4 @@ Minimum output:
 - risk hotspots
 - rebalancing candidates
 - missing data
-- provenance appendix
-
+- source log

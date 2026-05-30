@@ -10,11 +10,14 @@ This file is a handoff note for future sessions.
    - Ask the AI to write reports in the user's language.
    - If the typed question is clearly Korean, answer in Korean even when the terminal locale is English.
 
-2. Lock the investment report structure so answers are consistent.
-   - Keep a fixed 14-section report contract.
-   - Require the same section order for every answer.
-   - Require explicit "Not applicable" handling instead of silently dropping sections.
-   - Require tables for candidates, price zones, scenarios, action conditions, monitoring, and provenance.
+2. Simplify the investment report structure for non-professional users.
+   - Start every answer with an easy basic report.
+   - Keep the basic report short, practical, plain-language, and decision-ready.
+   - Make the basic report responsible for the conclusion, immediate plan, time horizon, action trigger, thesis-break trigger, review timing, main risks, and data freshness.
+   - Make detailed analysis responsible for verifying the basic report with evidence, valuation, scenarios, portfolio fit, and source-level support.
+   - Include detailed analysis only when requested or needed for complex, mixed, or high-risk decisions.
+   - When detailed analysis is omitted, tell the user they can ask for valuation, scenarios, portfolio fit, or source-level evidence.
+   - Preserve fresh-data checks, source links, risks, opposite view, action conditions, and monitoring triggers.
 
 3. Save completed reports as Markdown under a local Gacha data directory.
    - Ask before saving and save only when the user agrees.

@@ -94,7 +94,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.input.SetValue("")
 			if m.save != nil {
-				return m.handleSaveAnswer(value)
+				return m.handleReportAction(value)
 			}
 			return m.handleSubmit(value)
 		}
@@ -189,7 +189,7 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(m.spin.Tick, researchPhaseTick(), runPromptCmd(value))
 }
 
-func (m tuiModel) handleSaveAnswer(value string) (tea.Model, tea.Cmd) {
+func (m tuiModel) handleReportAction(value string) (tea.Model, tea.Cmd) {
 	pending := m.save
 	m.save = nil
 	if pending == nil {
@@ -214,10 +214,20 @@ func (m tuiModel) handleSaveAnswer(value string) (tea.Model, tea.Cmd) {
 		m.view.GotoBottom()
 		return m, nil
 	}
-	m.save = pending
-	m.view.SetContent(pending.report + "\n\n---\n" + m.text.SavePrompt)
-	m.view.GotoBottom()
-	return m, nil
+	if wantsDetailedAnalysis(value) {
+		m.busy = true
+		m.phase = 0
+		if len(m.text.ResearchPhases) > 0 {
+			m.status = m.text.ResearchPhases[0]
+		} else {
+			m.status = m.text.Researching
+		}
+		m.mode = m.text.Report
+		m.view.SetContent(researchingContent(pending.query, m.text))
+		m.view.GotoTop()
+		return m, tea.Batch(m.spin.Tick, researchPhaseTick(), runDetailPromptCmd(pending.query, pending.report))
+	}
+	return m.handleSubmit(value)
 }
 
 func (m tuiModel) View() string {
@@ -238,6 +248,13 @@ func (m tuiModel) View() string {
 func runPromptCmd(query string) tea.Cmd {
 	return func() tea.Msg {
 		result := runPrompt(query)
+		return runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+	}
+}
+
+func runDetailPromptCmd(query string, basicReport string) tea.Cmd {
+	return func() tea.Msg {
+		result := runDetailedPrompt(query, basicReport)
 		return runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
 	}
 }
@@ -274,6 +291,26 @@ func runPrompt(query string) promptRunResult {
 	}
 	report := strings.TrimSpace(output)
 	return promptRunResult{output: report, completed: report != ""}
+}
+
+func runDetailedPrompt(query string, basicReport string) promptRunResult {
+	prompt, err := buildDetailedPrompt(query, basicReport)
+	if err != nil {
+		return promptRunResult{err: err}
+	}
+	commandPath, ok := resolveCommand(openCodeCommand)
+	if !ok || !hasOpenCodeAuth() {
+		return promptRunResult{output: prompt}
+	}
+	output, err := runOpenCodeWithResolution(commandPath, prompt, resolveOpenCodeModel(), false)
+	if err != nil {
+		return promptRunResult{output: output, err: err}
+	}
+	report := strings.TrimSpace(output)
+	if report == "" {
+		return promptRunResult{}
+	}
+	return promptRunResult{output: strings.TrimSpace(basicReport) + "\n\n" + report, completed: true}
 }
 
 func welcomeContent(version string, text uiText) string {

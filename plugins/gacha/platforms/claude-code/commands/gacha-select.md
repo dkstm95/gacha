@@ -7,5 +7,4 @@ Requirements:
 - Build a current candidate universe.
 - Compare candidates using fresh data.
 - Rank candidates with reasons.
-- Include exclusions, risks, counterarguments, and provenance.
-
+- Include exclusions, risks, counterarguments, and source notes.

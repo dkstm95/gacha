@@ -16,7 +16,7 @@ The installer downloads a standalone binary from GitHub Releases and installs th
 Install a specific release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | GACHA_VERSION=v0.1.20 sh
+curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | GACHA_VERSION=v0.1.21 sh
 ```
 
 Build from source:
@@ -31,8 +31,8 @@ go build -o gacha ./cmd/gacha
 Maintainer release flow:
 
 ```bash
-VERSION=0.1.20 sh scripts/build-release.sh
-gh release create v0.1.20 dist/*.tar.gz dist/checksums.txt --title "v0.1.20"
+VERSION=0.1.21 sh scripts/build-release.sh
+gh release create v0.1.21 dist/*.tar.gz dist/checksums.txt --title "v0.1.21"
 ```
 
 Codex marketplace plugin:
@@ -416,52 +416,38 @@ User Request
 
 ## 6. Standard Report Format
 
-모든 결과물은 다음 형식을 따른다.
+모든 결과물은 쉬운 기본 리포트로 시작한다. 상세 분석은 사용자가 요청했거나, 판단이 복잡하거나, 데이터가 엇갈리거나, 리스크가 높거나, 밸류에이션/시나리오/포트폴리오 적합성이 결론에 중요할 때만 붙인다.
 
 ```text
-Investment Decision Report
+Investment Report
 
-1. Request Type
-   Discover / Select / Entry / Exit
+Easy Basic Report
+1. Bottom Line
+   쉬운 결론, 추천 라벨, 신뢰도
 
-2. Data Freshness
-   사용한 데이터 기준일, 가격 기준 시각, 주요 출처
+2. Simple Plan
+   후보/가격대/보유 판단별 다음 행동
 
-3. Executive Conclusion
-   핵심 결론과 추천 등급
+3. Decision Rules
+   시간 기준, 행동 조건, thesis 훼손 조건, 재검토 시점
 
-4. Ranked Candidates or Price Zones
-   후보 우선순위 또는 매수/매도 가격대
+4. Biggest Risks
+   일반 사용자가 이해해야 할 핵심 리스크
 
-5. Investment Thesis
-   왜 이 투자 아이디어가 성립하는가
+5. Data Check
+   데이터 기준 시각, 주요 출처, 누락 정보
 
-6. Evidence
-   최신 데이터, 공시, 실적, 뉴스, 거시 지표
+6. More Detail Options
+   추가로 요청할 수 있는 상세 항목 안내
 
-7. Valuation and Scenarios
-   base / bull / bear case
-
-8. Risks
-   핵심 리스크와 손실 가능성
-
-9. Devil's Advocate
-   반대 논리와 실패 시나리오
-
-10. Portfolio Fit
-   기존 포트폴리오와의 관계, 집중도, 상관관계
-
-11. Action Conditions
-   매수, 관망, 손절, 익절, 전량 매도 조건
-
-12. Monitoring Plan
-   추적할 지표, 이벤트, 재검토 시점
-
-13. Confidence and Unknowns
-   결론 신뢰도와 확인하지 못한 정보
-
-14. Provenance Appendix
-   주요 수치별 출처, 조회 시각, 데이터 기준일
+Detailed Analysis
+A. Evidence and Sources
+B. Valuation and Scenarios
+C. Strongest Opposite View
+D. Portfolio Fit
+E. Action Rules
+F. Unknowns and Questions
+G. Source Log
 ```
 
 ## 7. Evaluation and Quality Gates

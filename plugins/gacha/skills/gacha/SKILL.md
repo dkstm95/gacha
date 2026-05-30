@@ -20,7 +20,7 @@ For every investment conclusion, use web search or current market-data tools fir
 - `entry`: The user has chosen a concrete asset and wants to know whether the current price is attractive. Produce entry zones and conditions.
 - `exit`: The user owns or tracks an asset and wants sell, trim, stop-loss, or take-profit conditions.
 - `portfolio`: Review holdings-level concentration, correlation, factor exposure, drawdown, and rebalancing needs.
-- `journal`: Record the investment thesis, data provenance, action conditions, and later outcome review.
+- `journal`: Record the investment thesis, source notes, action conditions, and later outcome review.
 
 ## Required Research Process
 
@@ -38,33 +38,50 @@ For every investment conclusion, use web search or current market-data tools fir
    - cross-check key values across at least two sources when practical
    - show stale, missing, conflicting, or low-confidence data
 5. Analyze thesis, valuation, scenarios, risk, portfolio fit, and action conditions.
-6. Run Devil's Advocate review:
+6. Run strongest opposite-view review:
    - why this could be wrong
    - what the market may already price in
    - behavioral risks such as FOMO, overconfidence, anchoring, and confirmation bias
-7. Produce the report with links and provenance.
+7. Produce the report in an easy-first format with links and source notes.
 
-## Required Report Sections
+## Required Report Format
 
-Use this structure unless the user asks for a shorter format:
+Always start with the basic report. It must be understandable to a non-professional investor and complete enough to support a first decision: act, wait, avoid, hold, trim, sell, or ask for more data. Use short sentences, plain language, and explain unavoidable jargon.
+
+Basic Report responsibility:
+- provide the conclusion and immediate plan
+- provide time horizon, action trigger, thesis-break trigger, and review timing
+- provide the biggest risks and fresh-data check
+- show what detailed views the user can ask for next
+
+Detailed Analysis responsibility:
+- verify why the Basic Report's decision rules are reasonable
+- provide deeper evidence, valuation, scenarios, portfolio fit, action rules, unknowns, and source log
 
 ```text
-Investment Decision Report
+Investment Report
 
-1. Request Type
-2. Data Freshness
-3. Executive Conclusion
-4. Ranked Candidates or Price Zones
-5. Investment Thesis
-6. Evidence
-7. Valuation and Scenarios
-8. Risks
-9. Devil's Advocate
-10. Portfolio Fit
-11. Action Conditions
-12. Monitoring Plan
-13. Confidence and Unknowns
-14. Provenance Appendix
+Easy Basic Report
+1. Bottom Line
+2. Simple Plan
+3. Decision Rules
+4. Biggest Risks
+5. Data Check
+6. More Detail Options
+```
+
+Include Detailed Analysis only when the user asks for it, the request compares multiple choices, the data is mixed, the risk is high, or the recommendation depends on valuation, scenarios, portfolio fit, or source-level evidence.
+Always include More Detail Options in the Basic Report so the user knows what they can ask for next.
+
+```text
+Detailed Analysis
+A. Evidence and Sources
+B. Valuation and Scenarios
+C. Strongest Opposite View
+D. Portfolio Fit
+E. Action Rules
+F. Unknowns and Questions
+G. Source Log
 ```
 
 ## Price Zone Rules
@@ -90,4 +107,3 @@ Tie every zone to assumptions, source data, and invalidation criteria.
 - Do not ignore portfolio context.
 - Do not cite model memory as evidence for current prices, news, rates, filings, or market conditions.
 - State that the final investment decision remains with the user.
-

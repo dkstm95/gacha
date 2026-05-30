@@ -1,107 +1,112 @@
-# Investment Decision Report
+# Investment Report
 
-Use this exact 14-section structure for every answer. Keep the section numbers in order. Translate section headings into the response language when needed, but do not drop, merge, or reorder sections. If a section does not apply, write "Not applicable" and explain why.
+Use this easy-first structure for every answer. The Basic Report must be understandable to a non-professional investor and complete enough to support a first decision: act, wait, avoid, hold, trim, sell, or ask for more data. Keep it short, practical, and plain. Avoid unexplained jargon; when a technical term is necessary, explain it in one short phrase.
 
-## 1. Request Type
+Always include the Easy Basic Report. Its job is to provide the decision, the immediate plan, the concrete conditions for action, the main risks, and the data check. Include Detailed Analysis only when the user asks for it, the decision is complex, the data is mixed, the risk is high, or the conclusion depends on valuation, scenarios, portfolio fit, or source-level evidence. Its job is to explain and verify why the Basic Report's decision rules are reasonable.
 
-- Selected workflow: Discover / Select / Entry / Exit / Portfolio / Journal
-- User intent:
-- Assumptions made:
+## Easy Basic Report
 
-## 2. Data Freshness
+### 1. Bottom Line
 
-- Analysis timestamp:
-- Price timestamp:
-- Data sources:
-- Data gaps:
+- Decision: Buy / Watch / Avoid / Trim / Sell / Hold / Not enough data
+- Confidence: High / Medium / Low
+- Plain answer:
+- Why this matters now:
+- Current price or latest observable value:
+
+### 2. Simple Plan
+
+For Discover or Select requests, use a simple candidate table.
+
+| Choice | Why it may fit | Main risk | What to do now |
+| --- | --- | --- | --- |
+
+For Entry or Exit requests, use simple zones.
+
+| Zone | Price or condition | Meaning | Action |
+| --- | --- | --- | --- |
+
+For Portfolio or Journal requests, describe the next action, review date, and decision rule in bullets.
+
+### 3. Decision Rules
+
+Give concrete conditions the user can apply without reading the Detailed Analysis. Include time horizon, action trigger, thesis-break trigger, and review timing.
+
+| Rule | Trigger | Action |
+| --- | --- | --- |
+| Time horizon | | |
+| Act now / wait | | |
+| Thesis break | | |
+| Review again | | |
+
+### 4. Biggest Risks
+
+List the 3 to 5 risks a normal user should understand before acting. If you make a recommendation, include the strongest reason it could be wrong.
+
+### 5. Data Check
+
+- Checked at:
+- Price or data timestamp:
+- Main sources:
+- Missing or uncertain data:
 - Fresh-data verdict: Verified / Partially verified / Not verified
 
-## 3. Executive Conclusion
+### 6. More Detail Options
 
-- Decision label: Buy / Watch / Avoid / Trim / Sell / Hold / Not enough data
-- Confidence: High / Medium / Low
-- One-paragraph conclusion:
-- Why this is the right action now:
+End the Basic Report with 2 to 4 concrete detail options the user can ask for next. Use a short table.
 
-## 4. Ranked Candidates or Price Zones
+| Ask for | What it would add |
+| --- | --- |
 
-For Discover or Select, provide a ranked candidate table.
+## Detailed Analysis
 
-| Rank | Candidate | Vehicle | Why now | Key risk | Fit | Action |
-| --- | --- | --- | --- | --- | --- | --- |
+Include this section only when useful. Keep the headings below in order when you include it.
 
-For Entry or Exit, provide price zones.
+### A. Evidence and Sources
 
-| Zone | Price or range | Meaning | Action | Invalidation trigger |
-| --- | --- | --- | --- | --- |
-
-## 5. Investment Thesis
-
-- Core thesis:
-- What the market may be underpricing:
-- Time horizon:
-- Required conditions for the thesis to work:
-
-## 6. Evidence
-
-- Current price or latest observable value:
-- Financials, fund data, or on-chain data:
-- News, filings, or catalyst data:
-- Macro, sector, or peer context:
+- Price, financial, fund, on-chain, or portfolio evidence:
+- News, filings, or catalyst evidence:
+- Macro, sector, peer, rate, FX, or policy context:
 - Source links:
 
-## 7. Valuation and Scenarios
+### B. Valuation and Scenarios
 
-| Scenario | Assumptions | Implied range or outcome | Probability | What would confirm it |
-| --- | --- | --- | --- | --- |
-| Bull | | | | |
-| Base | | | | |
-| Bear | | | | |
+| Scenario | Plain-language setup | What it could mean | What would confirm it |
+| --- | --- | --- | --- |
+| Bull | | | |
+| Base | | | |
+| Bear | | | |
 
-## 8. Risks
+### C. Strongest Opposite View
 
-- Thesis risks:
-- Valuation risks:
-- Liquidity, concentration, or currency risks:
-- Event risks:
-- What could go wrong first:
+- Best reason not to follow the recommendation:
+- Data that weakens the idea:
+- How the recommendation could be wrong:
 
-## 9. Devil's Advocate
-
-- Strongest argument against the recommendation:
-- Data that weakens the thesis:
-- Why the recommendation might be wrong:
-
-## 10. Portfolio Fit
+### D. Portfolio Fit
 
 - Diversification impact:
-- Concentration and correlation:
-- Suggested sizing logic:
+- Concentration or correlation concern:
+- Sizing logic:
 - Who this is not suitable for:
 
-## 11. Action Conditions
+### E. Action Rules
 
-| Condition type | Trigger | Action | Review timing |
-| --- | --- | --- | --- |
-| Buy / add | | | |
-| Watch | | | |
-| Stop-loss / thesis break | | | |
-| Trim / take profit | | | |
-| Full exit review | | | |
+| Trigger | Action | Review timing |
+| --- | --- | --- |
+| Buy or add | | |
+| Watch | | |
+| Stop-loss or thesis break | | |
+| Trim or take profit | | |
+| Full exit review | | |
 
-## 12. Monitoring Plan
+### F. Unknowns and Questions
 
-| Monitor | Why it matters | Source | Frequency | Trigger |
-| --- | --- | --- | --- | --- |
-
-## 13. Confidence and Unknowns
-
-- Overall confidence:
 - Main unknowns:
 - Data that would change the recommendation:
 - Questions for the user:
 
-## 14. Provenance Appendix
+### G. Source Log
 
 | Claim or value | Source | URL | Retrieved at | Data as of | Confidence |
 | --- | --- | --- | --- | --- | --- |

@@ -7,6 +7,5 @@ Requirements:
 - Use web search or current market-data tools first.
 - Prioritize fresh sources and include source links.
 - Produce ranked candidates.
-- Include risks, Devil's Advocate, portfolio fit, monitoring plan, and provenance.
+- Include risks, strongest opposite view, portfolio fit when useful, monitoring plan, and source notes.
 - Do not claim to provide regulated financial advice.
-

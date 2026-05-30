@@ -158,16 +158,21 @@ Investment information changes quickly. `gacha` always tells the AI to check cur
 
 If current data cannot be checked, the AI should not make a recommendation.
 
-A good answer should include:
+A good answer starts with a short, plain-language basic report that is complete enough for a first decision. Detailed analysis is included only when it helps verify the decision.
+
+The basic report should include:
 
 - data date and time
 - source links
 - current price or latest numbers
-- main idea
-- risks
-- opposite view
+- plain bottom line
+- simple plan
+- time horizon, action trigger, thesis-break trigger, and review timing
+- biggest risks
+- strongest opposite view when relevant
 - buy, hold, sell, or watch conditions
 - what to monitor next
+- a short note that detailed valuation, scenarios, portfolio fit, or source-level evidence can be requested
 
 ## Important Limits
 

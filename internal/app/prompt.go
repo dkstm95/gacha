@@ -47,16 +47,50 @@ func runQuery(args []string) error {
 		return nil
 	}
 	if completed {
-		path, saved, err := askToSaveReport(strings.Join(query, " "), output, textFor(responseLanguage(strings.Join(query, " "))))
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not save report: %v\n", err)
-			return nil
-		}
-		if saved {
-			fmt.Fprintf(os.Stderr, "\nSaved report: %s\n", path)
-		}
+		return handleCompletedReport(strings.Join(query, " "), output)
 	}
 	return nil
+}
+
+func handleCompletedReport(query string, output string) error {
+	text := textFor(responseLanguage(query))
+	for {
+		action, value, err := askReportAction(text)
+		if err != nil {
+			return err
+		}
+		switch action {
+		case reportActionNone:
+			return nil
+		case reportActionSave:
+			path, err := saveReport(query, output)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not save report: %v\n", err)
+				return nil
+			}
+			fmt.Fprintf(os.Stderr, "\n%s %s\n", text.SavedReport, path)
+			return nil
+		case reportActionSkip:
+			fmt.Fprintln(os.Stderr, text.SkippedSave)
+			return nil
+		case reportActionDetail:
+			prompt, err := buildDetailedPrompt(query, output)
+			if err != nil {
+				return err
+			}
+			detail, completed, err := runAgent(prompt, false)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not use OpenCode automatically: %v\n", err)
+				return nil
+			}
+			if !completed {
+				return nil
+			}
+			output = strings.TrimSpace(output) + "\n\n" + strings.TrimSpace(detail)
+		case reportActionNewQuestion:
+			return runQuery([]string{value})
+		}
+	}
 }
 
 func buildPrompt(queryParts []string) (string, error) {
@@ -88,16 +122,39 @@ Classify the user's request into discover, select, entry, exit, portfolio, or jo
 		"Response language:\nWrite the final report in " + string(lang) + ". Keep source names, ticker symbols, numbers, and URLs unchanged.",
 		"Report template:\n" + strings.TrimSpace(template),
 		`Report structure contract:
-- The final answer must use the 14 numbered sections from the report template in the same order.
-- Do not drop, merge, or reorder sections.
-- If a section is not applicable to the request, keep the section and write "Not applicable" with a short reason.
-- Use the required tables for candidate ranking, price zones, scenarios, action conditions, monitoring, and provenance.
-- Translate user-facing section headings and labels into the response language, but preserve section numbers and meaning.`,
+- The final answer must start with the Easy Basic Report from the template.
+- Write for ordinary users, not investment professionals. Use short sentences and explain necessary jargon in plain language.
+- The Basic Report is decision-ready: it must include the conclusion, immediate plan, time horizon, action trigger, thesis-break trigger, review timing, main risks, and data freshness.
+- The Detailed Analysis is the verification layer: it explains the evidence, valuation, scenarios, portfolio fit, source log, and why the Basic Report's decision rules are reasonable.
+- Include Detailed Analysis only when the user asks for it, the request compares multiple choices, the data is mixed, the risk is high, or the recommendation depends on valuation, scenarios, or portfolio fit.
+- If Detailed Analysis is included, use the detailed headings from the template in order.
+- Always include More Detail Options in the Basic Report so the user knows what they can ask for next.
+- Use simple tables only when they make the answer easier to compare, such as candidates, price zones, or action triggers.
+- Translate user-facing section headings and labels into the response language, but preserve the template's meaning.`,
 		`Hard requirements:
 - Always use current web search or current market-data tools before analysis, even if the user does not ask for latest/current/recent data.
 - If fresh data cannot be verified, do not make a recommendation.
-- Include data freshness, source links, risks, Devil's Advocate, action conditions, monitoring plan, and provenance.
+- Include data freshness, source links, risks, action conditions, and what to monitor next. Include the strongest opposite view when making a recommendation.
 - Write user-facing explanations, headings, and action conditions in the response language above.
+- Do not execute trades. The final decision remains with the user.`,
+	}
+	return strings.Join(sections, "\n\n"), nil
+}
+
+func buildDetailedPrompt(query string, basicReport string) (string, error) {
+	lang := responseLanguage(query + "\n" + basicReport)
+	sections := []string{
+		"# gacha detailed analysis",
+		"User request:\n" + strings.TrimSpace(query),
+		"Existing basic report:\n" + strings.TrimSpace(basicReport),
+		"Response language:\nWrite the detailed analysis in " + string(lang) + ". Keep source names, ticker symbols, numbers, and URLs unchanged.",
+		`Task:
+- Continue from the existing basic report.
+- Produce only the "Detailed Analysis" section, not a new Basic Report.
+- Use these headings in order: Evidence and Sources, Valuation and Scenarios, Strongest Opposite View, Portfolio Fit, Action Rules, Unknowns and Questions, Source Log.
+- Use current web search or current market-data tools again when detailed evidence, prices, filings, news, valuation, or source-level claims need verification.
+- If fresh data cannot be verified, clearly mark what is missing instead of inventing it.
+- Keep explanations plain enough for ordinary users, but include the deeper evidence requested by this detailed view.
 - Do not execute trades. The final decision remains with the user.`,
 	}
 	return strings.Join(sections, "\n\n"), nil

@@ -19,5 +19,4 @@ Minimum output:
 - overheated zone
 - valuation assumptions
 - near-term event risks
-- provenance appendix
-
+- source log

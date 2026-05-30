@@ -17,5 +17,4 @@ Minimum output:
 - ranked recommendation list
 - excluded candidates with reasons
 - risks and counterarguments
-- provenance appendix
-
+- source log

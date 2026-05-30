@@ -131,7 +131,7 @@ func englishText() uiText {
 			"What should I invest in for the next 6 to 12 months?",
 			"I own TSLA. When should I trim, sell, or stop out?",
 			"Report contract",
-			"Data freshness • Sources • Thesis • Valuation • Risks • Devil's Advocate • Action conditions",
+			"Plain answer • Data freshness • Sources • Risks • Opposite view • Action conditions",
 			"No fresh data, no recommendation. Trading is disabled.",
 		},
 		Research: func(query string) []string {
@@ -143,8 +143,8 @@ func englishText() uiText {
 				"1. Classify request: discover, select, entry, exit, portfolio, or journal",
 				"2. Require current web or market data",
 				"3. Build thesis, valuation, and scenario analysis",
-				"4. Run risk review and Devil's Advocate",
-				"5. Produce action conditions and provenance",
+				"4. Run risk review and strongest opposite-view check",
+				"5. Produce action conditions and source notes",
 				"Waiting for the local AI runtime...",
 			}
 		},
@@ -174,7 +174,7 @@ func englishText() uiText {
 		StatusRuntime:   "Runtime ",
 		StatusFreshData: "Fresh data required",
 		StatusNoTrading: "No trading",
-		SavePrompt:      "Save this report as Markdown? Type y or n.",
+		SavePrompt:      "Next: type d for detailed analysis, y to save, n to skip, or ask a new question.",
 		SavedReport:     "Saved report:",
 		SkippedSave:     "Report was not saved.",
 	}
@@ -220,7 +220,7 @@ func koreanText() uiText {
 			"앞으로 6~12개월 관점에서 무엇에 투자하면 좋을까?",
 			"TSLA를 보유 중인데 언제 줄이거나 팔아야 할까?",
 			"리포트 원칙",
-			"데이터 시점 • 출처 • thesis • 밸류에이션 • 리스크 • 반대 논리 • 행동 조건",
+			"쉬운 결론 • 데이터 시점 • 출처 • 리스크 • 반대 논리 • 행동 조건",
 			"최신 데이터가 없으면 추천도 없습니다. Gacha는 거래를 실행하지 않습니다.",
 		},
 		Research: func(query string) []string {
@@ -231,7 +231,7 @@ func koreanText() uiText {
 				"진행 단계",
 				"1. 요청 분류: discover, select, entry, exit, portfolio, journal",
 				"2. 최신 웹 또는 시장 데이터 요구",
-				"3. thesis, 밸류에이션, 시나리오 분석 구성",
+				"3. 쉬운 기본 리포트와 필요한 상세 분석 구성",
 				"4. 리스크 검토와 반대 논리 점검",
 				"5. 행동 조건과 출처 정리",
 				"로컬 AI 런타임을 기다리는 중...",
@@ -263,7 +263,7 @@ func koreanText() uiText {
 		StatusRuntime:   "런타임 ",
 		StatusFreshData: "최신 데이터 필수",
 		StatusNoTrading: "거래 실행 안 함",
-		SavePrompt:      "이 리포트를 Markdown으로 저장할까요? y 또는 n을 입력하세요.",
+		SavePrompt:      "다음: d=상세 분석, y=저장, n=건너뛰기, 또는 새 질문을 입력하세요.",
 		SavedReport:     "리포트 저장:",
 		SkippedSave:     "리포트를 저장하지 않았습니다.",
 	}

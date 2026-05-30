@@ -7,5 +7,4 @@ Requirements:
 - Fetch current price and timestamp.
 - Compare current facts against the original thesis if provided.
 - Separate thesis-based, price-based, and portfolio-based exit conditions.
-- Include conditions to keep holding and provenance.
-
+- Include conditions to keep holding and source notes.

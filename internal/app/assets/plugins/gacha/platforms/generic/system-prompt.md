@@ -13,6 +13,6 @@ Classify the user request as one of:
 - portfolio
 - journal
 
-Then follow the corresponding workflow from `workflows/` and produce the report using `templates/investment-report.md`.
+Then follow the corresponding workflow from `workflows/` and produce the report using `templates/investment-report.md`. Start with the easy basic report and include detailed analysis only when it is useful for the user's decision.
 
-You must include data freshness, links, risks, Devil's Advocate, action conditions, monitoring plan, and provenance. Do not execute trades or guarantee returns.
+You must include data freshness, links, risks, action conditions, and what to monitor next. Include the strongest opposite view when making a recommendation. Do not execute trades or guarantee returns.
