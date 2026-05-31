@@ -4,9 +4,23 @@ Ask investment questions through a local AI runtime.
 
 `gacha` opens a terminal app for investment research. It uses OpenCode as the local AI runtime, so you can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another supported provider without choosing a platform for every question.
 
+Gacha is built around a simple belief: investment outcomes cannot be predicted perfectly, but careful research can improve the odds. It helps turn unclear investment questions into structured decisions by asking an AI runtime to check current data, compare alternatives, surface risks, and produce a clean report.
+
 If the runtime is missing, `gacha` can install it for you on first run on macOS and Linux. On Windows, install OpenCode separately first. If no runtime is ready, `gacha` still gives you a complete prompt you can paste into any AI with web browsing.
 
 Korean: [docs/ko/README.md](docs/ko/README.md)
+
+## What Gacha Helps With
+
+Gacha is designed for different stages of investment clarity:
+
+- Discover: you do not know what or how to invest in yet.
+- Theme selection: you know a field or theme, but not the specific stock, ETF, asset, or instrument.
+- Entry planning: you know what you may want to buy, but not when or under what conditions.
+- Holding management: you own something and need hold, trim, sell, or stop-out rules.
+- Portfolio review: you need allocation, concentration, overlap, or risk review across positions.
+
+The goal is not to make investing certain. The goal is to make the research faster, more consistent, and easier to act on.
 
 ## Install
 
@@ -77,6 +91,8 @@ You do not need to pick a model or choose an AI platform. `gacha` handles routin
 ```text
 Ask: What should I invest in for the next 6 to 12 months?
 Ask: I want exposure to AI infrastructure. Which stocks or ETFs should I compare?
+Ask: I want to invest in semiconductors. What should I compare?
+Ask: Should I buy NVDA now?
 Ask: I own TSLA. When should I trim, sell, or stop out?
 Ask: Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
 ```
