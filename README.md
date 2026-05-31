@@ -1,146 +1,204 @@
 # gacha
 
-Ask investment questions through a local AI runtime.
+Ask investment questions from your terminal.
 
-`gacha` opens a terminal app for investment research. It uses OpenCode as the local AI runtime, so you can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another supported provider without choosing a platform for every question.
+`gacha` is a small terminal app for investment research.
+You ask a plain question.
+Gacha turns it into a structured AI research workflow.
 
-Gacha is built around a simple belief: investment outcomes cannot be predicted perfectly, but careful research can improve the odds. It helps turn unclear investment questions into structured decisions by asking an AI runtime to check current data, compare alternatives, surface risks, and produce a clean report.
-
-If the runtime is missing, `gacha` can install it for you on first run on macOS and Linux. On Windows, install OpenCode separately first. If no runtime is ready, `gacha` still gives you a complete prompt you can paste into any AI with web browsing.
+Investment outcomes cannot be predicted perfectly.
+Careful research can still improve the odds.
+Gacha helps you check current data, compare alternatives, surface risks,
+and turn unclear questions into cleaner decisions.
 
 Korean: [docs/ko/README.md](docs/ko/README.md)
 
-## What Gacha Helps With
+## What It Helps With
 
-Gacha is designed for different stages of investment clarity:
+Gacha supports different stages of investment clarity:
 
 - Discover: you do not know what or how to invest in yet.
-- Theme selection: you know a field or theme, but not the specific stock, ETF, asset, or instrument.
-- Entry planning: you know what you may want to buy, but not when or under what conditions.
-- Holding management: you own something and need hold, trim, sell, or stop-out rules.
-- Portfolio review: you need allocation, concentration, overlap, or risk review across positions.
+- Theme: you know a field, but not the specific stock, ETF, or asset.
+- Entry: you know what you may buy, but not when or under what conditions.
+- Holding: you own something and need hold, trim, sell, or stop-out rules.
+- Portfolio: you need allocation, concentration, overlap, or risk review.
 
-The goal is not to make investing certain. The goal is to make the research faster, more consistent, and easier to act on.
+The goal is not certainty.
+The goal is faster, calmer, more consistent research.
 
-## Install
+## What It Does
+
+- Opens a simple terminal workspace for investment questions.
+- Asks the AI to check current web or market data before giving an opinion.
+- Starts with a short, plain-language report.
+- Saves finished reports when you choose to save them.
+- Falls back to a copy/paste prompt if AI setup is not ready.
+
+Gacha does not place trades.
+It does not fetch market data by itself.
+It prepares the workflow and sends it to your connected AI tool.
+
+## Quick Start
 
 ### macOS and Linux
+
+Install:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
 ```
 
-The macOS/Linux installer adds the main command and a short alias:
-
-- `gacha`
-- `gch`
-
-Use `gch` for day-to-day use. Use `gacha` when you want the full command name.
-
-No Node, npm, Python, or Go setup is needed for `gacha`.
-
-The installer verifies the downloaded release archive against the published SHA-256 checksums before installing it.
-
-On first run, `gacha` may ask to install OpenCode runtime and connect an AI provider on macOS and Linux. This runtime runs behind the Gacha UI.
-
-If the installer prints an `export PATH=...` line, run it once in your terminal.
-
-### Windows
-
-Download `gacha-windows-amd64.zip` from the latest release:
-
-```text
-https://github.com/dkstm95/gacha/releases/latest
-```
-
-Unzip it, move `gacha.exe` into a folder on your `PATH`, then open a new PowerShell or Windows Terminal window and verify it:
-
-```powershell
-gacha version
-gacha setup
-```
-
-If you want the short `gch` command too, copy `gacha.exe` as `gch.exe` in the same folder:
-
-```powershell
-Copy-Item gacha.exe gch.exe
-```
-
-Windows automatic OpenCode setup is not supported yet. Install OpenCode from its Windows documentation, make sure `opencode` is on your `PATH`, then run `gacha setup` to connect a provider.
-
-## Start
+Run:
 
 ```bash
 gch
 ```
 
-You will see a terminal workspace with a left context rail, a right research area, and a thin global status bar:
+The installer adds two commands:
+
+- `gch`: short command for daily use
+- `gacha`: full command name
+
+You do not need extra programming tools to use Gacha.
+
+On first run, Gacha may ask to set up AI.
+Follow the prompts and connect the account you want to use.
+
+If the installer asks you to run one more command, run it once.
+Then open a new terminal.
+
+### Windows
+
+Download the latest Windows zip:
+
+```text
+https://github.com/dkstm95/gacha/releases/latest
+```
+
+Unzip it.
+Move `gacha.exe` into a folder where you keep command-line tools.
+Then open a new terminal window:
+
+```powershell
+gacha setup
+```
+
+If you want the short command too, copy `gacha.exe` as `gch.exe`:
+
+```powershell
+Copy-Item gacha.exe gch.exe
+```
+
+Windows automatic AI setup is not supported yet.
+Install the extra AI tool shown by Gacha first.
+Then run:
+
+```powershell
+gacha setup
+```
+
+## Your First Question
+
+Start the app:
+
+```bash
+gch
+```
+
+You will see a terminal workspace.
+Context is on the left.
+The research area is on the right.
 
 ![Gacha TUI home screen](docs/assets/gacha-home.png)
 
-Type a question in the right-side prompt:
+Type a question:
 
 ```text
-Ask: "Should I buy NVDA now?"
+Should I buy NVDA now?
 ```
 
-You do not need to pick a model or choose an AI platform. `gacha` handles routing through OpenCode. On wide terminals, the left rail stays focused on context and decision types while the prompt stays inside the right workspace; on smaller terminals, the layout collapses around the workspace and prompt.
-
-## Example Questions
-
-```text
-Ask: What should I invest in for the next 6 to 12 months?
-Ask: I want exposure to AI infrastructure. Which stocks or ETFs should I compare?
-Ask: I want to invest in semiconductors. What should I compare?
-Ask: Should I buy NVDA now?
-Ask: I own TSLA. When should I trim, sell, or stop out?
-Ask: Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
-```
-
-You can also ask one question without opening the app:
+Or ask one question without opening the app:
 
 ```bash
 gch "Should I buy NVDA now?"
 ```
 
-## Setup Check
+You do not need to choose a model each time.
+By default, Gacha chooses a research-friendly model for you.
+If it cannot choose one, it uses the default from your AI setup.
 
-Run this if you want to see whether the local AI runtime is ready:
+## Example Questions
+
+```text
+What should I invest in for the next 6 to 12 months?
+I want exposure to AI infrastructure. Which stocks or ETFs should I compare?
+I want to invest in semiconductors. What should I compare?
+I own TSLA. When should I trim, sell, or stop out?
+Review my portfolio: AAPL 35%, NVDA 30%, SGOV 35%.
+```
+
+Good questions include:
+
+- your goal
+- your time horizon
+- your risk tolerance
+- your current holdings, if they matter
+
+## If Setup Is Not Ready
+
+Check your setup:
 
 ```bash
 gch doctor
 ```
 
-The check shows overall readiness, connected provider status, the model Gacha will ask OpenCode to use, and where reports are saved. The default model mode is `auto`.
+This shows:
 
-To view settings in the app, type:
+- whether AI setup is ready
+- whether an AI account is connected
+- where reports are saved
 
-```text
-/settings
+Fix setup:
+
+```bash
+gch setup
 ```
 
-Inside the app, you can set model mode, language, and theme:
+On macOS and Linux, `gch setup` can finish AI setup for you.
+Then it starts account login.
+
+On Windows, install the required AI tool separately first.
+
+If AI setup still cannot run, Gacha prints a complete prompt.
+You can paste that prompt into a web AI with browsing.
+
+## App Commands
+
+Inside the app:
 
 ```text
 /settings
-/model
-/model auto
-/model opencode-default
-/model provider/model
 /language
+/theme
+/help
+/quit
+```
+
+`/language` and `/theme` open interactive selectors.
+Use the arrow keys and enter.
+Or type the full command directly:
+
+```text
 /language auto
 /language en
 /language ko
-/theme
 /theme system
 /theme dark
 /theme light
 /theme gacha
 ```
 
-`/model`, `/language`, and `/theme` open an interactive selector. Use ↑/↓ and enter to choose, or type a full command directly. `system` adapts to your terminal background, while `dark`, `light`, and `gacha` use fixed palettes.
-
-Runtime setup, diagnostics, and updates stay outside the app:
+Setup, diagnostics, and updates stay outside the app:
 
 ```bash
 gch setup
@@ -148,44 +206,9 @@ gch doctor
 gch update
 ```
 
-For scripts, use non-interactive config commands:
+## Reports
 
-```bash
-gch config get
-gch config set model auto
-gch config set model opencode-default
-gch config set model provider/model
-gch config set language ko
-gch config set theme system
-```
-
-In auto mode, Gacha asks OpenCode for the connected provider's current model list, then chooses a strong research model from that list. For OpenAI, it prefers the newest base frontier model pattern, such as `gpt-N` or `gpt-N.M`, instead of hard-coding a specific model name. It pushes small/fast variants such as `mini`, `nano`, `lite`, `flash`, `fast`, `spark`, and coding-specialized variants behind the frontier base model.
-
-For OpenAI OAuth, the ChatGPT subscription route, Gacha treats `pro` models as lower priority because OpenCode can list models that the current ChatGPT account cannot actually run. If OpenCode still rejects a selected model as unsupported for the ChatGPT account, Gacha retries the next discovered candidate.
-
-If Gacha cannot read the model list, it does not guess a hard-coded model. It runs OpenCode without `--model` and lets OpenCode use its default.
-
-Advanced users can override this with:
-
-```bash
-GACHA_OPENCODE_MODEL=provider/model gch
-```
-
-Or create `~/.config/gacha/config.json`:
-
-```json
-{
-  "model": "auto",
-  "language": "auto",
-  "theme": "system"
-}
-```
-
-Supported model values are `auto`, `opencode-default`, or a custom `provider/model`. Supported theme values are `system`, `dark`, `light`, and `gacha`.
-
-## Saved Reports
-
-When the AI runtime completes a report, `gacha` asks whether you want to save it as Markdown.
+When the AI finishes a report, Gacha asks whether to save it.
 
 Default location:
 
@@ -193,86 +216,62 @@ Default location:
 ~/.local/share/gacha/reports
 ```
 
-If `XDG_DATA_HOME` is set, reports are saved under:
-
-```text
-$XDG_DATA_HOME/gacha/reports
-```
-
-Reports are saved only when you answer yes. Paste-fallback prompts and dry runs are not saved as reports.
+Reports are saved only when you answer yes.
+Copy/paste fallback prompts are not saved as reports.
 
 ## Language
 
-`gacha` detects your terminal language from `GACHA_LANG`, `LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, or `LANG`.
+Gacha tries to match your terminal language.
+If your question contains Korean text, Gacha asks the AI to answer in Korean.
 
-If the language is Korean, the interactive UI is shown in Korean. Reports are also requested in the detected language. If your question contains Korean text, Gacha asks the AI to answer in Korean even when your terminal locale is English.
-
-Set `"language"` in `~/.config/gacha/config.json` to `auto`, `en`, or `ko` to override the terminal language. `GACHA_LANG` still takes precedence.
-
-`gacha` uses this route:
+To set the language inside the app:
 
 ```text
-OpenCode runtime -> copy/paste prompt
+/language
 ```
 
-If OpenCode is missing or no provider is connected, run:
+## Updates
 
-```bash
-gch setup
-```
-
-`gch setup` installs the runtime if needed, then starts provider login. You can connect ChatGPT, GitHub Copilot, Gemini, OpenAI API, or another OpenCode-supported provider.
-
-On Windows, `gch setup` does not install OpenCode automatically. Install OpenCode separately, make sure `opencode` is on your `PATH`, then run `gacha setup` or `gch setup`.
-
-The interactive home screen also shows a setup callout when OpenCode or provider login is missing. After setup, return to `gch` and ask your first investment question.
-
-After setup, `gacha` keeps the investment workflow and results inside the Gacha UI.
-
-If the runtime fails, `gacha` falls back to a prompt you can paste into a web AI.
-
-## Update
+macOS and Linux:
 
 ```bash
 gch update
 ```
 
-On macOS and Linux, this downloads the right binary for your computer, verifies it against the published SHA-256 checksums, and replaces the old one.
+This downloads the right app file for your computer.
+Then it replaces the old one.
 
-On Windows, self-update is disabled to avoid replacing a running `.exe`. Download the latest `gacha-windows-amd64.zip` or `gacha-windows-arm64.zip`, replace `gacha.exe` in your `PATH`, and open a new terminal.
+Download the latest Windows zip from the releases page.
+Replace your old `gacha.exe`.
+Then open a new terminal.
 
 ## Fresh Data
 
-Investment information changes quickly. `gacha` always tells the AI to check current web or market data, even if you do not ask for "latest" data.
+Investment information changes quickly.
+Gacha always tells the AI to check current web or market data.
+It does this even if your question does not say "latest".
 
 If current data cannot be checked, the AI should not make a recommendation.
 
-A good answer starts with a short, plain-language basic report that is complete enough for a first decision. Detailed analysis is included only when it helps verify the decision.
+A good Gacha report should make these clear:
 
-The basic report should include:
+- what data was checked, when, and from which sources
+- the plain bottom line
+- the next action and review timing
+- the biggest risks and opposite view
+- when to buy, hold, sell, or watch
 
-- data date and time
-- source links
-- current price or latest numbers
-- plain bottom line
-- simple plan
-- time horizon, action trigger, thesis-break trigger, and review timing
-- biggest risks
-- strongest opposite view when relevant
-- buy, hold, sell, or watch conditions
-- what to monitor next
-- a short note that detailed valuation, scenarios, portfolio fit, or source-level evidence can be requested
+## Limits
 
-## Important Limits
-
-`gacha` does not:
+Gacha does not:
 
 - place trades
 - promise returns
 - replace professional financial, tax, or legal advice
-- fetch market data by itself yet
+- directly fetch market data in the current version
 
-It prepares a strict research workflow and sends it to an AI tool. The AI tool must do the current web or market-data research.
+Gacha prepares a strict research workflow.
+Your connected AI tool performs the current web or market-data research.
 
 ## Developers
 
