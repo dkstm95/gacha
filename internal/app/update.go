@@ -24,11 +24,10 @@ type GitHubRelease struct {
 var (
 	gitHubLatestReleaseURL = "https://api.github.com/repos/dkstm95/gacha/releases/latest"
 	gitHubReleaseBaseURL   = "https://github.com/dkstm95/gacha/releases/download"
-	gitHubHTTPClient       = http.DefaultClient
 )
 
 func (a *App) updateSelf() error {
-	if !selfUpdateSupported(runtime.GOOS) {
+	if !selfUpdateSupported(a.env.GOOS) {
 		fmt.Println(windowsUpdateUnsupportedMessage())
 		return nil
 	}
@@ -60,8 +59,9 @@ func (a *App) updateSelf() error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	archivePath := filepath.Join(tmpDir, releaseAssetName(runtime.GOOS, runtime.GOARCH))
-	url := releaseAssetURL(latest)
+	assetName := releaseAssetName(a.env.GOOS, a.env.GOARCH)
+	archivePath := filepath.Join(tmpDir, assetName)
+	url := releaseAssetURLFor(latest, a.env.GOOS, a.env.GOARCH)
 	if err := a.downloadFile(url, archivePath); err != nil {
 		return fmt.Errorf("could not download update archive: %w\nManual install: https://github.com/dkstm95/gacha/releases/latest", err)
 	}
@@ -69,7 +69,7 @@ func (a *App) updateSelf() error {
 	if err := a.downloadFile(releaseChecksumsURL(latest), checksumsPath); err != nil {
 		return fmt.Errorf("could not download release checksums: %w\nManual install: https://github.com/dkstm95/gacha/releases/latest", err)
 	}
-	if err := verifyReleaseChecksum(archivePath, checksumsPath, releaseAssetName(runtime.GOOS, runtime.GOARCH)); err != nil {
+	if err := verifyReleaseChecksum(archivePath, checksumsPath, assetName); err != nil {
 		return fmt.Errorf("could not verify update download: %w\nManual install: https://github.com/dkstm95/gacha/releases/latest", err)
 	}
 	if err := extractTarGz(archivePath, tmpDir); err != nil {
@@ -104,7 +104,7 @@ func (a *App) latestReleaseTag() (string, error) {
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", "gacha/"+a.version)
-	resp, err := gitHubHTTPClient.Do(req)
+	resp, err := a.env.httpClient().Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -209,7 +209,7 @@ func (a *App) downloadFile(url string, destination string) error {
 		return err
 	}
 	req.Header.Set("User-Agent", "gacha/"+a.version)
-	resp, err := gitHubHTTPClient.Do(req)
+	resp, err := a.env.httpClient().Do(req)
 	if err != nil {
 		return err
 	}

@@ -7,10 +7,11 @@ import (
 
 type App struct {
 	version string
+	env     Env
 }
 
 func New(version string) *App {
-	return &App{version: version}
+	return &App{version: version, env: defaultEnv()}
 }
 
 func (a *App) Run(args []string) error {
@@ -44,7 +45,7 @@ func (a *App) Run(args []string) error {
 	case "prompt":
 		return printPrompt(args[1:])
 	default:
-		return runQuery(args)
+		return a.runQuery(args)
 	}
 }
 

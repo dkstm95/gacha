@@ -25,10 +25,10 @@ The release workflow lives in:
 .github/workflows/release.yml
 ```
 
-An archived workflow template is also available in:
+The release artifact and checksum contract is documented in:
 
 ```text
-docs/github-actions/
+docs/release-artifacts.md
 ```
 
 ## Agent Assets

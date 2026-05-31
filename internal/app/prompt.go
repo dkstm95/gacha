@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
-	"os"
 	"strings"
 
 	"github.com/dkstm95/gacha/internal/agent"
@@ -20,6 +19,10 @@ func printPrompt(query []string) error {
 }
 
 func runQuery(args []string) error {
+	return New("").runQuery(args)
+}
+
+func (a *App) runQuery(args []string) error {
 	dryRun := false
 	query := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
@@ -36,19 +39,23 @@ func runQuery(args []string) error {
 	}
 	output, completed, err := runAgent(prompt, dryRun)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not use OpenCode automatically: %v\n", err)
-		fmt.Fprintln(os.Stderr, "Falling back to a prompt you can paste into any web AI.")
-		fmt.Fprintln(os.Stderr)
-		fmt.Println(prompt)
+		fmt.Fprintf(a.env.Stderr, "Could not use OpenCode automatically: %v\n", err)
+		fmt.Fprintln(a.env.Stderr, "Falling back to a prompt you can paste into any web AI.")
+		fmt.Fprintln(a.env.Stderr)
+		fmt.Fprintln(a.env.Stdout, prompt)
 		return nil
 	}
 	if completed {
-		return handleCompletedReport(strings.Join(query, " "), output)
+		return a.handleCompletedReport(strings.Join(query, " "), output)
 	}
 	return nil
 }
 
 func handleCompletedReport(query string, output string) error {
+	return New("").handleCompletedReport(query, output)
+}
+
+func (a *App) handleCompletedReport(query string, output string) error {
 	text := textFor(responseLanguage(query))
 	for {
 		action, value, err := askReportAction(text)
@@ -59,15 +66,15 @@ func handleCompletedReport(query string, output string) error {
 		case reportActionNone:
 			return nil
 		case reportActionSave:
-			path, err := saveReport(query, output)
+			path, err := a.saveReport(query, output)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Could not save report: %v\n", err)
+				fmt.Fprintf(a.env.Stderr, "Could not save report: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(os.Stderr, "\n%s %s\n", text.SavedReport, path)
+			fmt.Fprintf(a.env.Stderr, "\n%s %s\n", text.SavedReport, path)
 			return nil
 		case reportActionSkip:
-			fmt.Fprintln(os.Stderr, text.SkippedSave)
+			fmt.Fprintln(a.env.Stderr, text.SkippedSave)
 			return nil
 		case reportActionDetail:
 			prompt, err := buildDetailedPrompt(query, output)
@@ -76,7 +83,7 @@ func handleCompletedReport(query string, output string) error {
 			}
 			detail, completed, err := runAgent(prompt, false)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Could not use OpenCode automatically: %v\n", err)
+				fmt.Fprintf(a.env.Stderr, "Could not use OpenCode automatically: %v\n", err)
 				return nil
 			}
 			if !completed {
@@ -84,7 +91,7 @@ func handleCompletedReport(query string, output string) error {
 			}
 			output = strings.TrimSpace(output) + "\n\n" + strings.TrimSpace(detail)
 		case reportActionNewQuestion:
-			return runQuery([]string{value})
+			return a.runQuery([]string{value})
 		}
 	}
 }

@@ -11,6 +11,14 @@ import (
 )
 
 func saveReport(query string, report string) (string, error) {
+	return saveReportAt(query, report, time.Now())
+}
+
+func (a *App) saveReport(query string, report string) (string, error) {
+	return saveReportAt(query, report, a.env.now())
+}
+
+func saveReportAt(query string, report string, now time.Time) (string, error) {
 	report = strings.TrimSpace(report)
 	if report == "" {
 		return "", fmt.Errorf("empty report")
@@ -22,7 +30,7 @@ func saveReport(query string, report string) (string, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
-	path := filepath.Join(dir, reportFileName(time.Now(), query))
+	path := filepath.Join(dir, reportFileName(now, query))
 	content := reportFileContent(query, report)
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		return "", err

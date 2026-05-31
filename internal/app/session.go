@@ -20,18 +20,18 @@ func (a *App) startSession() error {
 
 func (a *App) startLineSession() error {
 	text := textFor(detectLanguage())
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("gacha")
+	reader := bufio.NewReader(a.env.Stdin)
+	fmt.Fprintln(a.env.Stdout, "gacha")
 	if detectLanguage() == languageKorean {
-		fmt.Println("질문을 입력하세요. 종료하려면 /quit을 입력하세요.")
+		fmt.Fprintln(a.env.Stdout, "질문을 입력하세요. 종료하려면 /quit을 입력하세요.")
 	} else {
-		fmt.Println("Type a question, or /quit to exit.")
+		fmt.Fprintln(a.env.Stdout, "Type a question, or /quit to exit.")
 	}
 	for {
-		fmt.Print("\n" + strings.TrimSuffix(text.InputPlaceholder, "...") + " > ")
+		fmt.Fprint(a.env.Stdout, "\n"+strings.TrimSuffix(text.InputPlaceholder, "...")+" > ")
 		line, err := reader.ReadString('\n')
 		if err != nil && strings.TrimSpace(line) == "" {
-			fmt.Println()
+			fmt.Fprintln(a.env.Stdout)
 			return nil
 		}
 		input := strings.TrimSpace(line)
@@ -39,34 +39,34 @@ func (a *App) startLineSession() error {
 			continue
 		}
 		if isSettingsCommand(input) {
-			fmt.Println(settingsContent(text))
+			fmt.Fprintln(a.env.Stdout, settingsContent(text))
 			continue
 		}
 		switch input {
 		case "/q", "/quit", "quit", "exit":
 			if detectLanguage() == languageKorean {
-				fmt.Println("종료합니다.")
+				fmt.Fprintln(a.env.Stdout, "종료합니다.")
 			} else {
-				fmt.Println("Goodbye.")
+				fmt.Fprintln(a.env.Stdout, "Goodbye.")
 			}
 			return nil
 		case "/doctor", "doctor":
 			if err := doctor(); err != nil {
-				fmt.Fprintln(os.Stderr, err)
+				fmt.Fprintln(a.env.Stderr, err)
 			}
 		case "/setup", "setup":
 			if err := ensureRuntime(true); err != nil {
-				fmt.Fprintln(os.Stderr, err)
+				fmt.Fprintln(a.env.Stderr, err)
 			}
 		default:
 			if isSlashCommand(input) {
-				fmt.Println(fmt.Sprintf(text.UnknownCommand, input))
-				fmt.Println()
-				fmt.Println(helpContent(text))
+				fmt.Fprintln(a.env.Stdout, fmt.Sprintf(text.UnknownCommand, input))
+				fmt.Fprintln(a.env.Stdout)
+				fmt.Fprintln(a.env.Stdout, helpContent(text))
 				continue
 			}
-			if err := runQuery([]string{input}); err != nil {
-				fmt.Fprintln(os.Stderr, err)
+			if err := a.runQuery([]string{input}); err != nil {
+				fmt.Fprintln(a.env.Stderr, err)
 			}
 		}
 	}
