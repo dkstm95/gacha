@@ -2,9 +2,11 @@ package app
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
+	lgcompat "charm.land/lipgloss/v2/compat"
 )
 
 type uiTheme struct {
@@ -13,21 +15,21 @@ type uiTheme struct {
 }
 
 type uiPalette struct {
-	BrandFg       lipgloss.TerminalColor
-	BrandBg       lipgloss.TerminalColor
-	Accent        lipgloss.TerminalColor
-	Hero          lipgloss.TerminalColor
-	SectionFg     lipgloss.TerminalColor
-	SectionBg     lipgloss.TerminalColor
-	Muted         lipgloss.TerminalColor
-	Faint         lipgloss.TerminalColor
-	Warning       lipgloss.TerminalColor
-	ActionFg      lipgloss.TerminalColor
-	ActionBg      lipgloss.TerminalColor
-	Border        lipgloss.TerminalColor
-	PanelBorder   lipgloss.TerminalColor
-	InputBorder   lipgloss.TerminalColor
-	CalloutBorder lipgloss.TerminalColor
+	BrandFg       color.Color
+	BrandBg       color.Color
+	Accent        color.Color
+	Hero          color.Color
+	SectionFg     color.Color
+	SectionBg     color.Color
+	Muted         color.Color
+	Faint         color.Color
+	Warning       color.Color
+	ActionFg      color.Color
+	ActionBg      color.Color
+	Border        color.Color
+	PanelBorder   color.Color
+	InputBorder   color.Color
+	CalloutBorder color.Color
 }
 
 type uiStyles struct {
@@ -126,25 +128,29 @@ func makeUIStyles(p uiPalette) uiStyles {
 	}
 }
 
+func adaptiveColor(light string, dark string) color.Color {
+	return lgcompat.AdaptiveColor{Light: lipgloss.Color(light), Dark: lipgloss.Color(dark)}
+}
+
 func availableThemes() []uiTheme {
 	return []uiTheme{
 		{
 			Name: themeSettingSystem,
 			Palette: uiPalette{
 				BrandFg:       lipgloss.Color("230"),
-				BrandBg:       lipgloss.AdaptiveColor{Light: "25", Dark: "62"},
-				Accent:        lipgloss.AdaptiveColor{Light: "25", Dark: "81"},
-				Hero:          lipgloss.AdaptiveColor{Light: "24", Dark: "87"},
+				BrandBg:       adaptiveColor("25", "62"),
+				Accent:        adaptiveColor("25", "81"),
+				Hero:          adaptiveColor("24", "87"),
 				SectionFg:     lipgloss.Color("230"),
-				SectionBg:     lipgloss.AdaptiveColor{Light: "25", Dark: "62"},
-				Muted:         lipgloss.AdaptiveColor{Light: "240", Dark: "244"},
-				Faint:         lipgloss.AdaptiveColor{Light: "242", Dark: "245"},
-				Warning:       lipgloss.AdaptiveColor{Light: "130", Dark: "230"},
+				SectionBg:     adaptiveColor("25", "62"),
+				Muted:         adaptiveColor("240", "244"),
+				Faint:         adaptiveColor("242", "245"),
+				Warning:       adaptiveColor("130", "230"),
 				ActionFg:      lipgloss.Color("230"),
-				ActionBg:      lipgloss.AdaptiveColor{Light: "238", Dark: "238"},
-				Border:        lipgloss.AdaptiveColor{Light: "245", Dark: "238"},
-				PanelBorder:   lipgloss.AdaptiveColor{Light: "25", Dark: "62"},
-				InputBorder:   lipgloss.AdaptiveColor{Light: "25", Dark: "81"},
+				ActionBg:      adaptiveColor("238", "238"),
+				Border:        adaptiveColor("245", "238"),
+				PanelBorder:   adaptiveColor("25", "62"),
+				InputBorder:   adaptiveColor("25", "81"),
 				CalloutBorder: lipgloss.Color("214"),
 			},
 		},

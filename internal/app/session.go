@@ -6,14 +6,14 @@ import (
 	"os"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func (a *App) startSession() error {
 	if !isInteractiveTerminal() {
 		return a.startLineSession()
 	}
-	program := tea.NewProgram(newTUIModel(a.version), tea.WithAltScreen())
+	program := tea.NewProgram(newTUIModel(a.version))
 	_, err := program.Run()
 	return err
 }

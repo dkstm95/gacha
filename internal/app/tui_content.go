@@ -1,8 +1,8 @@
 package app
 
 import (
+	"charm.land/lipgloss/v2"
 	"fmt"
-	"github.com/charmbracelet/lipgloss"
 	"os"
 	"strings"
 )

@@ -1,11 +1,11 @@
 package app
 
 import (
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"strings"
 	"time"
 )
@@ -48,12 +48,13 @@ func newTUIModel(version string) tuiModel {
 	input.Focus()
 	input.CharLimit = 2000
 	input.Prompt = " "
+	input.SetVirtualCursor(false)
 
 	spin := spinner.New()
 	spin.Spinner = spinner.Dot
 	spin.Style = accentStyle
 
-	view := viewport.New(80, 16)
+	view := viewport.New(viewport.WithWidth(80), viewport.WithHeight(16))
 	view.SetContent(welcomeContent(version, text, 80, 16))
 
 	return tuiModel{
@@ -81,16 +82,16 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.view.Width = max(32, msg.Width-4)
-		m.view.Height = max(6, msg.Height-8)
-		m.input.Width = max(16, msg.Width-8)
+		m.view.SetWidth(max(32, msg.Width-4))
+		m.view.SetHeight(max(6, msg.Height-8))
+		m.input.SetWidth(max(16, msg.Width-8))
 		m.input.Placeholder = inputPlaceholderForWidth(m.text, msg.Width)
 		if m.choice != nil {
-			m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
+			m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width()))
 		} else if m.mode == m.text.Auto && !m.busy {
-			m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
+			m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width(), m.view.Height()))
 		}
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		key := msg.String()
 		if m.choice != nil {
 			switch key {
@@ -168,7 +169,15 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m tuiModel) View() string {
+func (m tuiModel) View() tea.View {
+	content := m.render()
+	view := tea.NewView(content)
+	view.AltScreen = true
+	view.Cursor = m.inputCursorForContent(content)
+	return view
+}
+
+func (m tuiModel) render() string {
 	width := max(44, m.width)
 	outerPadding := 4
 	if width < 72 {
@@ -179,28 +188,28 @@ func (m tuiModel) View() string {
 	fullLayout := bodyWidth >= 132 && m.height >= 22
 	_, workspaceWidth := splitLayoutWidths(bodyWidth)
 	if fullLayout {
-		m.view.Width = max(30, workspaceWidth-8)
-		m.input.Width = max(16, workspaceWidth-12)
+		m.view.SetWidth(max(30, workspaceWidth-8))
+		m.input.SetWidth(max(16, workspaceWidth-12))
 	} else {
-		m.view.Width = max(30, bodyWidth-4)
-		m.input.Width = max(16, bodyWidth-8)
+		m.view.SetWidth(max(30, bodyWidth-4))
+		m.input.SetWidth(max(16, bodyWidth-8))
 	}
-	m.input.Placeholder = inputPlaceholderForWidth(m.text, m.input.Width)
+	m.input.Placeholder = inputPlaceholderForWidth(m.text, m.input.Width())
 	workspaceHeight := contentHeight
 	if fullLayout {
 		workspaceHeight = max(6, contentHeight-4)
 	}
-	m.view.Height = workspaceHeight
+	m.view.SetHeight(workspaceHeight)
 
 	content := m.view.View()
 	if m.mode == m.text.Auto && !m.busy {
-		content = welcomeContentWithColumns(m.version, m.text, m.view.Width, workspaceHeight, !fullLayout)
+		content = welcomeContentWithColumns(m.version, m.text, m.view.Width(), workspaceHeight, !fullLayout)
 		if !fullLayout {
 			homeHeight := lipgloss.Height(content) + 2
 			contentHeight = min(contentHeight, max(8, homeHeight))
 			workspaceHeight = contentHeight
 		}
-		m.view.Height = workspaceHeight
+		m.view.SetHeight(workspaceHeight)
 	}
 
 	header := renderHeader(bodyWidth, m.version)
@@ -216,6 +225,34 @@ func (m tuiModel) View() string {
 	}
 	parts = append(parts, status)
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+}
+
+func (m tuiModel) inputCursorForContent(content string) *tea.Cursor {
+	cursor := m.input.Cursor()
+	if cursor == nil {
+		return nil
+	}
+	needle := stripANSI(m.input.View())
+	for y, line := range strings.Split(stripANSI(content), "\n") {
+		x := strings.Index(line, needle)
+		if x < 0 {
+			continue
+		}
+		cursor.Position.X = lipgloss.Width(line[:x]) + m.inputCursorColumn()
+		cursor.Position.Y += y
+		return cursor
+	}
+	return nil
+}
+
+func (m tuiModel) inputCursorColumn() int {
+	value := []rune(m.input.Value())
+	pos := min(m.input.Position(), len(value))
+	column := lipgloss.Width(m.input.Prompt + string(value[:pos]))
+	if m.input.Width() > 0 {
+		column = min(column, m.input.Width()+lipgloss.Width(m.input.Prompt))
+	}
+	return column
 }
 
 func (m tuiModel) renderSplitMain(bodyWidth int, height int, workspace string, input string) string {

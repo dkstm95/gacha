@@ -1,22 +1,27 @@
 package app
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"strings"
 	"testing"
 )
 
-func keyMsg(value string) tea.KeyMsg {
+func keyMsg(value string) tea.KeyPressMsg {
 	switch value {
 	case "down":
-		return tea.KeyMsg{Type: tea.KeyDown}
+		return tea.KeyPressMsg{Code: tea.KeyDown}
 	case "up":
-		return tea.KeyMsg{Type: tea.KeyUp}
+		return tea.KeyPressMsg{Code: tea.KeyUp}
 	case "enter":
-		return tea.KeyMsg{Type: tea.KeyEnter}
+		return tea.KeyPressMsg{Code: tea.KeyEnter}
 	}
-	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(value)}
+	code := rune(0)
+	for _, r := range value {
+		code = r
+		break
+	}
+	return tea.KeyPressMsg{Code: code, Text: value}
 }
 
 func TestTUILanguageAndModelCommandsOpenChoices(t *testing.T) {
@@ -138,9 +143,9 @@ func TestTUIViewFitsCommonTerminalSizes(t *testing.T) {
 			model := newTUIModel("0.1.27")
 			model.width = tc.width
 			model.height = tc.height
-			model.view.Width = max(30, tc.width-8)
-			model.view.Height = max(6, tc.height-8)
-			got := stripANSI(model.View())
+			model.view.SetWidth(max(30, tc.width-8))
+			model.view.SetHeight(max(6, tc.height-8))
+			got := stripANSI(model.render())
 			for _, line := range strings.Split(got, "\n") {
 				if lipgloss.Width(line) > tc.width {
 					t.Fatalf("line width %d exceeds %d: %q\n%s", lipgloss.Width(line), tc.width, line, got)
@@ -190,7 +195,7 @@ func TestTUICommandViewsFitQuarterTerminal(t *testing.T) {
 			updated := next.(tuiModel)
 			updated.width = 80
 			updated.height = 24
-			got := stripANSI(updated.View())
+			got := stripANSI(updated.render())
 			for _, line := range strings.Split(got, "\n") {
 				if lipgloss.Width(line) > 80 {
 					t.Fatalf("line width %d exceeds 80: %q\n%s", lipgloss.Width(line), line, got)
@@ -219,7 +224,7 @@ func TestTUIChoiceViewsRerenderAfterNarrowResize(t *testing.T) {
 	if cmd != nil {
 		t.Fatal("unexpected command")
 	}
-	got := stripANSI(resized.(tuiModel).View())
+	got := stripANSI(resized.(tuiModel).render())
 	for _, line := range strings.Split(got, "\n") {
 		if lipgloss.Width(line) > 60 {
 			t.Fatalf("line width %d exceeds 60: %q\n%s", lipgloss.Width(line), line, got)
@@ -252,7 +257,7 @@ func TestTUIFullLayoutKeepsLocalizedPromptInRightPanel(t *testing.T) {
 			model.input.Placeholder = tc.text.InputPlaceholder
 			model.width = 180
 			model.height = 36
-			got := stripANSI(model.View())
+			got := stripANSI(model.render())
 			railWidth, _ := splitLayoutWidths(max(40, model.width-4))
 			foundPrompt := false
 			for _, line := range strings.Split(got, "\n") {
@@ -276,7 +281,7 @@ func TestTUIStatusBarRendersBelowWorkspace(t *testing.T) {
 	model := newTUIModel("0.1.27")
 	model.width = 180
 	model.height = 36
-	got := stripANSI(model.View())
+	got := stripANSI(model.render())
 	promptLine := -1
 	statusLine := -1
 	panelBottomLine := -1
@@ -305,14 +310,53 @@ func TestTUIStatusBarRendersBelowWorkspace(t *testing.T) {
 	}
 }
 
+func TestTUIViewPlacesRealCursorOnInputLine(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	model.width = 100
+	model.height = 30
+	model.input.SetValue("한")
+
+	view := model.View()
+	if view.Cursor == nil {
+		t.Fatal("expected real input cursor")
+	}
+	if model.input.VirtualCursor() {
+		t.Fatal("text input should use Bubble Tea's real cursor path")
+	}
+
+	lines := strings.Split(stripANSI(view.Content), "\n")
+	inputLine := -1
+	inputColumn := -1
+	for i, line := range lines {
+		if column := strings.Index(line, "한"); column >= 0 {
+			inputLine = i
+			inputColumn = column
+			break
+		}
+	}
+	if inputLine < 0 {
+		t.Fatalf("rendered view missing input text:\n%s", stripANSI(view.Content))
+	}
+	if view.Cursor.Position.Y != inputLine {
+		t.Fatalf("cursor row %d did not match input row %d:\n%s", view.Cursor.Position.Y, inputLine, stripANSI(view.Content))
+	}
+	inputDisplayColumn := lipgloss.Width(lines[inputLine][:inputColumn])
+	if view.Cursor.Position.X <= inputDisplayColumn {
+		t.Fatalf("cursor column %d did not move past input column %d", view.Cursor.Position.X, inputDisplayColumn)
+	}
+	if wantMin := inputDisplayColumn + lipgloss.Width("한"); view.Cursor.Position.X < wantMin {
+		t.Fatalf("cursor column %d did not account for wide Korean text; want at least %d", view.Cursor.Position.X, wantMin)
+	}
+}
+
 func TestContextRailReflectsTUIState(t *testing.T) {
 	model := newTUIModel("0.1.27")
 	model.width = 180
 	model.height = 36
-	model.view.Width = 172
-	model.view.Height = 28
+	model.view.SetWidth(172)
+	model.view.SetHeight(28)
 
-	home := stripANSI(model.View())
+	home := stripANSI(model.render())
 	for _, expected := range []string{"Context", "Decision types"} {
 		if !strings.Contains(home, expected) {
 			t.Fatalf("home context missing %q:\n%s", expected, home)
@@ -327,7 +371,7 @@ func TestContextRailReflectsTUIState(t *testing.T) {
 	model.phase = 1
 	model.status = model.text.ResearchPhases[1]
 	model.view.SetContent(researchingContent(model.query, model.text))
-	research := stripANSI(model.View())
+	research := stripANSI(model.render())
 	for _, expected := range []string{"Current request", "Should I buy NVDA now?", "Research", "Sources"} {
 		if !strings.Contains(research, expected) {
 			t.Fatalf("research context missing %q:\n%s", expected, research)
@@ -339,7 +383,7 @@ func TestContextRailReflectsTUIState(t *testing.T) {
 	model.status = model.text.Complete
 	model.report = "## Easy Basic Report\n\n### 1. Bottom Line\nWait.\n\n### 3. Decision Rules\nBuy if...\n\n### 4. Biggest Risks\nValuation.\n\n### 5. Data Check\nCurrent price checked."
 	model.view.SetContent(model.report)
-	report := stripANSI(model.View())
+	report := stripANSI(model.render())
 	for _, expected := range []string{"Current request", "Report", "Bottom line", "Decision rules", "Risks", "Data check"} {
 		if !strings.Contains(report, expected) {
 			t.Fatalf("report context missing %q:\n%s", expected, report)
