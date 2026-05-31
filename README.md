@@ -13,6 +13,20 @@ and turn unclear questions into cleaner decisions.
 
 Korean: [docs/ko/README.md](docs/ko/README.md)
 
+## TL;DR
+
+Install Gacha, run `gch`, answer the one-time research profile, and ask an
+investment question.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
+gch
+```
+
+Gacha is for research, not trading automation.
+It helps the AI check current data, compare alternatives, surface risks, and
+produce a report you can revisit.
+
 ## What It Helps With
 
 Gacha supports different stages of investment clarity:
@@ -39,6 +53,16 @@ It does not fetch market data by itself.
 It prepares the workflow and sends it to your connected AI tool.
 
 ## Quick Start
+
+### If You Use an AI Agent
+
+You can ask your coding assistant or terminal agent to install Gacha for you:
+
+```text
+Install Gacha by following the README:
+https://github.com/dkstm95/gacha
+Then run gch and help me complete the first-run setup.
+```
 
 ### macOS and Linux
 
@@ -207,6 +231,18 @@ gch setup
 gch doctor
 gch update
 ```
+
+## Privacy and Data Flow
+
+Gacha stores your profile and saved reports on your machine.
+Reports are saved only after you choose to save them.
+
+When you ask a question, Gacha sends the research prompt to your connected
+OpenCode runtime and AI provider.
+Your AI provider's own data policy applies to that request.
+
+Gacha does not include product analytics or telemetry in the current version.
+`gch update` contacts GitHub only when you run the update command.
 
 ## Reports
 
