@@ -15,8 +15,8 @@ ln -sf gacha gch
 ## Release
 
 ```bash
-VERSION=0.2.0 sh scripts/build-release.sh
-gh release create v0.2.0 dist/*.tar.gz dist/*.zip dist/checksums.txt --title "v0.2.0"
+VERSION=0.2.2 sh scripts/build-release.sh
+gh release create v0.2.2 dist/*.tar.gz dist/*.zip dist/checksums.txt --title "v0.2.2"
 ```
 
 The release workflow lives in:
