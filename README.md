@@ -25,6 +25,8 @@ Use `gch` for day-to-day use. Use `gacha` when you want the full command name.
 
 No Node, npm, Python, or Go setup is needed for `gacha`.
 
+The installer verifies the downloaded release archive against the published SHA-256 checksums before installing it.
+
 On first run, `gacha` may ask to install OpenCode runtime and connect an AI provider on macOS and Linux. This runtime runs behind the Gacha UI.
 
 If the installer prints an `export PATH=...` line, run it once in your terminal.

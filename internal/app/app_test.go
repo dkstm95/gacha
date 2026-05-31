@@ -1,8 +1,11 @@
 package app
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -962,6 +965,51 @@ func TestReleaseAssetURLForUsesTargetArchive(t *testing.T) {
 	}
 }
 
+func TestExtractTarGzWritesGachaBinary(t *testing.T) {
+	dir := t.TempDir()
+	archive := filepath.Join(dir, "gacha.tar.gz")
+	writeTarGz(t, archive, map[string]string{"gacha": "binary"})
+
+	if err := extractTarGz(archive, dir); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "gacha"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "binary" {
+		t.Fatalf("unexpected extracted binary: %q", data)
+	}
+}
+
+func TestExtractTarGzRejectsArchiveWithoutGachaBinary(t *testing.T) {
+	dir := t.TempDir()
+	archive := filepath.Join(dir, "gacha.tar.gz")
+	writeTarGz(t, archive, map[string]string{"README.md": "not a binary"})
+
+	err := extractTarGz(archive, dir)
+	if err == nil || !strings.Contains(err.Error(), "did not contain gacha binary") {
+		t.Fatalf("expected missing binary error, got %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "gacha")); !os.IsNotExist(err) {
+		t.Fatalf("unexpected gacha path after rejected archive: %v", err)
+	}
+}
+
+func TestExtractTarGzIgnoresTraversalEntry(t *testing.T) {
+	dir := t.TempDir()
+	archive := filepath.Join(dir, "gacha.tar.gz")
+	writeTarGz(t, archive, map[string]string{"../gacha": "escape"})
+
+	err := extractTarGz(archive, dir)
+	if err == nil || !strings.Contains(err.Error(), "did not contain gacha binary") {
+		t.Fatalf("expected missing binary error, got %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(dir), "gacha")); !os.IsNotExist(err) {
+		t.Fatalf("unexpected traversal output: %v", err)
+	}
+}
+
 func TestSelfUpdateUnsupportedOnWindows(t *testing.T) {
 	if selfUpdateSupported("windows") {
 		t.Fatal("expected Windows self-update to be disabled")
@@ -971,5 +1019,31 @@ func TestSelfUpdateUnsupportedOnWindows(t *testing.T) {
 	}
 	if !strings.Contains(windowsUpdateUnsupportedMessage(), "gacha-windows-amd64.zip") {
 		t.Fatal("Windows update message should point users to Windows ZIP artifacts")
+	}
+}
+
+func writeTarGz(t *testing.T, path string, files map[string]string) {
+	t.Helper()
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	gzipWriter := gzip.NewWriter(file)
+	defer gzipWriter.Close()
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+	for name, content := range files {
+		data := []byte(content)
+		if err := tarWriter.WriteHeader(&tar.Header{
+			Name: name,
+			Mode: 0o755,
+			Size: int64(len(data)),
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tarWriter.Write(data); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

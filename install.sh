@@ -36,19 +36,59 @@ detect_target() {
 need curl
 need tar
 
+checksum_command() {
+  if command -v shasum >/dev/null 2>&1; then
+    echo "shasum"
+    return
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    echo "sha256sum"
+    return
+  fi
+  echo "install.sh requires shasum or sha256sum" >&2
+  exit 1
+}
+
+verify_checksum() {
+  archive="$1"
+  checksums="$2"
+  asset_name="$3"
+  expected="$(awk -v asset="$asset_name" '$2 == asset { print $1 }' "$checksums")"
+  if [ -z "$expected" ]; then
+    echo "checksum for $asset_name not found" >&2
+    exit 1
+  fi
+  tool="$(checksum_command)"
+  if [ "$tool" = "shasum" ]; then
+    actual="$(shasum -a 256 "$archive" | awk '{ print $1 }')"
+  else
+    actual="$(sha256sum "$archive" | awk '{ print $1 }')"
+  fi
+  if [ "$actual" != "$expected" ]; then
+    echo "checksum mismatch for $asset_name" >&2
+    exit 1
+  fi
+}
+
 target="$(detect_target)"
+asset="gacha-$target.tar.gz"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 if [ "$VERSION" = "latest" ]; then
-  url="https://github.com/$REPO/releases/latest/download/gacha-$target.tar.gz"
+  url="https://github.com/$REPO/releases/latest/download/$asset"
+  checksums_url="https://github.com/$REPO/releases/latest/download/checksums.txt"
 else
-  url="https://github.com/$REPO/releases/download/$VERSION/gacha-$target.tar.gz"
+  url="https://github.com/$REPO/releases/download/$VERSION/$asset"
+  checksums_url="https://github.com/$REPO/releases/download/$VERSION/checksums.txt"
 fi
 
 mkdir -p "$INSTALL_DIR"
 echo "Downloading $url"
 curl -fsSL "$url" -o "$tmpdir/gacha.tar.gz"
+echo "Downloading $checksums_url"
+curl -fsSL "$checksums_url" -o "$tmpdir/checksums.txt"
+verify_checksum "$tmpdir/gacha.tar.gz" "$tmpdir/checksums.txt" "$asset"
 tar -xzf "$tmpdir/gacha.tar.gz" -C "$tmpdir"
 install -m 0755 "$tmpdir/gacha" "$INSTALL_DIR/$BIN_NAME"
 

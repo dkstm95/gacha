@@ -183,7 +183,7 @@ func extractTarGz(archivePath string, destinationDir string) error {
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
-			return nil
+			return fmt.Errorf("release archive did not contain gacha binary")
 		}
 		if err != nil {
 			return err
