@@ -7,6 +7,10 @@ import (
 )
 
 func runPrompt(query string) promptRunResult {
+	return runPromptWithProgress(query, nil)
+}
+
+func runPromptWithProgress(query string, onOutput func(string)) promptRunResult {
 	prompt, err := buildPrompt([]string{query})
 	if err != nil {
 		return promptRunResult{err: err}
@@ -15,7 +19,7 @@ func runPrompt(query string) promptRunResult {
 	if !ok || !hasOpenCodeAuth() {
 		return promptRunResult{output: prompt}
 	}
-	output, err := runOpenCodeWithResolution(commandPath, prompt, resolveOpenCodeModel(), false)
+	output, err := runOpenCodeWithResolutionProgress(commandPath, prompt, resolveOpenCodeModel(), false, onOutput)
 	if err != nil {
 		return promptRunResult{output: output, err: err}
 	}
@@ -24,6 +28,10 @@ func runPrompt(query string) promptRunResult {
 }
 
 func runDetailedPrompt(query string, basicReport string) promptRunResult {
+	return runDetailedPromptWithProgress(query, basicReport, nil)
+}
+
+func runDetailedPromptWithProgress(query string, basicReport string, onOutput func(string)) promptRunResult {
 	prompt, err := buildDetailedPrompt(query, basicReport)
 	if err != nil {
 		return promptRunResult{err: err}
@@ -32,7 +40,7 @@ func runDetailedPrompt(query string, basicReport string) promptRunResult {
 	if !ok || !hasOpenCodeAuth() {
 		return promptRunResult{output: prompt}
 	}
-	output, err := runOpenCodeWithResolution(commandPath, prompt, resolveOpenCodeModel(), false)
+	output, err := runOpenCodeWithResolutionProgress(commandPath, prompt, resolveOpenCodeModel(), false, onOutput)
 	if err != nil {
 		return promptRunResult{output: output, err: err}
 	}
