@@ -186,9 +186,9 @@ Windows에서는 필요한 AI 도구를 먼저 별도로 설치해야 합니다.
 ```
 
 `/profile`은 투자 프로필을 보거나 수정합니다.
-`/settings`는 언어 명령을 보여줍니다.
-`/theme`은 테마 선택 화면을 엽니다.
-방향키와 enter로 고르거나 전체 명령을 직접 입력해도 됩니다.
+`/settings`는 언어와 테마 설정 화면을 엽니다.
+`/theme`은 테마 선택 화면으로 바로 이동합니다.
+방향키와 enter로 고르거나 전체 명령을 직접 입력할 수 있습니다.
 
 ```text
 /language auto
@@ -233,6 +233,9 @@ Gacha는 터미널 언어에 맞추려고 합니다.
 ```text
 /settings
 ```
+
+그다음 `Language`를 고르거나 `/language ko`, `/language en`,
+`/language auto`를 직접 입력하세요.
 
 ## 업데이트
 

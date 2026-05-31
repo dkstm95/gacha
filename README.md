@@ -185,9 +185,9 @@ Inside the app:
 ```
 
 `/profile` shows or edits your research profile.
-`/settings` shows language commands.
-`/theme` opens an interactive theme selector.
-Use the arrow keys and enter, or type the full command directly:
+`/settings` opens language and theme settings.
+`/theme` jumps directly to the interactive theme selector.
+Use the arrow keys and enter, or type a full command directly:
 
 ```text
 /language auto
@@ -231,6 +231,9 @@ To set the language inside the app:
 ```text
 /settings
 ```
+
+Then choose `Language`, or type `/language en`, `/language ko`, or
+`/language auto` directly.
 
 ## Updates
 
