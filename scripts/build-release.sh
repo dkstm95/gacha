@@ -4,9 +4,14 @@ set -eu
 VERSION="${VERSION:-0.1.35}"
 OUT_DIR="${OUT_DIR:-dist}"
 TARGETS="${TARGETS:-darwin/arm64 darwin/amd64 linux/arm64 linux/amd64 windows/amd64 windows/arm64}"
+ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+GOCACHE="${GOCACHE:-$ROOT_DIR/.cache/go-build}"
+GOMODCACHE="${GOMODCACHE:-$ROOT_DIR/.cache/go-mod}"
+export GOCACHE GOMODCACHE
 
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
+mkdir -p "$GOCACHE" "$GOMODCACHE"
 
 for target in $TARGETS; do
   os="${target%/*}"

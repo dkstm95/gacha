@@ -1,6 +1,7 @@
 package app
 
 import (
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -177,6 +178,70 @@ func TestDetailedAnalysisAnswerParsing(t *testing.T) {
 	if wantsDetailedAnalysis("new question") {
 		t.Fatal("unexpected detail parse for ordinary text")
 	}
+}
+
+func TestLineSessionAcceptsDocumentedSlashQuit(t *testing.T) {
+	output := runLineSessionWithInput(t, "/quit\n")
+	if strings.Contains(output, "Unknown command") {
+		t.Fatalf("line session treated /quit as unknown:\n%s", output)
+	}
+	if !strings.Contains(output, "Goodbye.") {
+		t.Fatalf("line session did not exit cleanly:\n%s", output)
+	}
+}
+
+func TestLineSessionShowsHelpForUnknownSlashCommand(t *testing.T) {
+	output := runLineSessionWithInput(t, "/unknown\n/quit\n")
+	if !strings.Contains(output, "Unknown command") {
+		t.Fatalf("line session did not explain unknown slash command:\n%s", output)
+	}
+	if !strings.Contains(output, "Command palette") {
+		t.Fatalf("line session did not show help for unknown slash command:\n%s", output)
+	}
+}
+
+func runLineSessionWithInput(t *testing.T, input string) string {
+	t.Helper()
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("GACHA_LANG", "en")
+
+	oldStdin := os.Stdin
+	oldStdout := os.Stdout
+	inReader, inWriter, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	outReader, outWriter, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		os.Stdin = oldStdin
+		os.Stdout = oldStdout
+		_ = inReader.Close()
+		_ = outReader.Close()
+	})
+	os.Stdin = inReader
+	os.Stdout = outWriter
+
+	if _, err := inWriter.WriteString(input); err != nil {
+		t.Fatal(err)
+	}
+	if err := inWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := New("test").startLineSession(); err != nil {
+		t.Fatal(err)
+	}
+	if err := outWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	data, err := io.ReadAll(outReader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
 }
 
 func TestDetectLanguageFromLocale(t *testing.T) {
