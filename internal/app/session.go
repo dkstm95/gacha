@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,9 +14,30 @@ func (a *App) startSession() error {
 	if !isInteractiveTerminal() {
 		return a.startLineSession()
 	}
-	program := tea.NewProgram(newTUIModel(a.version), tea.WithAltScreen())
+	restoreInterrupts := ignoreTUIInterrupts()
+	defer restoreInterrupts()
+	program := tea.NewProgram(newTUIModel(a.version), tea.WithAltScreen(), tea.WithoutSignalHandler())
 	_, err := program.Run()
 	return err
+}
+
+func ignoreTUIInterrupts() func() {
+	signals := make(chan os.Signal, 1)
+	done := make(chan struct{})
+	signal.Notify(signals, os.Interrupt)
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-signals:
+			}
+		}
+	}()
+	return func() {
+		signal.Stop(signals)
+		close(done)
+	}
 }
 
 func (a *App) startLineSession() error {

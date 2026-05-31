@@ -94,6 +94,10 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		key := msg.String()
 		if m.choice != nil {
 			switch key {
+			case "esc":
+				if m.choice.Kind == choiceReport {
+					return m.returnToReport(), nil
+				}
 			case "up", "k":
 				m.moveChoice(-1)
 				return m, nil
@@ -103,12 +107,13 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		switch key {
-		case "ctrl+c", "esc":
-			return m, tea.Quit
 		case "enter":
 			value := strings.TrimSpace(m.input.Value())
 			if value == "" && m.choice != nil {
 				return m.handleChoiceSelection()
+			}
+			if value == "" && m.save != nil {
+				return m.showReportChoice(), nil
 			}
 			if value == "" {
 				return m, nil
@@ -138,7 +143,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				report := strings.TrimSpace(msg.output)
 				m.report = report
 				m.save = &pendingSave{query: msg.query, report: report}
-				m = m.showReportChoice()
+				m.view.SetContent(reportContentWithPrompt(report, m.text))
 			} else {
 				m.save = nil
 				m.report = strings.TrimSpace(msg.output)

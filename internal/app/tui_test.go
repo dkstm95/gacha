@@ -15,6 +15,10 @@ func keyMsg(value string) tea.KeyMsg {
 		return tea.KeyMsg{Type: tea.KeyUp}
 	case "enter":
 		return tea.KeyMsg{Type: tea.KeyEnter}
+	case "esc":
+		return tea.KeyMsg{Type: tea.KeyEsc}
+	case "ctrl+c":
+		return tea.KeyMsg{Type: tea.KeyCtrlC}
 	}
 	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(value)}
 }
@@ -357,6 +361,93 @@ func TestReportActionsExposeNextChoices(t *testing.T) {
 	}
 }
 
+func TestCompletedReportDoesNotAppendActionChoices(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	next, cmd := model.Update(runResultMsg{
+		query:     "Should I buy NVDA now?",
+		output:    "## Report\n\nRead this first.",
+		completed: true,
+	})
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	updated := next.(tuiModel)
+	got := stripANSI(updated.view.View())
+	if updated.choice != nil {
+		t.Fatalf("report should not enter choice mode immediately: %#v", updated.choice)
+	}
+	for _, expected := range []string{"## Report", "Read this first.", "Next: type d"} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("report view missing %q:\n%s", expected, got)
+		}
+	}
+	for _, unexpected := range []string{"Use ↑/↓ and enter", "y  Save", "n  Skip"} {
+		if strings.Contains(got, unexpected) {
+			t.Fatalf("report view unexpectedly included action choice %q:\n%s", unexpected, got)
+		}
+	}
+}
+
+func TestReportActionsOpenOnEnterAndEscReturnsToReport(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	model.report = "## Report\n\nRead this first."
+	model.save = &pendingSave{query: "Should I buy NVDA now?", report: model.report}
+	model.view.SetContent(reportContentWithPrompt(model.report, model.text))
+
+	next, cmd := model.Update(keyMsg("enter"))
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	actions := next.(tuiModel)
+	if actions.choice == nil || actions.choice.Kind != choiceReport {
+		t.Fatalf("expected report action choice, got %#v", actions.choice)
+	}
+	actionView := stripANSI(actions.view.View())
+	if strings.Contains(actionView, "Read this first.") {
+		t.Fatalf("action screen should not include report body:\n%s", actionView)
+	}
+	if !strings.Contains(actionView, "y  Save") {
+		t.Fatalf("action screen missing save choice:\n%s", actionView)
+	}
+
+	next, cmd = actions.Update(keyMsg("esc"))
+	if cmd != nil {
+		t.Fatal("esc in report actions should return to the report without quitting")
+	}
+	report := next.(tuiModel)
+	if report.choice != nil {
+		t.Fatalf("expected choice mode to close, got %#v", report.choice)
+	}
+	reportView := stripANSI(report.view.View())
+	if !strings.Contains(reportView, "Read this first.") {
+		t.Fatalf("report view missing original body after esc:\n%s", reportView)
+	}
+}
+
+func TestTUIOnlyTypedQuitCommandsExit(t *testing.T) {
+	for _, key := range []string{"esc", "ctrl+c"} {
+		t.Run(key, func(t *testing.T) {
+			model := newTUIModel("0.1.27")
+			next, cmd := model.Update(keyMsg(key))
+			if cmd != nil {
+				t.Fatalf("%s should not quit the TUI", key)
+			}
+			if _, ok := next.(tuiModel); !ok {
+				t.Fatalf("%s returned unexpected model type %T", key, next)
+			}
+		})
+	}
+
+	model := newTUIModel("0.1.27")
+	next, cmd := model.handleSubmit("exit")
+	if cmd == nil {
+		t.Fatal("typed exit command should quit the TUI")
+	}
+	if _, ok := next.(tuiModel); !ok {
+		t.Fatalf("exit returned unexpected model type %T", next)
+	}
+}
+
 func TestTUIHelpExposesOnlyUserFacingCommands(t *testing.T) {
 	got := stripANSI(helpContent(englishText()))
 	for _, expected := range []string{"/home", "/help", "/settings", "/model", "/language", "/theme", "/quit"} {
@@ -382,5 +473,8 @@ func TestFooterKeepsPrimaryCommandsVisible(t *testing.T) {
 		if strings.Contains(got, hidden) {
 			t.Fatalf("footer exposed operational command %q:\n%s", hidden, got)
 		}
+	}
+	if strings.Contains(strings.ToLower(got), "esc") {
+		t.Fatalf("footer should not advertise esc as an exit command:\n%s", got)
 	}
 }

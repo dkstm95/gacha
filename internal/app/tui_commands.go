@@ -311,7 +311,22 @@ func (m tuiModel) showReportChoice() tuiModel {
 		Options: reportChoiceOptions(m.text),
 		Footer:  m.text.NewQuestionAction,
 	}
-	m.view.SetContent(m.report + "\n\n" + m.choice.RenderWidth(m.text, m.view.Width))
-	m.view.GotoBottom()
+	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
+	m.view.GotoTop()
 	return m
+}
+
+func (m tuiModel) returnToReport() tuiModel {
+	m.choice = nil
+	m.view.SetContent(reportContentWithPrompt(m.report, m.text))
+	m.view.GotoTop()
+	return m
+}
+
+func reportContentWithPrompt(report string, text uiText) string {
+	report = strings.TrimSpace(report)
+	if report == "" {
+		return text.SavePrompt
+	}
+	return report + "\n\n---\n" + text.SavePrompt
 }
