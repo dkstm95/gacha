@@ -16,6 +16,10 @@ func renderHeader(width int, version string) string {
 }
 
 func renderStatus(width int, status string, runtime string, mode string, busy bool, spin string, text uiText) string {
+	return renderStatusWithFooter(width, status, runtime, mode, busy, spin, text, true)
+}
+
+func renderStatusWithFooter(width int, status string, runtime string, mode string, busy bool, spin string, text uiText, includeFooter bool) string {
 	indicator := "●"
 	if busy {
 		indicator = spin
@@ -25,6 +29,9 @@ func renderStatus(width int, status string, runtime string, mode string, busy bo
 		items = append(items, mutedStyle.Render(text.StatusRuntime+runtime))
 	}
 	left := strings.Join(items, "   ")
+	if !includeFooter {
+		return statusStyle.Width(width - 2).Render(left)
+	}
 	right := renderFooter(width, text)
 	gap := width - 4 - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 3 {

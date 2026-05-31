@@ -209,7 +209,7 @@ func (m tuiModel) View() string {
 
 	header := renderHeader(bodyWidth, m.version)
 	panel := panelStyle.Width(bodyWidth - 2).Height(contentHeight).Render(content)
-	status := renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text)
+	status := renderStatusWithFooter(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text, m.profile == nil)
 	parts := []string{header}
 	parts = append(parts, panel)
 	if m.profile == nil {

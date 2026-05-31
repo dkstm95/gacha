@@ -267,23 +267,17 @@ func renderThemePreview(theme uiTheme, active bool, text uiText, width int) stri
 	if active {
 		marker = "✓"
 	}
-	actionName := "Buy"
-	actionPrompt := "Should I buy NVDA now?"
-	if len(text.HomeActions) > 0 {
-		actionName = text.HomeActions[0].Name
-		actionPrompt = text.HomeActions[0].Prompt
-	}
 	previewWidth := max(28, width)
 	textWidth := previewWidth - 6
 	label := styles.brand.Render(" " + themeLabel(theme, text) + " ")
 	descriptionWidth := max(20, textWidth-lipgloss.Width(stripANSI(label))-3)
 	header := label + " " + styles.muted.Render(wrapIndented(themeDescription(theme, text), descriptionWidth, ""))
-	actionLine := styles.section.Render(text.HomeActionsTitle) + " " + styles.actionName.Render(actionName)
-	actionPrompt = wrapIndented(actionPrompt, max(24, textWidth-lipgloss.Width(actionName)-3), strings.Repeat(" ", lipgloss.Width(actionName)+3))
 	sample := strings.Join([]string{
-		actionLine + " " + actionPrompt,
+		styles.title.Render("GACHA") + "  " + styles.muted.Render("Better odds through research."),
+		styles.muted.Render(wrapLine("Profile: US stocks / ETFs · 6-12 months · Balanced", max(24, textWidth))),
+		styles.title.Render("Ask an investment question."),
 	}, "\n")
-	return styles.panel.Width(previewWidth).Render(marker + " " + header + "\n" + sample)
+	return marker + " " + header + "\n" + sample
 }
 
 func themeLabel(theme uiTheme, text uiText) string {

@@ -124,9 +124,8 @@ Or ask one question without opening the app:
 gch "Should I buy NVDA now?"
 ```
 
-You do not need to choose a model each time.
-By default, Gacha chooses a research-friendly model for you.
-If it cannot choose one, it uses the default from your AI setup.
+You do not need to choose a model. Gacha handles model routing through the
+local AI runtime and falls back to your runtime default when needed.
 
 ## Example Questions
 
@@ -180,16 +179,15 @@ Inside the app:
 ```text
 /profile
 /settings
-/language
 /theme
 /help
 /quit
 ```
 
 `/profile` shows or edits your research profile.
-`/language` and `/theme` open interactive selectors.
-Use the arrow keys and enter.
-Or type the full command directly:
+`/settings` shows language commands.
+`/theme` opens an interactive theme selector.
+Use the arrow keys and enter, or type the full command directly:
 
 ```text
 /language auto
@@ -231,7 +229,7 @@ If your question contains Korean text, Gacha asks the AI to answer in Korean.
 To set the language inside the app:
 
 ```text
-/language
+/settings
 ```
 
 ## Updates

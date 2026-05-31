@@ -28,30 +28,20 @@ func skipProfileOnboardingForTest(t *testing.T) {
 	}
 }
 
-func TestTUILanguageAndModelCommandsOpenChoices(t *testing.T) {
+func TestTUILanguageCommandIsSettingsOnly(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	for _, tc := range []struct {
-		value string
-		kind  choiceKind
-		title string
-	}{
-		{value: "/language", kind: choiceLanguage, title: "Language"},
-		{value: "/model", kind: choiceModel, title: "Model"},
-	} {
-		t.Run(tc.value, func(t *testing.T) {
-			model := newTUIModel("0.1.27")
-			next, cmd := model.handleSubmit(tc.value)
-			if cmd != nil {
-				t.Fatal("unexpected command")
-			}
-			updated := next.(tuiModel)
-			if updated.choice == nil || updated.choice.Kind != tc.kind {
-				t.Fatalf("expected %s choice, got %#v", tc.kind, updated.choice)
-			}
-			if !strings.Contains(stripANSI(updated.view.View()), tc.title) {
-				t.Fatalf("choice view missing title %q:\n%s", tc.title, stripANSI(updated.view.View()))
-			}
-		})
+	model := newTUIModel("0.1.27")
+	next, cmd := model.handleSubmit("/language")
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	updated := next.(tuiModel)
+	if updated.choice != nil {
+		t.Fatalf("language should not open as a top-level selector: %#v", updated.choice)
+	}
+	got := stripANSI(updated.view.View())
+	if !strings.Contains(got, "Unknown command: /language") {
+		t.Fatalf("language should be a settings-only command:\n%s", got)
 	}
 }
 
@@ -311,6 +301,9 @@ func TestTUIOnboardingStartsWhenProfileMissing(t *testing.T) {
 	if researchLine < 0 || profileLine != researchLine+2 || strings.Trim(strings.Trim(lines[researchLine+1], "│"), " ") != "" {
 		t.Fatalf("onboarding intro should keep separate paragraphs:\n%s", got)
 	}
+	if strings.Contains(got, "enter run") {
+		t.Fatalf("onboarding status should not show the global prompt footer:\n%s", got)
+	}
 }
 
 func TestTUIOnboardingCanSaveProfile(t *testing.T) {
@@ -434,7 +427,6 @@ func TestTUIProfileEditorPersistsEditedCategory(t *testing.T) {
 func TestTUIProfileEditorResetPreservesSystemSettings(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	if err := saveGachaConfig(gachaConfig{
-		Model:    modelSettingOpenCodeDefault,
 		Language: languageSettingKorean,
 		Theme:    themeSettingGacha,
 		Profile: gachaProfile{
@@ -466,7 +458,7 @@ func TestTUIProfileEditorResetPreservesSystemSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.Model != modelSettingOpenCodeDefault || config.Language != languageSettingKorean || config.Theme != themeSettingGacha {
+	if config.Language != languageSettingKorean || config.Theme != themeSettingGacha {
 		t.Fatalf("reset changed system settings: %#v", config)
 	}
 	if !profileIsZero(config.Profile) {
@@ -502,15 +494,23 @@ func TestReportContextRecognizesKoreanSections(t *testing.T) {
 
 func TestTUIHelpExposesOnlyUserFacingCommands(t *testing.T) {
 	got := stripANSI(helpContent(englishText()))
-	for _, expected := range []string{"/home", "/help", "/profile", "/settings", "/model", "/language", "/theme", "/quit"} {
+	for _, expected := range []string{"/home", "/help", "/profile", "/settings", "/theme", "/quit"} {
 		if !strings.Contains(got, expected) {
 			t.Fatalf("help content missing %q:\n%s", expected, got)
 		}
 	}
-	for _, hidden := range []string{"/doctor", "/setup", "/update"} {
+	for _, expected := range []string{"return to the prompt", "language and theme settings"} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("help content missing updated copy %q:\n%s", expected, got)
+		}
+	}
+	for _, hidden := range []string{"/doctor", "/setup", "/update", "/model", "/language"} {
 		if strings.Contains(got, hidden) {
 			t.Fatalf("help content exposed operational command %q:\n%s", hidden, got)
 		}
+	}
+	if strings.Contains(got, "dashboard") {
+		t.Fatalf("help content kept outdated dashboard copy:\n%s", got)
 	}
 }
 

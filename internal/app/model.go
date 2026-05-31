@@ -29,24 +29,7 @@ func resolveOpenCodeModel() modelResolution {
 			Source: "GACHA_OPENCODE_MODEL",
 		}
 	}
-
-	config, _ := loadGachaConfig()
-	configModel := strings.TrimSpace(config.Model)
-	switch {
-	case configModel == "", strings.EqualFold(configModel, modelSettingAuto):
-		return autoOpenCodeModel()
-	case strings.EqualFold(configModel, modelSettingOpenCodeDefault):
-		return modelResolution{
-			Reason: "configured to use OpenCode default",
-			Source: gachaConfigPath(),
-		}
-	default:
-		return modelResolution{
-			Model:  configModel,
-			Reason: "configured custom model",
-			Source: gachaConfigPath(),
-		}
-	}
+	return autoOpenCodeModel()
 }
 
 func autoOpenCodeModel() modelResolution {

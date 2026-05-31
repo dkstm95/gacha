@@ -72,10 +72,9 @@ Usage:
   gch                                      Open the interactive gacha UI
   gch doctor                               Check the local AI runtime
   gch setup                                Install the runtime and connect an AI provider
-  gch settings                             Show model and language settings
+  gch settings                             Show language and theme settings
   gch profile                              Show the research profile
   gch config get                           Print the current config JSON
-  gch config set model auto                Set model mode or provider/model
   gch config set language ko               Set language: auto, en, or ko
   gch config set theme system              Set theme: system, dark, light, or gacha
   gch update                               Update gacha to the latest release

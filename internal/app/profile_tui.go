@@ -257,16 +257,16 @@ func profileMenuHint(lang language) string {
 
 func profileMultiHint(lang language) string {
 	if lang == languageKorean {
-		return "space 선택   d 기본값   enter 계속   s 건너뛰기"
+		return "space 선택   d 기본값   enter 계속   s 건너뛰기   esc 돌아가기"
 	}
-	return "space toggle   d default   enter continue   s skip"
+	return "space toggle   d default   enter continue   s skip   esc back"
 }
 
 func profileSingleHint(lang language) string {
 	if lang == languageKorean {
-		return "↑/↓ 이동   enter 계속   s 건너뛰기"
+		return "↑/↓ 이동   enter 계속   s 건너뛰기   esc 돌아가기"
 	}
-	return "↑/↓ choose   enter continue   s skip"
+	return "↑/↓ choose   enter continue   s skip   esc back"
 }
 
 func brandLine(lang language) string {

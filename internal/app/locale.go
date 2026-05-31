@@ -84,71 +84,57 @@ func containsKorean(value string) bool {
 }
 
 type uiText struct {
-	InputPlaceholder      string
-	InputPlaceholderShort string
-	Ready                 string
-	Auto                  string
-	Report                string
-	Fallback              string
-	Complete              string
-	Help                  string
-	Command               string
-	Runtime               string
-	Setup                 string
-	Update                string
-	System                string
-	Researching           string
-	ResearchPhases        []string
-	Footer                string
-	HomeActionsTitle      string
-	HomeActions           []homeAction
-	Onboarding            []string
-	Research              func(string) []string
-	HelpLines             []string
-	SetupLines            []string
-	UpdateMessage         string
-	ErrorTitle            string
-	RuntimeTitle          string
-	SettingsTitle         string
-	LoginRequired         string
-	Missing               string
-	RunSetupHint          string
-	StatusMode            string
-	StatusRuntime         string
-	FooterShort           string
-	SavePrompt            string
-	ReportActionsTitle    string
-	ReportChoiceIntro     string
-	ReportActions         []reportChoice
-	NewQuestionAction     string
-	SavedReport           string
-	SkippedSave           string
-	SettingsSaved         string
-	SettingsInvalidModel  string
-	SettingsInvalidLang   string
-	SettingsInvalidTheme  string
-	UnknownCommand        string
-	ChoiceHint            string
-	ModelTitle            string
-	ModelIntro            string
-	ModelCustomHint       string
-	ModelDescriptions     map[string]string
-	LanguageTitle         string
-	LanguageIntro         string
-	LanguageDescriptions  map[string]string
-	ThemeTitle            string
-	ThemeIntro            string
-	ThemeActive           string
-	ThemeCommandHint      string
-	ThemePreviewTitle     string
-	ThemeSelectLabel      string
-	ThemeLabels           map[string]string
-	ThemeDescriptions     map[string]string
-}
-
-type homeAction struct {
-	Name   string
-	Prompt string
+	InputPlaceholder            string
+	InputPlaceholderShort       string
+	Ready                       string
+	Auto                        string
+	Report                      string
+	Fallback                    string
+	Complete                    string
+	Help                        string
+	Command                     string
+	Runtime                     string
+	Setup                       string
+	Update                      string
+	System                      string
+	Researching                 string
+	ResearchPhases              []string
+	Footer                      string
+	Onboarding                  []string
+	Research                    func(string) []string
+	HelpLines                   []string
+	ErrorTitle                  string
+	SettingsTitle               string
+	StatusMode                  string
+	StatusRuntime               string
+	FooterShort                 string
+	SavePrompt                  string
+	ReportActionsTitle          string
+	ReportChoiceIntro           string
+	ReportActions               []reportChoice
+	NewQuestionAction           string
+	SavedReport                 string
+	SkippedSave                 string
+	SettingsSaved               string
+	SettingsCommandsTitle       string
+	SettingsLanguageDescription string
+	SettingsThemeDescription    string
+	SettingsCommandHint         string
+	SettingsInvalidLang         string
+	SettingsInvalidTheme        string
+	UnknownCommand              string
+	ChoiceHint                  string
+	LanguageTitle               string
+	LanguageIntro               string
+	LanguageDescriptions        map[string]string
+	ThemeTitle                  string
+	ThemeIntro                  string
+	ThemeActive                 string
+	ThemeCommandHint            string
+	ThemePreviewTitle           string
+	ThemeSelectLabel            string
+	ThemeLabels                 map[string]string
+	ThemeDescriptions           map[string]string
 }
 
 type reportChoice struct {
@@ -188,16 +174,8 @@ func englishText() uiText {
 			"Reviewing risks",
 			"Writing report",
 		},
-		Footer:           " /profile  /settings  /quit   •   enter to run   •   esc to exit",
-		FooterShort:      " /profile  /settings  /quit   •   enter run",
-		HomeActionsTitle: "Decision desk",
-		HomeActions: []homeAction{
-			{Name: "Buy", Prompt: "Should I buy NVDA now?"},
-			{Name: "Find", Prompt: "What should I invest in for the next 6 to 12 months?"},
-			{Name: "Hold", Prompt: "I own TSLA. Should I trim, hold, or sell?"},
-			{Name: "Exit", Prompt: "Where should I stop out or sell?"},
-			{Name: "Portfolio", Prompt: "Is my portfolio too concentrated?"},
-		},
+		Footer:      " /profile  /settings  /quit   •   enter to run   •   esc to exit",
+		FooterShort: " /profile  /settings  /quit   •   enter run",
 		Onboarding: []string{
 			"Setup needed",
 			"OpenCode is not installed yet.",
@@ -224,30 +202,15 @@ func englishText() uiText {
 		},
 		HelpLines: []string{
 			"Command palette",
-			"/home     return to the dashboard",
+			"/home     return to the prompt",
 			"/help     show this command palette",
 			"/profile  show or edit your research profile",
-			"/settings show model and language settings",
-			"/model    set model: /model auto, /model opencode-default, or /model provider/model",
-			"/language set UI/report language: /language auto, /language en, /language ko",
+			"/settings show language and theme settings",
 			"/theme    choose a theme and preview each option",
 			"/quit     exit",
 		},
-		SetupLines: []string{
-			"Setup",
-			"Use this one-time setup flow:",
-			"  gch setup",
-			"1. Install OpenCode if it is missing.",
-			"2. Connect ChatGPT, Copilot, Gemini, OpenAI API, or another provider.",
-			"3. Return here and ask your first investment question.",
-		},
-		UpdateMessage:      "Run `gacha update` outside the interactive UI to update the binary.",
 		ErrorTitle:         "OpenCode failed",
-		RuntimeTitle:       "Runtime",
 		SettingsTitle:      "Settings",
-		LoginRequired:      "login required",
-		Missing:            "missing",
-		RunSetupHint:       "Run `gch setup` outside this screen to connect ChatGPT, Copilot, Gemini, or an API provider.",
 		StatusMode:         "Mode ",
 		StatusRuntime:      "Runtime ",
 		SavePrompt:         "Next: type d for detailed analysis, y to save, n to skip, or ask a new question.",
@@ -258,24 +221,20 @@ func englishText() uiText {
 			{Key: "y", Label: "Save report", Description: "Write this report to your local reports folder. Shortcut: y."},
 			{Key: "n", Label: "Skip saving", Description: "Keep reading without saving. Shortcut: n."},
 		},
-		NewQuestionAction:    "or ask a new question",
-		SavedReport:          "Saved report:",
-		SkippedSave:          "Report was not saved.",
-		SettingsSaved:        "Settings saved.",
-		SettingsInvalidModel: "Use `/model auto`, `/model opencode-default`, or `/model provider/model`.",
-		SettingsInvalidLang:  "Use `/language auto`, `/language en`, or `/language ko`.",
-		SettingsInvalidTheme: "Use `/theme system`, `/theme dark`, `/theme light`, or `/theme gacha`.",
-		UnknownCommand:       "Unknown command: %s",
-		ChoiceHint:           "Use ↑/↓ and enter, or type a command directly.",
-		ModelTitle:           "Model",
-		ModelIntro:           "Choose how Gacha selects the OpenCode model.",
-		ModelCustomHint:      "For a custom model, type `/model provider/model`.",
-		ModelDescriptions: map[string]string{
-			modelSettingAuto:            "Pick the best available model from the current provider list.",
-			modelSettingOpenCodeDefault: "Let OpenCode use its configured default.",
-		},
-		LanguageTitle: "Language",
-		LanguageIntro: "Choose the UI and report language preference.",
+		NewQuestionAction:           "or ask a new question",
+		SavedReport:                 "Saved report:",
+		SkippedSave:                 "Report was not saved.",
+		SettingsSaved:               "Settings saved.",
+		SettingsCommandsTitle:       "Commands",
+		SettingsLanguageDescription: "Set the default UI and report language.",
+		SettingsThemeDescription:    "Choose how Gacha looks in your terminal.",
+		SettingsCommandHint:         "Commands: /language en · /theme gacha",
+		SettingsInvalidLang:         "Use `/language auto`, `/language en`, or `/language ko`.",
+		SettingsInvalidTheme:        "Use `/theme system`, `/theme dark`, `/theme light`, or `/theme gacha`.",
+		UnknownCommand:              "Unknown command: %s",
+		ChoiceHint:                  "Use ↑/↓ and enter, or type a command directly.",
+		LanguageTitle:               "Language",
+		LanguageIntro:               "Choose the UI and report language preference.",
 		LanguageDescriptions: map[string]string{
 			languageSettingAuto:    "Follow the terminal locale and the question language.",
 			languageSettingEnglish: "Use English.",
@@ -326,16 +285,8 @@ func koreanText() uiText {
 			"리스크 검토 중",
 			"리포트 작성 중",
 		},
-		Footer:           " /profile  /settings  /quit   •   enter 실행   •   esc 종료",
-		FooterShort:      " /profile  /settings  /quit   •   enter 실행",
-		HomeActionsTitle: "결정 데스크",
-		HomeActions: []homeAction{
-			{Name: "매수", Prompt: "NVDA 지금 사도 될까?"},
-			{Name: "탐색", Prompt: "앞으로 6~12개월 관점에서 무엇에 투자하면 좋을까?"},
-			{Name: "보유", Prompt: "TSLA를 보유 중인데 줄일까, 유지할까, 팔까?"},
-			{Name: "매도", Prompt: "어디서 손절하거나 매도해야 할까?"},
-			{Name: "포트폴리오", Prompt: "내 포트폴리오가 너무 집중되어 있을까?"},
-		},
+		Footer:      " /profile  /settings  /quit   •   enter 실행   •   esc 종료",
+		FooterShort: " /profile  /settings  /quit   •   enter 실행",
 		Onboarding: []string{
 			"설정 필요",
 			"OpenCode가 아직 설치되어 있지 않습니다.",
@@ -362,30 +313,15 @@ func koreanText() uiText {
 		},
 		HelpLines: []string{
 			"명령 팔레트",
-			"/home     대시보드로 돌아가기",
+			"/home     프롬프트로 돌아가기",
 			"/help     명령 팔레트 보기",
 			"/profile  투자 프로필 보기 또는 수정",
-			"/settings 모델과 언어 설정 보기",
-			"/model    모델 설정: /model auto, /model opencode-default, /model provider/model",
-			"/language UI/리포트 언어: /language auto, /language en, /language ko",
+			"/settings 언어와 테마 설정 보기",
 			"/theme    테마 선택과 예시 보기",
 			"/quit     종료",
 		},
-		SetupLines: []string{
-			"설정",
-			"처음 한 번 다음 설정 흐름을 실행하세요:",
-			"  gch setup",
-			"1. OpenCode가 없으면 설치합니다.",
-			"2. ChatGPT, Copilot, Gemini, OpenAI API 또는 다른 provider를 연결합니다.",
-			"3. 다시 돌아와 첫 투자 질문을 입력합니다.",
-		},
-		UpdateMessage:      "바이너리를 업데이트하려면 인터랙티브 UI 밖에서 `gacha update`를 실행하세요.",
 		ErrorTitle:         "OpenCode 실행 실패",
-		RuntimeTitle:       "런타임",
 		SettingsTitle:      "설정",
-		LoginRequired:      "로그인 필요",
-		Missing:            "없음",
-		RunSetupHint:       "ChatGPT, Copilot, Gemini 또는 API provider를 연결하려면 이 화면 밖에서 `gch setup`을 실행하세요.",
 		StatusMode:         "모드 ",
 		StatusRuntime:      "런타임 ",
 		SavePrompt:         "다음: d=상세 분석, y=저장, n=건너뛰기, 또는 새 질문을 입력하세요.",
@@ -396,24 +332,20 @@ func koreanText() uiText {
 			{Key: "y", Label: "리포트 저장", Description: "이 리포트를 로컬 reports 폴더에 저장합니다. 단축키: y."},
 			{Key: "n", Label: "저장 건너뛰기", Description: "저장하지 않고 계속 봅니다. 단축키: n."},
 		},
-		NewQuestionAction:    "또는 새 질문 입력",
-		SavedReport:          "리포트 저장:",
-		SkippedSave:          "리포트를 저장하지 않았습니다.",
-		SettingsSaved:        "설정을 저장했습니다.",
-		SettingsInvalidModel: "`/model auto`, `/model opencode-default`, 또는 `/model provider/model` 형식으로 입력하세요.",
-		SettingsInvalidLang:  "`/language auto`, `/language en`, 또는 `/language ko`를 입력하세요.",
-		SettingsInvalidTheme: "`/theme system`, `/theme dark`, `/theme light`, 또는 `/theme gacha`를 입력하세요.",
-		UnknownCommand:       "알 수 없는 명령: %s",
-		ChoiceHint:           "↑/↓로 이동하고 enter로 선택하거나, 명령을 직접 입력하세요.",
-		ModelTitle:           "모델",
-		ModelIntro:           "Gacha가 OpenCode 모델을 선택하는 방식을 고르세요.",
-		ModelCustomHint:      "사용자 지정 모델은 `/model provider/model` 형식으로 입력하세요.",
-		ModelDescriptions: map[string]string{
-			modelSettingAuto:            "현재 provider 목록에서 가장 적합한 모델을 고릅니다.",
-			modelSettingOpenCodeDefault: "OpenCode의 기본 설정 모델을 사용합니다.",
-		},
-		LanguageTitle: "언어",
-		LanguageIntro: "UI와 리포트 언어 기본값을 선택하세요.",
+		NewQuestionAction:           "또는 새 질문 입력",
+		SavedReport:                 "리포트 저장:",
+		SkippedSave:                 "리포트를 저장하지 않았습니다.",
+		SettingsSaved:               "설정을 저장했습니다.",
+		SettingsCommandsTitle:       "명령",
+		SettingsLanguageDescription: "UI와 리포트 기본 언어를 설정합니다.",
+		SettingsThemeDescription:    "터미널에 맞는 Gacha 화면 스타일을 고릅니다.",
+		SettingsCommandHint:         "명령: /language ko · /theme gacha",
+		SettingsInvalidLang:         "`/language auto`, `/language en`, 또는 `/language ko`를 입력하세요.",
+		SettingsInvalidTheme:        "`/theme system`, `/theme dark`, `/theme light`, 또는 `/theme gacha`를 입력하세요.",
+		UnknownCommand:              "알 수 없는 명령: %s",
+		ChoiceHint:                  "↑/↓로 이동하고 enter로 선택하거나, 명령을 직접 입력하세요.",
+		LanguageTitle:               "언어",
+		LanguageIntro:               "UI와 리포트 언어 기본값을 선택하세요.",
 		LanguageDescriptions: map[string]string{
 			languageSettingAuto:    "터미널 locale과 질문 언어를 따릅니다.",
 			languageSettingEnglish: "영어를 사용합니다.",

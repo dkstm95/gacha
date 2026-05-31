@@ -148,65 +148,39 @@ func unknownCommandContent(value string, text uiText) string {
 	return fmt.Sprintf(text.UnknownCommand, value) + "\n\n" + helpContent(text)
 }
 
-func doctorContent(text uiText) string {
-	status := text.Missing
-	if hasRunnableCommand(openCodeCommand) {
-		status = text.Ready
-		if !hasOpenCodeAuth() {
-			status = text.LoginRequired
-		}
-	}
-	lines := []string{
-		titleStyle.Render(text.RuntimeTitle),
-		fmt.Sprintf("OpenCode: %s", status),
-		fmt.Sprintf("Command:  %s", openCodeCommand),
-		fmt.Sprintf("Auth:     %s", openCodeAuthPath()),
-	}
-	if resolved, ok := resolveCommand(openCodeCommand); ok {
-		lines = append(lines, fmt.Sprintf("Resolved: %s", resolved))
-	}
-	lines = append(lines, fmt.Sprintf("Model:    %s", modelDescription(resolveOpenCodeModel())))
-	if hasOpenCodeAuth() {
-		if providers, err := openCodeAuthList(); err == nil && strings.TrimSpace(providers) != "" {
-			lines = append(lines, "", titleStyle.Render("Providers"), strings.TrimSpace(stripANSI(providers)))
-		}
-	} else {
-		lines = append(lines, "", text.RunSetupHint)
-	}
-	return strings.Join(lines, "\n")
-}
-
-func setupContent(text uiText) string {
-	lines := []string{
-		titleStyle.Render(text.SetupLines[0]),
-		text.SetupLines[1],
-		"",
-		text.SetupLines[2],
-		"",
-		text.SetupLines[3],
-		text.SetupLines[4],
-		text.SetupLines[5],
-	}
-	return strings.Join(lines, "\n")
-}
-
 func settingsContent(text uiText) string {
+	lines := []string{titleStyle.Render(text.SettingsTitle), settingsSummary(text)}
+	return strings.Join(lines, "\n")
+}
+
+func settingsOverview() string {
 	config, err := configWithDefaults()
 	if err != nil {
-		return strings.Join([]string{titleStyle.Render(text.SettingsTitle), err.Error()}, "\n")
+		return err.Error()
 	}
 	lines := []string{
-		titleStyle.Render(text.SettingsTitle),
+		fmt.Sprintf("Language: %s", config.Language),
+		fmt.Sprintf("Theme:    %s", configuredThemeSummary(config.Theme)),
+		fmt.Sprintf("Active:   %s", detectLanguage()),
+	}
+	if envLang := strings.TrimSpace(os.Getenv("GACHA_LANG")); envLang != "" {
+		lines = append(lines, mutedStyle.Render("GACHA_LANG is overriding the language setting."))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func settingsSummary(text uiText) string {
+	config, err := configWithDefaults()
+	if err != nil {
+		return err.Error()
+	}
+	lines := []string{
 		fmt.Sprintf("Config:   %s", gachaConfigPath()),
-		fmt.Sprintf("Model:    %s", configuredModelSummary(config.Model)),
 		fmt.Sprintf("Language: %s", config.Language),
 		fmt.Sprintf("Theme:    %s", configuredThemeSummary(config.Theme)),
 		fmt.Sprintf("Active:   %s", detectLanguage()),
 		"",
-		sectionStyle.Render("Commands"),
-		"/model auto",
-		"/model opencode-default",
-		"/model provider/model",
+		sectionStyle.Render(text.SettingsCommandsTitle),
 		"/language auto",
 		"/language en",
 		"/language ko",
@@ -214,9 +188,6 @@ func settingsContent(text uiText) string {
 		"/theme dark",
 		"/theme light",
 		"/theme gacha",
-	}
-	if envModel := strings.TrimSpace(os.Getenv("GACHA_OPENCODE_MODEL")); envModel != "" {
-		lines = append(lines, "", mutedStyle.Render("GACHA_OPENCODE_MODEL is currently overriding the model setting."))
 	}
 	if envLang := strings.TrimSpace(os.Getenv("GACHA_LANG")); envLang != "" {
 		lines = append(lines, mutedStyle.Render("GACHA_LANG is currently overriding the language setting."))

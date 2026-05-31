@@ -30,28 +30,10 @@ func TestOpenAIChatGPTAuthDetection(t *testing.T) {
 	}
 }
 
-func TestResolveOpenCodeModelUsesConfigDefault(t *testing.T) {
+func TestSaveGachaConfigWritesLanguageAndTheme(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	t.Setenv("XDG_DATA_HOME", dir)
-	t.Setenv("GACHA_OPENCODE_MODEL", "")
-	configDir := dir + "/gacha"
-	if err := os.MkdirAll(configDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(configDir+"/config.json", []byte(`{"model":"opencode-default"}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	got := resolveOpenCodeModel()
-	if got.Model != "" || !strings.Contains(got.Reason, "OpenCode default") {
-		t.Fatalf("unexpected model resolution: %#v", got)
-	}
-}
-
-func TestSaveGachaConfigWritesModelAndLanguage(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", dir)
-	want := gachaConfig{Model: "opencode-default", Language: "ko", Theme: "dark"}
+	want := gachaConfig{Language: "ko", Theme: "dark"}
 	if err := saveGachaConfig(want); err != nil {
 		t.Fatal(err)
 	}
@@ -59,17 +41,14 @@ func TestSaveGachaConfigWritesModelAndLanguage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Model != want.Model || got.Language != want.Language || got.Theme != want.Theme {
+	if got.Language != want.Language || got.Theme != want.Theme {
 		t.Fatalf("unexpected config: %#v", got)
 	}
 }
 
-func TestRunConfigCommandSetsModelAndLanguage(t *testing.T) {
+func TestRunConfigCommandSetsLanguageAndTheme(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	if err := runConfigCommand([]string{"set", "model", "OpenCode-Default"}); err != nil {
-		t.Fatal(err)
-	}
 	if err := runConfigCommand([]string{"set", "language", "ko"}); err != nil {
 		t.Fatal(err)
 	}
@@ -80,15 +59,15 @@ func TestRunConfigCommandSetsModelAndLanguage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Model != "opencode-default" || got.Language != "ko" || got.Theme != "light" {
+	if got.Language != "ko" || got.Theme != "light" {
 		t.Fatalf("unexpected config: %#v", got)
 	}
 }
 
 func TestRunConfigCommandRejectsInvalidValues(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	if err := runConfigCommand([]string{"set", "model", "bad-model"}); err == nil {
-		t.Fatal("expected invalid model error")
+	if err := runConfigCommand([]string{"set", "model", "bad-model"}); err == nil || !strings.Contains(err.Error(), "unknown config key") {
+		t.Fatalf("expected unknown model config key error, got %v", err)
 	}
 	if err := runConfigCommand([]string{"set", "language", "fr"}); err == nil {
 		t.Fatal("expected invalid language error")
@@ -104,7 +83,7 @@ func TestConfigWithDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.Model != modelSettingAuto || config.Language != languageSettingAuto || config.Theme != themeSettingSystem {
+	if config.Language != languageSettingAuto || config.Theme != themeSettingSystem {
 		t.Fatalf("unexpected default config: %#v", config)
 	}
 }
@@ -116,7 +95,7 @@ func TestExistingConfigWithoutProfileLoads(t *testing.T) {
 	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(configDir+"/config.json", []byte(`{"model":"auto","language":"en","theme":"system"}`), 0o600); err != nil {
+	if err := os.WriteFile(configDir+"/config.json", []byte(`{"language":"en","theme":"system"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	config, err := loadGachaConfig()
@@ -129,7 +108,7 @@ func TestExistingConfigWithoutProfileLoads(t *testing.T) {
 }
 
 func TestConfigJSONOmitsEmptyProfileAndIncludesSavedProfile(t *testing.T) {
-	empty, err := json.Marshal(gachaConfig{Model: "auto", Language: "en", Theme: "system"})
+	empty, err := json.Marshal(gachaConfig{Language: "en", Theme: "system"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +116,6 @@ func TestConfigJSONOmitsEmptyProfileAndIncludesSavedProfile(t *testing.T) {
 		t.Fatalf("empty profile should be omitted: %s", empty)
 	}
 	withProfile, err := json.Marshal(gachaConfig{
-		Model:    "auto",
 		Language: "en",
 		Theme:    "system",
 		Profile: gachaProfile{
@@ -156,7 +134,6 @@ func TestConfigJSONOmitsEmptyProfileAndIncludesSavedProfile(t *testing.T) {
 func TestSaveGachaConfigPreservesProfile(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	want := gachaConfig{
-		Model:    "auto",
 		Language: "en",
 		Theme:    "system",
 		Profile: gachaProfile{

@@ -50,14 +50,6 @@ func (a *App) startLineSession() error {
 				fmt.Fprintln(a.env.Stdout, "Goodbye.")
 			}
 			return nil
-		case "/doctor", "doctor":
-			if err := doctor(); err != nil {
-				fmt.Fprintln(a.env.Stderr, err)
-			}
-		case "/setup", "setup":
-			if err := ensureRuntime(true); err != nil {
-				fmt.Fprintln(a.env.Stderr, err)
-			}
 		case "/profile", "profile":
 			if err := printProfileTo(a.env.Stdout); err != nil {
 				fmt.Fprintln(a.env.Stderr, err)
