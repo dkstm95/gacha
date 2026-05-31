@@ -221,7 +221,7 @@ If the runtime fails, `gacha` falls back to a prompt you can paste into a web AI
 gch update
 ```
 
-On macOS and Linux, this downloads the right binary for your computer and replaces the old one.
+On macOS and Linux, this downloads the right binary for your computer, verifies it against the published SHA-256 checksums, and replaces the old one.
 
 On Windows, self-update is disabled to avoid replacing a running `.exe`. Download the latest `gacha-windows-amd64.zip` or `gacha-windows-arm64.zip`, replace `gacha.exe` in your `PATH`, and open a new terminal.
 

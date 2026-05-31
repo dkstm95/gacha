@@ -220,7 +220,7 @@ runtime 실행에 실패하면 웹 AI에 붙여넣을 수 있는 프롬프트로
 gch update
 ```
 
-macOS와 Linux에서는 현재 컴퓨터에 맞는 바이너리를 내려받아 기존 파일을 교체합니다.
+macOS와 Linux에서는 현재 컴퓨터에 맞는 바이너리를 내려받고 게시된 SHA-256 체크섬으로 검증한 뒤 기존 파일을 교체합니다.
 
 Windows에서는 실행 중인 `.exe` 교체 문제를 피하기 위해 self-update를 비활성화했습니다. 최신 `gacha-windows-amd64.zip` 또는 `gacha-windows-arm64.zip`을 내려받아 `PATH`에 있는 `gacha.exe`를 교체한 뒤 새 터미널을 여세요.
 

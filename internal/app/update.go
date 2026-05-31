@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +20,12 @@ import (
 type GitHubRelease struct {
 	TagName string `json:"tag_name"`
 }
+
+var (
+	gitHubLatestReleaseURL = "https://api.github.com/repos/dkstm95/gacha/releases/latest"
+	gitHubReleaseBaseURL   = "https://github.com/dkstm95/gacha/releases/download"
+	gitHubHTTPClient       = http.DefaultClient
+)
 
 func (a *App) updateSelf() error {
 	if !selfUpdateSupported(runtime.GOOS) {
@@ -56,24 +63,31 @@ func (a *App) updateSelf() error {
 	archivePath := filepath.Join(tmpDir, releaseAssetName(runtime.GOOS, runtime.GOARCH))
 	url := releaseAssetURL(latest)
 	if err := a.downloadFile(url, archivePath); err != nil {
-		return err
+		return fmt.Errorf("could not download update archive: %w\nManual install: https://github.com/dkstm95/gacha/releases/latest", err)
+	}
+	checksumsPath := filepath.Join(tmpDir, "checksums.txt")
+	if err := a.downloadFile(releaseChecksumsURL(latest), checksumsPath); err != nil {
+		return fmt.Errorf("could not download release checksums: %w\nManual install: https://github.com/dkstm95/gacha/releases/latest", err)
+	}
+	if err := verifyReleaseChecksum(archivePath, checksumsPath, releaseAssetName(runtime.GOOS, runtime.GOARCH)); err != nil {
+		return fmt.Errorf("could not verify update download: %w\nManual install: https://github.com/dkstm95/gacha/releases/latest", err)
 	}
 	if err := extractTarGz(archivePath, tmpDir); err != nil {
-		return err
+		return fmt.Errorf("could not unpack update archive: %w", err)
 	}
 	newBinary := filepath.Join(tmpDir, "gacha")
 	if err := os.Chmod(newBinary, 0o755); err != nil {
-		return err
+		return fmt.Errorf("could not prepare update binary: %w", err)
 	}
 
 	backup := exe + ".old"
 	_ = os.Remove(backup)
 	if err := os.Rename(exe, backup); err != nil {
-		return fmt.Errorf("cannot replace %s: %w", exe, err)
+		return fmt.Errorf("could not replace %s: %w\nTry installing manually from https://github.com/dkstm95/gacha/releases/latest", exe, err)
 	}
 	if err := copyFile(newBinary, exe, 0o755); err != nil {
 		_ = os.Rename(backup, exe)
-		return err
+		return fmt.Errorf("could not install updated binary: %w\nThe previous binary was restored when possible.", err)
 	}
 	_ = os.Remove(backup)
 
@@ -84,13 +98,13 @@ func (a *App) updateSelf() error {
 func (a *App) latestReleaseTag() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/repos/dkstm95/gacha/releases/latest", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, gitHubLatestReleaseURL, nil)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", "gacha/"+a.version)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := gitHubHTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +131,11 @@ func releaseAssetURL(tag string) string {
 }
 
 func releaseAssetURLFor(tag string, goos string, goarch string) string {
-	return fmt.Sprintf("https://github.com/dkstm95/gacha/releases/download/%s/%s", tag, releaseAssetName(goos, goarch))
+	return fmt.Sprintf("%s/%s/%s", strings.TrimRight(gitHubReleaseBaseURL, "/"), tag, releaseAssetName(goos, goarch))
+}
+
+func releaseChecksumsURL(tag string) string {
+	return fmt.Sprintf("%s/%s/checksums.txt", strings.TrimRight(gitHubReleaseBaseURL, "/"), tag)
 }
 
 func releaseAssetName(goos string, goarch string) string {
@@ -126,6 +144,48 @@ func releaseAssetName(goos string, goarch string) string {
 		extension = ".zip"
 	}
 	return "gacha-" + targetTripleFor(goos, goarch) + extension
+}
+
+func verifyReleaseChecksum(archivePath string, checksumsPath string, assetName string) error {
+	expected, err := checksumForAsset(checksumsPath, assetName)
+	if err != nil {
+		return err
+	}
+	actual, err := sha256File(archivePath)
+	if err != nil {
+		return err
+	}
+	if actual != expected {
+		return fmt.Errorf("checksum mismatch for %s", assetName)
+	}
+	return nil
+}
+
+func checksumForAsset(checksumsPath string, assetName string) (string, error) {
+	data, err := os.ReadFile(checksumsPath)
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[1] == assetName {
+			return fields[0], nil
+		}
+	}
+	return "", fmt.Errorf("checksum for %s not found", assetName)
+}
+
+func sha256File(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
 func selfUpdateSupported(goos string) bool {
@@ -149,7 +209,7 @@ func (a *App) downloadFile(url string, destination string) error {
 		return err
 	}
 	req.Header.Set("User-Agent", "gacha/"+a.version)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := gitHubHTTPClient.Do(req)
 	if err != nil {
 		return err
 	}

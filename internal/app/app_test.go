@@ -3,7 +3,9 @@ package app
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -962,6 +964,120 @@ func TestReleaseAssetURLForUsesTargetArchive(t *testing.T) {
 	want := "https://github.com/dkstm95/gacha/releases/download/v0.1.27/gacha-windows-arm64.zip"
 	if got != want {
 		t.Fatalf("unexpected URL:\n got: %s\nwant: %s", got, want)
+	}
+}
+
+func TestReleaseChecksumsURL(t *testing.T) {
+	got := releaseChecksumsURL("v0.1.37")
+	want := "https://github.com/dkstm95/gacha/releases/download/v0.1.37/checksums.txt"
+	if got != want {
+		t.Fatalf("unexpected checksums URL:\n got: %s\nwant: %s", got, want)
+	}
+}
+
+func TestLatestReleaseTagUsesConfiguredEndpoint(t *testing.T) {
+	oldURL := gitHubLatestReleaseURL
+	oldClient := gitHubHTTPClient
+	gitHubLatestReleaseURL = "https://example.test/latest"
+	gitHubHTTPClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.String() != "https://example.test/latest" {
+			t.Fatalf("unexpected URL: %s", req.URL.String())
+		}
+		return stringResponse(http.StatusOK, `{"tag_name":"v9.9.9"}`), nil
+	})}
+	t.Cleanup(func() { gitHubLatestReleaseURL = oldURL })
+	t.Cleanup(func() { gitHubHTTPClient = oldClient })
+
+	got, err := New("test").latestReleaseTag()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "v9.9.9" {
+		t.Fatalf("unexpected release tag: %s", got)
+	}
+}
+
+func TestDownloadFileReportsHTTPFailures(t *testing.T) {
+	oldClient := gitHubHTTPClient
+	gitHubHTTPClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return stringResponse(http.StatusNotFound, "missing"), nil
+	})}
+	t.Cleanup(func() { gitHubHTTPClient = oldClient })
+
+	err := New("test").downloadFile("https://example.test/missing", filepath.Join(t.TempDir(), "out"))
+	if err == nil || !strings.Contains(err.Error(), "404") {
+		t.Fatalf("expected HTTP failure, got %v", err)
+	}
+}
+
+func TestDownloadFileWritesResponseBody(t *testing.T) {
+	oldClient := gitHubHTTPClient
+	gitHubHTTPClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return stringResponse(http.StatusOK, "body"), nil
+	})}
+	t.Cleanup(func() { gitHubHTTPClient = oldClient })
+	path := filepath.Join(t.TempDir(), "out")
+	if err := New("test").downloadFile("https://example.test/asset", path); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "body" {
+		t.Fatalf("unexpected download body: %q", data)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func stringResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Status:     fmt.Sprintf("%d %s", status, http.StatusText(status)),
+		Body:       io.NopCloser(strings.NewReader(body)),
+		Header:     make(http.Header),
+	}
+}
+
+func TestVerifyReleaseChecksum(t *testing.T) {
+	dir := t.TempDir()
+	archive := filepath.Join(dir, "gacha-linux-amd64.tar.gz")
+	if err := os.WriteFile(archive, []byte("archive"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sum, err := sha256File(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checksums := filepath.Join(dir, "checksums.txt")
+	if err := os.WriteFile(checksums, []byte(sum+"  gacha-linux-amd64.tar.gz\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyReleaseChecksum(archive, checksums, "gacha-linux-amd64.tar.gz"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestVerifyReleaseChecksumRejectsMismatchAndMissingAsset(t *testing.T) {
+	dir := t.TempDir()
+	archive := filepath.Join(dir, "gacha-linux-amd64.tar.gz")
+	if err := os.WriteFile(archive, []byte("archive"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	checksums := filepath.Join(dir, "checksums.txt")
+	if err := os.WriteFile(checksums, []byte("0  gacha-linux-amd64.tar.gz\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyReleaseChecksum(archive, checksums, "gacha-linux-amd64.tar.gz"); err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
+		t.Fatalf("expected checksum mismatch, got %v", err)
+	}
+	if err := verifyReleaseChecksum(archive, checksums, "gacha-darwin-arm64.tar.gz"); err == nil || !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("expected missing checksum, got %v", err)
 	}
 }
 
