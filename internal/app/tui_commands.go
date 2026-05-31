@@ -124,7 +124,7 @@ func (m *tuiModel) moveChoice(delta int) {
 		next += len(m.choice.Options)
 	}
 	m.choice.Selected = next
-	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
+	m.view.SetContent(m.choiceContent())
 	m.view.GotoTop()
 }
 
@@ -250,18 +250,18 @@ func (m tuiModel) handleReportAction(value string) (tea.Model, tea.Cmd) {
 		path, err := saveReport(pending.query, pending.report)
 		if err != nil {
 			m.status = m.text.Fallback
-			m.view.SetContent(pending.report + "\n\n---\n" + errorContent(err, "", m.text))
+			m.view.SetContent(renderMarkdownReport(pending.report) + "\n\n" + errorContent(err, "", m.text))
 			m.view.GotoBottom()
 			return m, nil
 		}
 		m.status = m.text.Complete
-		m.view.SetContent(pending.report + "\n\n---\n" + m.text.SavedReport + " " + path)
+		m.view.SetContent(renderMarkdownReport(pending.report) + "\n\n" + mutedStyle.Render(strings.Repeat("─", 24)) + "\n" + m.text.SavedReport + " " + path)
 		m.view.GotoBottom()
 		return m, nil
 	}
 	if refusesSaveReport(value) {
 		m.status = m.text.Complete
-		m.view.SetContent(pending.report + "\n\n---\n" + m.text.SkippedSave)
+		m.view.SetContent(renderMarkdownReport(pending.report) + "\n\n" + mutedStyle.Render(strings.Repeat("─", 24)) + "\n" + m.text.SkippedSave)
 		m.view.GotoBottom()
 		return m, nil
 	}
@@ -289,7 +289,18 @@ func (m tuiModel) showReportChoice() tuiModel {
 		Options: reportChoiceOptions(m.text),
 		Footer:  m.text.NewQuestionAction,
 	}
-	m.view.SetContent(m.report + "\n\n" + m.choice.RenderWidth(m.text, m.view.Width))
+	m.view.SetContent(m.choiceContent())
 	m.view.GotoBottom()
 	return m
+}
+
+func (m tuiModel) choiceContent() string {
+	if m.choice == nil {
+		return ""
+	}
+	choice := m.choice.RenderWidth(m.text, m.view.Width)
+	if m.choice.Kind == choiceReport && strings.TrimSpace(m.report) != "" {
+		return renderMarkdownReport(m.report) + "\n\n" + choice
+	}
+	return choice
 }

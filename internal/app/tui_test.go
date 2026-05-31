@@ -492,6 +492,36 @@ func TestReportContextRecognizesKoreanSections(t *testing.T) {
 	}
 }
 
+func TestReportMarkdownRendersForDisplay(t *testing.T) {
+	got := stripANSI(renderMarkdownReport("## Easy Basic Report\n\n### 1. Bottom Line\n- **Wait** for pullback\n\n---\n\n`NVDA`"))
+	for _, unexpected := range []string{"##", "###", "**", "`", "---"} {
+		if strings.Contains(got, unexpected) {
+			t.Fatalf("rendered report still contains markdown marker %q:\n%s", unexpected, got)
+		}
+	}
+	for _, expected := range []string{"Easy Basic Report", "1. Bottom Line", "• Wait for pullback", "NVDA"} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("rendered report missing %q:\n%s", expected, got)
+		}
+	}
+}
+
+func TestReportChoiceKeepsRenderedReportWhenSelectionMoves(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	model.mode = model.text.Report
+	model.report = "## Easy Basic Report\n\n### 1. Bottom Line\nWait."
+	model = model.showReportChoice()
+	model.moveChoice(1)
+
+	got := stripANSI(model.view.View())
+	if !strings.Contains(got, "Easy Basic Report") || !strings.Contains(got, "Wait.") {
+		t.Fatalf("report disappeared after moving choice:\n%s", got)
+	}
+	if strings.Contains(got, "##") || strings.Contains(got, "###") {
+		t.Fatalf("report choice showed raw markdown:\n%s", got)
+	}
+}
+
 func TestTUIHelpExposesOnlyUserFacingCommands(t *testing.T) {
 	got := stripANSI(helpContent(englishText()))
 	for _, expected := range []string{"/home", "/help", "/profile", "/settings", "/theme", "/quit"} {

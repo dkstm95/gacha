@@ -97,9 +97,11 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.profile != nil {
 			m.view.SetContent(m.profile.render(m.lang, m.view.Width))
 		} else if m.choice != nil {
-			m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
+			m.view.SetContent(m.choiceContent())
 		} else if m.mode == m.text.Auto && !m.busy {
 			m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
+		} else if m.mode == m.text.Report && m.report != "" && !m.busy {
+			m.view.SetContent(renderMarkdownReport(m.report))
 		}
 	case tea.KeyMsg:
 		key := msg.String()
@@ -156,7 +158,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.save = nil
 				m.report = strings.TrimSpace(msg.output)
-				m.view.SetContent(msg.output)
+				m.view.SetContent(renderMarkdownReport(msg.output))
 			}
 		}
 		m.view.GotoTop()
