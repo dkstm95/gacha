@@ -239,7 +239,7 @@ func themeContent(text uiText) string {
 func renderThemeChoice(choice pendingChoice, text uiText) string {
 	lines := []string{titleStyle.Render(choice.Title)}
 	if strings.TrimSpace(choice.Intro) != "" {
-		lines = append(lines, wrapLine(choice.Intro, 78))
+		lines = append(lines, wrapLine(choice.Intro, 68))
 	}
 	lines = append(lines, mutedStyle.Render(text.ChoiceHint), "")
 	for i, option := range choice.Options {
@@ -273,13 +273,21 @@ func renderThemePreview(theme uiTheme, active bool, text uiText) string {
 	if len(text.HomeOutcomes) > 0 {
 		outcome = text.HomeOutcomes[0]
 	}
-	header := styles.brand.Render(" "+themeLabel(theme, text)+" ") + " " + styles.muted.Render(themeDescription(theme, text))
+	previewWidth := 64
+	textWidth := previewWidth - 6
+	label := styles.brand.Render(" " + themeLabel(theme, text) + " ")
+	descriptionWidth := max(20, textWidth-lipgloss.Width(stripANSI(label))-3)
+	header := label + " " + styles.muted.Render(wrapIndented(themeDescription(theme, text), descriptionWidth, ""))
+	actionLine := styles.section.Render(text.HomeActionsTitle) + " " + styles.actionName.Render(actionName)
+	actionPrompt = wrapIndented(actionPrompt, max(24, textWidth-lipgloss.Width(actionName)-3), strings.Repeat(" ", lipgloss.Width(actionName)+3))
+	outcomeLine := styles.bullet.Render("›") + " " + styles.title.Render(outcome)
+	note := wrapIndented(text.HomeNote, max(24, textWidth-lipgloss.Width(outcome)-3), strings.Repeat(" ", lipgloss.Width(outcome)+3))
 	sample := strings.Join([]string{
-		styles.section.Render(text.HomeActionsTitle) + " " + styles.actionName.Render(actionName) + " " + actionPrompt,
-		styles.bullet.Render("›") + " " + styles.title.Render(outcome) + " " + styles.faint.Render(text.HomeNote),
+		actionLine + " " + actionPrompt,
+		outcomeLine + " " + styles.faint.Render(note),
 		styles.key.Render("enter") + " " + styles.muted.Render(text.ThemeSelectLabel),
 	}, "\n")
-	return styles.panel.Width(72).Render(marker + " " + header + "\n" + sample)
+	return styles.panel.Width(previewWidth).Render(marker + " " + header + "\n" + sample)
 }
 
 func themeLabel(theme uiTheme, text uiText) string {

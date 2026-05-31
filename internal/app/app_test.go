@@ -628,6 +628,36 @@ func TestTUIViewFitsCommonTerminalSizes(t *testing.T) {
 	}
 }
 
+func TestTUICommandViewsFitQuarterTerminal(t *testing.T) {
+	for _, command := range []string{"/theme", "/help"} {
+		t.Run(command, func(t *testing.T) {
+			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+			model := newTUIModel("0.1.27")
+			next, cmd := model.handleSubmit(command)
+			if cmd != nil {
+				t.Fatal("unexpected command")
+			}
+			updated := next.(tuiModel)
+			updated.width = 80
+			updated.height = 24
+			got := stripANSI(updated.View())
+			for _, line := range strings.Split(got, "\n") {
+				if lipgloss.Width(line) > 80 {
+					t.Fatalf("line width %d exceeds 80: %q\n%s", lipgloss.Width(line), line, got)
+				}
+			}
+			for _, fragment := range []string{
+				"│  pro                                                                     │",
+				"│  /languag                                                                │",
+			} {
+				if strings.Contains(got, fragment) {
+					t.Fatalf("command view contains wrapped fragment %q:\n%s", fragment, got)
+				}
+			}
+		})
+	}
+}
+
 func TestTUIFullLayoutKeepsLocalizedPromptInRightPanel(t *testing.T) {
 	for _, tc := range []struct {
 		name       string

@@ -789,8 +789,17 @@ func researchingContent(query string, text uiText) string {
 }
 
 func helpContent(text uiText) string {
-	lines := append([]string(nil), text.HelpLines...)
-	lines[0] = titleStyle.Render(lines[0])
+	lines := []string{titleStyle.Render(text.HelpLines[0])}
+	for _, line := range text.HelpLines[1:] {
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			lines = append(lines, "")
+			continue
+		}
+		command := fields[0]
+		description := strings.TrimSpace(strings.TrimPrefix(line, command))
+		lines = append(lines, padRight(command, 10)+wrapIndented(description, 56, strings.Repeat(" ", 10)))
+	}
 	return strings.Join(lines, "\n")
 }
 
