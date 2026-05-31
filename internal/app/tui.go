@@ -17,6 +17,12 @@ type runResultMsg struct {
 	err       error
 }
 
+type promptOutputMsg struct {
+	query  string
+	chunk  string
+	stream <-chan tea.Msg
+}
+
 type researchPhaseMsg struct{}
 
 type tuiModel struct {
@@ -162,6 +168,18 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.view.GotoTop()
+	case promptOutputMsg:
+		if m.busy && msg.query == m.query {
+			m.report += displayPromptChunk(msg.chunk)
+			if strings.TrimSpace(m.report) != "" {
+				m.mode = m.text.Report
+				m.view.SetContent(strings.TrimSpace(m.report))
+				m.view.GotoBottom()
+			}
+		}
+		if msg.stream != nil {
+			cmds = append(cmds, waitForPromptMsg(msg.stream))
+		}
 	case researchPhaseMsg:
 		if m.busy && len(m.text.ResearchPhases) > 0 {
 			m.phase++
@@ -229,17 +247,52 @@ func inputPlaceholderForWidth(text uiText, width int) string {
 }
 
 func runPromptCmd(query string) tea.Cmd {
+	stream := make(chan tea.Msg, 64)
+	return tea.Batch(startPromptCmd(query, stream), waitForPromptMsg(stream))
+}
+
+func startPromptCmd(query string, stream chan tea.Msg) tea.Cmd {
 	return func() tea.Msg {
-		result := runPrompt(query)
-		return runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+		result := runPromptWithProgress(query, func(chunk string) {
+			stream <- promptOutputMsg{query: query, chunk: chunk, stream: stream}
+		})
+		stream <- runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+		close(stream)
+		return nil
 	}
 }
 
 func runDetailPromptCmd(query string, basicReport string) tea.Cmd {
+	stream := make(chan tea.Msg, 64)
+	return tea.Batch(startDetailPromptCmd(query, basicReport, stream), waitForPromptMsg(stream))
+}
+
+func startDetailPromptCmd(query string, basicReport string, stream chan tea.Msg) tea.Cmd {
 	return func() tea.Msg {
-		result := runDetailedPrompt(query, basicReport)
-		return runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+		result := runDetailedPromptWithProgress(query, basicReport, func(chunk string) {
+			stream <- promptOutputMsg{query: query, chunk: chunk, stream: stream}
+		})
+		stream <- runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+		close(stream)
+		return nil
 	}
+}
+
+func waitForPromptMsg(stream <-chan tea.Msg) tea.Cmd {
+	return func() tea.Msg {
+		msg, ok := <-stream
+		if !ok {
+			return nil
+		}
+		return msg
+	}
+}
+
+func displayPromptChunk(chunk string) string {
+	clean := stripANSI(chunk)
+	clean = strings.ReplaceAll(clean, "\r\n", "\n")
+	clean = strings.ReplaceAll(clean, "\r", "\n")
+	return clean
 }
 
 func researchPhaseTick() tea.Cmd {
