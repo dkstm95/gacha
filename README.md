@@ -286,6 +286,35 @@ Download the latest Windows zip from the releases page.
 Replace your old `gacha.exe`.
 Then open a new terminal.
 
+## Uninstall
+
+macOS and Linux:
+
+```bash
+rm -f ~/.local/bin/gacha ~/.local/bin/gch
+```
+
+If you installed to a custom `GACHA_INSTALL_DIR`, remove `gacha` and `gch`
+from that directory instead.
+
+Windows:
+
+```powershell
+Remove-Item .\gacha.exe
+Remove-Item .\gch.exe
+```
+
+Run those commands in the folder where you placed the executables.
+
+To remove Gacha's local profile and saved reports too:
+
+```bash
+rm -rf ~/.config/gacha ~/.local/share/gacha
+```
+
+This does not remove OpenCode or your AI provider credentials.
+Remove those separately only if you no longer use them for anything else.
+
 ## Fresh Data
 
 Investment information changes quickly.

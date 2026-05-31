@@ -288,6 +288,35 @@ gch update
 기존 `gacha.exe`를 교체하세요.
 그 뒤 새 터미널을 여세요.
 
+## 제거
+
+macOS와 Linux:
+
+```bash
+rm -f ~/.local/bin/gacha ~/.local/bin/gch
+```
+
+설치할 때 `GACHA_INSTALL_DIR`를 따로 지정했다면, 그 폴더에서 `gacha`와
+`gch`를 제거하세요.
+
+Windows:
+
+```powershell
+Remove-Item .\gacha.exe
+Remove-Item .\gch.exe
+```
+
+실행 파일을 옮겨 둔 폴더에서 실행하세요.
+
+Gacha의 로컬 투자 프로필과 저장 리포트까지 지우려면:
+
+```bash
+rm -rf ~/.config/gacha ~/.local/share/gacha
+```
+
+이 명령은 OpenCode나 AI provider 인증 정보는 제거하지 않습니다.
+다른 곳에서도 쓰지 않는 경우에만 별도로 제거하세요.
+
 ## 최신 데이터
 
 투자 정보는 빠르게 바뀝니다.
