@@ -66,6 +66,26 @@ func TestTUIUnknownSlashCommandDoesNotRunPrompt(t *testing.T) {
 	}
 }
 
+func TestTUIShowsPromptOutputWhileBusy(t *testing.T) {
+	model := newTUIModel("0.1.27")
+	model.busy = true
+	model.query = "NVDA"
+	model.view.SetContent(researchingContent(model.query, model.text))
+
+	next, cmd := model.Update(promptOutputMsg{query: "NVDA", chunk: "\x1b[32mpartial report\rnext line"})
+	if cmd != nil {
+		t.Fatal("unexpected command without stream")
+	}
+	updated := next.(tuiModel)
+	got := stripANSI(updated.view.View())
+	if !strings.Contains(got, "partial report") || !strings.Contains(got, "next line") {
+		t.Fatalf("streamed output not visible:\n%s", got)
+	}
+	if updated.mode != updated.text.Report {
+		t.Fatalf("expected report mode while output is streaming, got %q", updated.mode)
+	}
+}
+
 func TestOnboardingContentReflectsSetupState(t *testing.T) {
 	text := englishText()
 	if got := onboardingContent(text, 80, setupReady); got != "" {
