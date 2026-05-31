@@ -208,6 +208,35 @@ func TestTUICommandViewsFitQuarterTerminal(t *testing.T) {
 	}
 }
 
+func TestTUIChoiceViewsRerenderAfterNarrowResize(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	model := newTUIModel("0.1.27")
+	next, cmd := model.handleSubmit("/theme")
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	resized, cmd := next.(tuiModel).Update(tea.WindowSizeMsg{Width: 60, Height: 20})
+	if cmd != nil {
+		t.Fatal("unexpected command")
+	}
+	got := stripANSI(resized.(tuiModel).View())
+	for _, line := range strings.Split(got, "\n") {
+		if lipgloss.Width(line) > 60 {
+			t.Fatalf("line width %d exceeds 60: %q\n%s", lipgloss.Width(line), line, got)
+		}
+	}
+	for _, fragment := range []string{
+		"│  backgroun",
+		"│  lig",
+		"│  Gach",
+		"──                                                    │",
+	} {
+		if strings.Contains(got, fragment) {
+			t.Fatalf("narrow theme view contains clipped fragment %q:\n%s", fragment, got)
+		}
+	}
+}
+
 func TestTUIFullLayoutKeepsLocalizedPromptInRightPanel(t *testing.T) {
 	for _, tc := range []struct {
 		name       string

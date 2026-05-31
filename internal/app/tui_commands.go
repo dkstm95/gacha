@@ -135,7 +135,7 @@ func (m tuiModel) handleThemeSetting(value string) (tea.Model, tea.Cmd) {
 	}
 	m.status = m.text.SettingsSaved
 	m.mode = m.text.System
-	m.view.SetContent(m.text.SettingsSaved + "\n\n" + m.choice.Render(m.text))
+	m.view.SetContent(m.text.SettingsSaved + "\n\n" + m.choice.RenderWidth(m.text, m.view.Width))
 	m.view.GotoTop()
 	return m, nil
 }
@@ -149,7 +149,7 @@ func (m *tuiModel) moveChoice(delta int) {
 		next += len(m.choice.Options)
 	}
 	m.choice.Selected = next
-	m.view.SetContent(m.choice.Render(m.text))
+	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
 	m.view.GotoTop()
 }
 
@@ -192,7 +192,7 @@ func (m tuiModel) showModelChoice() (tea.Model, tea.Cmd) {
 	}
 	m.status = m.text.ModelTitle
 	m.mode = m.text.System
-	m.view.SetContent(m.choice.Render(m.text))
+	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
 	m.view.GotoTop()
 	return m, nil
 }
@@ -217,7 +217,7 @@ func (m tuiModel) showLanguageChoice() (tea.Model, tea.Cmd) {
 	}
 	m.status = m.text.LanguageTitle
 	m.mode = m.text.System
-	m.view.SetContent(m.choice.Render(m.text))
+	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
 	m.view.GotoTop()
 	return m, nil
 }
@@ -234,7 +234,7 @@ func (m tuiModel) showThemeChoice() (tea.Model, tea.Cmd) {
 	}
 	m.status = m.text.ThemeTitle
 	m.mode = m.text.System
-	m.view.SetContent(m.choice.Render(m.text))
+	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
 	m.view.GotoTop()
 	return m, nil
 }
@@ -311,7 +311,7 @@ func (m tuiModel) showReportChoice() tuiModel {
 		Options: reportChoiceOptions(m.text),
 		Footer:  m.text.NewQuestionAction,
 	}
-	m.view.SetContent(m.report + "\n\n" + m.choice.Render(m.text))
+	m.view.SetContent(m.report + "\n\n" + m.choice.RenderWidth(m.text, m.view.Width))
 	m.view.GotoBottom()
 	return m
 }

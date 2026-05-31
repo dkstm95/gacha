@@ -85,7 +85,9 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.view.Height = max(6, msg.Height-8)
 		m.input.Width = max(16, msg.Width-8)
 		m.input.Placeholder = inputPlaceholderForWidth(m.text, msg.Width)
-		if m.mode == m.text.Auto && !m.busy {
+		if m.choice != nil {
+			m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
+		} else if m.mode == m.text.Auto && !m.busy {
 			m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
 		}
 	case tea.KeyMsg:

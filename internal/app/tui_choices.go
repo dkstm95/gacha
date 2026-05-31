@@ -29,12 +29,16 @@ type choiceOption struct {
 }
 
 func (c pendingChoice) Render(text uiText) string {
+	return c.RenderWidth(text, 78)
+}
+
+func (c pendingChoice) RenderWidth(text uiText, width int) string {
 	if c.Kind == choiceTheme {
-		return renderThemeChoice(c, text)
+		return renderThemeChoice(c, text, width)
 	}
 	lines := []string{titleStyle.Render(c.Title)}
 	if strings.TrimSpace(c.Intro) != "" {
-		lines = append(lines, wrapLine(c.Intro, 78))
+		lines = append(lines, wrapLine(c.Intro, max(24, width-4)))
 	}
 	lines = append(lines, mutedStyle.Render(text.ChoiceHint), "")
 	for i, option := range c.Options {
@@ -44,7 +48,7 @@ func (c pendingChoice) Render(text uiText) string {
 		}
 		line := bulletStyle.Render(marker) + " " + actionNameStyle.Render(option.Label)
 		if strings.TrimSpace(option.Description) != "" {
-			line += " " + mutedStyle.Render(wrapIndented(option.Description, 58, "    "))
+			line += " " + mutedStyle.Render(wrapIndented(option.Description, max(18, width-20), "    "))
 		}
 		lines = append(lines, line)
 	}

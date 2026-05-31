@@ -236,10 +236,11 @@ func themeContent(text uiText) string {
 	return choice.Render(text)
 }
 
-func renderThemeChoice(choice pendingChoice, text uiText) string {
+func renderThemeChoice(choice pendingChoice, text uiText, width int) string {
 	lines := []string{titleStyle.Render(choice.Title)}
+	contentWidth := max(28, width-4)
 	if strings.TrimSpace(choice.Intro) != "" {
-		lines = append(lines, wrapLine(choice.Intro, 68))
+		lines = append(lines, wrapLine(choice.Intro, contentWidth))
 	}
 	lines = append(lines, mutedStyle.Render(text.ChoiceHint), "")
 	for i, option := range choice.Options {
@@ -247,17 +248,20 @@ func renderThemeChoice(choice pendingChoice, text uiText) string {
 		if i == choice.Selected {
 			marker = "›"
 		}
-		lines = append(lines, bulletStyle.Render(marker)+" "+actionNameStyle.Render(option.Label)+" "+mutedStyle.Render(wrapIndented(option.Description, 58, "    ")))
+		prefix := bulletStyle.Render(marker) + " " + actionNameStyle.Render(option.Label) + " "
+		indent := strings.Repeat(" ", lipgloss.Width(stripANSI(prefix)))
+		descriptionWidth := max(16, contentWidth-lipgloss.Width(stripANSI(prefix)))
+		lines = append(lines, prefix+mutedStyle.Render(wrapIndented(option.Description, descriptionWidth, indent)))
 	}
-	lines = append(lines, "", sectionStyle.Render(text.ThemePreviewTitle))
+	lines = append(lines, "", sectionStyle.Render(text.ThemePreviewTitle+" - "+text.ThemeSelectLabel))
 	if choice.Selected >= 0 && choice.Selected < len(choice.Options) {
 		selected := themeByName(choice.Options[choice.Selected].Value)
-		lines = append(lines, "", renderThemePreview(selected, configuredTheme() == selected.Name, text))
+		lines = append(lines, "", renderThemePreview(selected, configuredTheme() == selected.Name, text, min(64, contentWidth)))
 	}
 	return strings.Join(lines, "\n")
 }
 
-func renderThemePreview(theme uiTheme, active bool, text uiText) string {
+func renderThemePreview(theme uiTheme, active bool, text uiText, width int) string {
 	styles := makeUIStyles(theme.Palette)
 	marker := " "
 	if active {
@@ -269,23 +273,15 @@ func renderThemePreview(theme uiTheme, active bool, text uiText) string {
 		actionName = text.HomeActions[0].Name
 		actionPrompt = text.HomeActions[0].Prompt
 	}
-	outcome := "Bottom line"
-	if len(text.HomeOutcomes) > 0 {
-		outcome = text.HomeOutcomes[0]
-	}
-	previewWidth := 64
+	previewWidth := max(28, width)
 	textWidth := previewWidth - 6
 	label := styles.brand.Render(" " + themeLabel(theme, text) + " ")
 	descriptionWidth := max(20, textWidth-lipgloss.Width(stripANSI(label))-3)
 	header := label + " " + styles.muted.Render(wrapIndented(themeDescription(theme, text), descriptionWidth, ""))
 	actionLine := styles.section.Render(text.HomeActionsTitle) + " " + styles.actionName.Render(actionName)
 	actionPrompt = wrapIndented(actionPrompt, max(24, textWidth-lipgloss.Width(actionName)-3), strings.Repeat(" ", lipgloss.Width(actionName)+3))
-	outcomeLine := styles.bullet.Render("›") + " " + styles.title.Render(outcome)
-	note := wrapIndented(text.HomeNote, max(24, textWidth-lipgloss.Width(outcome)-3), strings.Repeat(" ", lipgloss.Width(outcome)+3))
 	sample := strings.Join([]string{
 		actionLine + " " + actionPrompt,
-		outcomeLine + " " + styles.faint.Render(note),
-		styles.key.Render("enter") + " " + styles.muted.Render(text.ThemeSelectLabel),
 	}, "\n")
 	return styles.panel.Width(previewWidth).Render(marker + " " + header + "\n" + sample)
 }
