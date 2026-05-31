@@ -9,21 +9,52 @@ import (
 )
 
 const (
-	modelSettingAuto            = "auto"
-	modelSettingOpenCodeDefault = "opencode-default"
-	languageSettingAuto         = "auto"
-	languageSettingEnglish      = "en"
-	languageSettingKorean       = "ko"
-	themeSettingSystem          = "system"
-	themeSettingDark            = "dark"
-	themeSettingLight           = "light"
-	themeSettingGacha           = "gacha"
+	languageSettingAuto    = "auto"
+	languageSettingEnglish = "en"
+	languageSettingKorean  = "ko"
+	themeSettingSystem     = "system"
+	themeSettingDark       = "dark"
+	themeSettingLight      = "light"
+	themeSettingGacha      = "gacha"
 )
 
 type gachaConfig struct {
-	Model    string `json:"model"`
-	Language string `json:"language"`
-	Theme    string `json:"theme"`
+	Language string       `json:"language"`
+	Theme    string       `json:"theme"`
+	Profile  gachaProfile `json:"profile,omitempty"`
+}
+
+func (config gachaConfig) MarshalJSON() ([]byte, error) {
+	type configJSON struct {
+		Language string        `json:"language"`
+		Theme    string        `json:"theme"`
+		Profile  *gachaProfile `json:"profile,omitempty"`
+	}
+	output := configJSON{
+		Language: config.Language,
+		Theme:    config.Theme,
+	}
+	profile := normalizeProfile(config.Profile)
+	if !profileIsZero(profile) {
+		output.Profile = &profile
+	}
+	return json.Marshal(output)
+}
+
+func (config *gachaConfig) UnmarshalJSON(data []byte) error {
+	type configJSON struct {
+		Language string       `json:"language"`
+		Theme    string       `json:"theme"`
+		Profile  gachaProfile `json:"profile,omitempty"`
+	}
+	var input configJSON
+	if err := json.Unmarshal(data, &input); err != nil {
+		return err
+	}
+	config.Language = input.Language
+	config.Theme = input.Theme
+	config.Profile = input.Profile
+	return nil
 }
 
 func runConfigCommand(args []string) error {
@@ -31,18 +62,14 @@ func runConfigCommand(args []string) error {
 		return printConfig()
 	}
 	if args[0] != "set" {
-		return fmt.Errorf("usage: gch config get | gch config set model <value> | gch config set language <auto|en|ko> | gch config set theme <system|dark|light|gacha>")
+		return fmt.Errorf("usage: gch config get | gch config set language <auto|en|ko> | gch config set theme <system|dark|light|gacha>")
 	}
 	if len(args) < 3 {
-		return fmt.Errorf("usage: gch config set model <value> | gch config set language <auto|en|ko> | gch config set theme <system|dark|light|gacha>")
+		return fmt.Errorf("usage: gch config set language <auto|en|ko> | gch config set theme <system|dark|light|gacha>")
 	}
 	key := strings.ToLower(strings.TrimSpace(args[1]))
 	value := strings.TrimSpace(strings.Join(args[2:], " "))
 	switch key {
-	case "model":
-		if err := updateConfigModel(value); err != nil {
-			return err
-		}
 	case "language", "lang":
 		if err := updateConfigLanguage(value); err != nil {
 			return err
@@ -69,19 +96,6 @@ func printConfig() error {
 	}
 	fmt.Println(string(data))
 	return nil
-}
-
-func updateConfigModel(value string) error {
-	model, ok := normalizeModelSetting(value)
-	if !ok {
-		return fmt.Errorf("model must be auto, opencode-default, or provider/model")
-	}
-	config, err := loadGachaConfig()
-	if err != nil {
-		return err
-	}
-	config.Model = model
-	return saveGachaConfig(config)
 }
 
 func updateConfigLanguage(value string) error {
@@ -115,9 +129,6 @@ func configWithDefaults() (gachaConfig, error) {
 	if err != nil {
 		return gachaConfig{}, err
 	}
-	if strings.TrimSpace(config.Model) == "" {
-		config.Model = modelSettingAuto
-	}
 	if strings.TrimSpace(config.Language) == "" {
 		config.Language = languageSettingAuto
 	}
@@ -143,6 +154,7 @@ func loadGachaConfig() (gachaConfig, error) {
 	if err := json.Unmarshal(data, &config); err != nil {
 		return gachaConfig{}, err
 	}
+	config.Profile = normalizeProfile(config.Profile)
 	return config, nil
 }
 
@@ -154,6 +166,7 @@ func saveGachaConfig(config gachaConfig) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
+	config.Profile = normalizeProfile(config.Profile)
 	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return err
@@ -172,28 +185,6 @@ func gachaConfigPath() string {
 		base = filepath.Join(home, ".config")
 	}
 	return filepath.Join(base, "gacha", "config.json")
-}
-
-func normalizeModelSetting(value string) (string, bool) {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return "", false
-	}
-	if strings.EqualFold(value, modelSettingAuto) {
-		return modelSettingAuto, true
-	}
-	if strings.EqualFold(value, modelSettingOpenCodeDefault) {
-		return modelSettingOpenCodeDefault, true
-	}
-	if strings.ContainsAny(value, " \t\n\r") || !strings.Contains(value, "/") {
-		return "", false
-	}
-	return value, true
-}
-
-func validModelSetting(value string) bool {
-	_, ok := normalizeModelSetting(value)
-	return ok
 }
 
 func normalizeThemeSetting(value string) (string, bool) {

@@ -9,12 +9,9 @@ import (
 func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	m.save = nil
 	m.choice = nil
+	m.profile = nil
 	if isSettingsCommand(value) {
-		m.status = m.text.SettingsTitle
-		m.mode = m.text.System
-		m.view.SetContent(settingsContent(m.text))
-		m.view.GotoTop()
-		return m, nil
+		return m.showSettingsChoice()
 	}
 	switch value {
 	case "/q", "/quit", "quit", "exit":
@@ -27,10 +24,8 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "/theme", "theme", "/themes", "themes":
 		return m.showThemeChoice()
-	case "/model", "model":
-		return m.showModelChoice()
-	case "/language", "language", "/lang", "lang":
-		return m.showLanguageChoice()
+	case "/profile", "profile":
+		return m.showProfileEditor()
 	case "/home", "home":
 		m.status = m.text.Ready
 		m.mode = m.text.Auto
@@ -39,28 +34,6 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 		m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
 		m.view.GotoTop()
 		return m, nil
-	case "/doctor", "doctor":
-		m.status = "Doctor"
-		m.runtime = routeLabelFor(m.lang)
-		m.mode = m.text.Runtime
-		m.view.SetContent(doctorContent(m.text))
-		m.view.GotoTop()
-		return m, nil
-	case "/setup", "setup":
-		m.status = m.text.Setup
-		m.mode = m.text.Runtime
-		m.view.SetContent(setupContent(m.text))
-		m.view.GotoTop()
-		return m, nil
-	case "/update", "update":
-		m.status = m.text.Update
-		m.mode = m.text.System
-		m.view.SetContent(m.text.UpdateMessage)
-		m.view.GotoTop()
-		return m, nil
-	}
-	if strings.HasPrefix(value, "/model ") || strings.HasPrefix(value, "model ") {
-		return m.handleModelSetting(value)
 	}
 	if strings.HasPrefix(value, "/language ") || strings.HasPrefix(value, "language ") || strings.HasPrefix(value, "/lang ") || strings.HasPrefix(value, "lang ") {
 		return m.handleLanguageSetting(value)
@@ -90,15 +63,17 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(m.spin.Tick, researchPhaseTick(), runPromptCmd(value))
 }
 
-func (m tuiModel) handleModelSetting(value string) (tea.Model, tea.Cmd) {
-	model := settingValue(value)
-	if err := updateConfigModel(model); err != nil {
-		if !validModelSetting(model) {
-			return m.showSettingsError(m.text.SettingsInvalidModel)
-		}
+func (m tuiModel) showProfileEditor() (tea.Model, tea.Cmd) {
+	config, err := loadGachaConfig()
+	if err != nil {
 		return m.showError(err)
 	}
-	return m.showSettingsSaved()
+	m.profile = newProfileMenu(config.Profile)
+	m.status = profileTitleForLang(m.lang)
+	m.mode = m.text.System
+	m.view.SetContent(m.profile.render(m.lang, m.view.Width))
+	m.view.GotoTop()
+	return m, nil
 }
 
 func (m tuiModel) handleLanguageSetting(value string) (tea.Model, tea.Cmd) {
@@ -149,7 +124,7 @@ func (m *tuiModel) moveChoice(delta int) {
 		next += len(m.choice.Options)
 	}
 	m.choice.Selected = next
-	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
+	m.view.SetContent(m.choiceContent())
 	m.view.GotoTop()
 }
 
@@ -165,8 +140,15 @@ func (m tuiModel) handleChoiceSelection() (tea.Model, tea.Cmd) {
 		return m.handleThemeSetting("/theme " + selected.Value)
 	case choiceLanguage:
 		return m.handleLanguageSetting("/language " + selected.Value)
-	case choiceModel:
-		return m.handleModelSetting("/model " + selected.Value)
+	case choiceSettings:
+		switch selected.Value {
+		case "language":
+			return m.showLanguageChoice()
+		case "theme":
+			return m.showThemeChoice()
+		default:
+			return m, nil
+		}
 	case choiceReport:
 		m.input.SetValue("")
 		return m.handleReportAction(selected.Value)
@@ -175,22 +157,18 @@ func (m tuiModel) handleChoiceSelection() (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m tuiModel) showModelChoice() (tea.Model, tea.Cmd) {
-	config, _ := configWithDefaults()
-	options := []choiceOption{
-		{Label: "Auto", Value: modelSettingAuto, Description: m.text.ModelDescriptions[modelSettingAuto]},
-		{Label: "OpenCode default", Value: modelSettingOpenCodeDefault, Description: m.text.ModelDescriptions[modelSettingOpenCodeDefault]},
-	}
-	selected := selectedChoiceIndex(options, configuredModelSummary(config.Model))
+func (m tuiModel) showSettingsChoice() (tea.Model, tea.Cmd) {
 	m.choice = &pendingChoice{
-		Kind:     choiceModel,
-		Title:    m.text.ModelTitle,
-		Intro:    m.text.ModelIntro,
-		Options:  options,
-		Selected: selected,
-		Footer:   m.text.ModelCustomHint,
+		Kind:  choiceSettings,
+		Title: m.text.SettingsTitle,
+		Intro: settingsOverview(),
+		Options: []choiceOption{
+			{Label: m.text.LanguageTitle, Value: "language", Description: m.text.SettingsLanguageDescription},
+			{Label: m.text.ThemeTitle, Value: "theme", Description: m.text.SettingsThemeDescription},
+		},
+		Footer: m.text.SettingsCommandHint,
 	}
-	m.status = m.text.ModelTitle
+	m.status = m.text.SettingsTitle
 	m.mode = m.text.System
 	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
 	m.view.GotoTop()
@@ -272,18 +250,18 @@ func (m tuiModel) handleReportAction(value string) (tea.Model, tea.Cmd) {
 		path, err := saveReport(pending.query, pending.report)
 		if err != nil {
 			m.status = m.text.Fallback
-			m.view.SetContent(pending.report + "\n\n---\n" + errorContent(err, "", m.text))
+			m.view.SetContent(renderMarkdownReport(pending.report) + "\n\n" + errorContent(err, "", m.text))
 			m.view.GotoBottom()
 			return m, nil
 		}
 		m.status = m.text.Complete
-		m.view.SetContent(pending.report + "\n\n---\n" + m.text.SavedReport + " " + path)
+		m.view.SetContent(renderMarkdownReport(pending.report) + "\n\n" + mutedStyle.Render(strings.Repeat("─", 24)) + "\n" + m.text.SavedReport + " " + path)
 		m.view.GotoBottom()
 		return m, nil
 	}
 	if refusesSaveReport(value) {
 		m.status = m.text.Complete
-		m.view.SetContent(pending.report + "\n\n---\n" + m.text.SkippedSave)
+		m.view.SetContent(renderMarkdownReport(pending.report) + "\n\n" + mutedStyle.Render(strings.Repeat("─", 24)) + "\n" + m.text.SkippedSave)
 		m.view.GotoBottom()
 		return m, nil
 	}
@@ -311,7 +289,7 @@ func (m tuiModel) showReportChoice() tuiModel {
 		Options: reportChoiceOptions(m.text),
 		Footer:  m.text.NewQuestionAction,
 	}
-	m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
+	m.view.SetContent(m.choiceContent())
 	m.view.GotoTop()
 	return m
 }
@@ -323,10 +301,18 @@ func (m tuiModel) returnToReport() tuiModel {
 	return m
 }
 
+func (m tuiModel) choiceContent() string {
+	if m.choice == nil {
+		return ""
+	}
+	choice := m.choice.RenderWidth(m.text, m.view.Width)
+	return choice
+}
+
 func reportContentWithPrompt(report string, text uiText) string {
 	report = strings.TrimSpace(report)
 	if report == "" {
 		return text.SavePrompt
 	}
-	return report + "\n\n---\n" + text.SavePrompt
+	return renderMarkdownReport(report) + "\n\n---\n" + text.SavePrompt
 }

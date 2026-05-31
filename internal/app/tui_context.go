@@ -1,79 +1,6 @@
 package app
 
-import (
-	"strings"
-)
-
-func (m tuiModel) contextRail(width int) string {
-	switch {
-	case m.busy:
-		return m.researchContext(width)
-	case m.mode == m.text.Report:
-		return m.reportContext(width)
-	default:
-		return m.homeContext(width)
-	}
-}
-
-func (m tuiModel) homeContext(width int) string {
-	actions := actionNames(m.text.HomeActions)
-	lines := []string{
-		sectionStyle.Render(m.text.ContextTitle),
-		titleStyle.Render(m.text.ContextTypesTitle),
-	}
-	for _, action := range actions {
-		lines = append(lines, bulletStyle.Render("›")+" "+wrapLine(action, max(12, width-3)))
-	}
-	return strings.Join(lines, "\n")
-}
-
-func (m tuiModel) researchContext(width int) string {
-	lines := []string{
-		sectionStyle.Render(m.text.ContextTitle),
-		titleStyle.Render(m.text.ContextRequestTitle),
-		wrapLine(m.query, max(16, width)),
-		"",
-		titleStyle.Render(m.text.ContextResearchTitle),
-	}
-	for i, phase := range m.text.ResearchPhases {
-		marker := " "
-		switch {
-		case i < m.phase:
-			marker = "✓"
-		case i == m.phase:
-			marker = "•"
-		}
-		lines = append(lines, mutedStyle.Render(marker)+" "+wrapLine(phase, max(12, width-3)))
-		if i >= 4 {
-			break
-		}
-	}
-	lines = append(lines, "", titleStyle.Render(m.text.ContextSourcesTitle), mutedStyle.Render(m.text.ContextSourcesPending))
-	return strings.Join(lines, "\n")
-}
-
-func (m tuiModel) reportContext(width int) string {
-	context := reportContextFromMarkdown(m.report, m.text.ContextReportFallback)
-	lines := []string{
-		sectionStyle.Render(m.text.ContextTitle),
-		titleStyle.Render(m.text.ContextRequestTitle),
-		wrapLine(m.query, max(16, width)),
-		"",
-		titleStyle.Render(m.text.ContextReportTitle),
-	}
-	for _, item := range context {
-		lines = append(lines, bulletStyle.Render("•")+" "+wrapLine(item, max(12, width-3)))
-	}
-	return strings.Join(lines, "\n")
-}
-
-func actionNames(actions []homeAction) []string {
-	names := make([]string, 0, len(actions))
-	for _, action := range actions {
-		names = append(names, action.Name)
-	}
-	return names
-}
+import "strings"
 
 func reportContextFromMarkdown(report string, fallback string) []string {
 	if strings.TrimSpace(report) == "" {
@@ -84,11 +11,17 @@ func reportContextFromMarkdown(report string, fallback string) []string {
 		label string
 	}{
 		{match: "bottom line", label: "Bottom line"},
+		{match: "결론", label: "결론"},
 		{match: "decision rules", label: "Decision rules"},
+		{match: "행동 기준", label: "행동 기준"},
 		{match: "biggest risks", label: "Risks"},
 		{match: "risks", label: "Risks"},
+		{match: "리스크", label: "리스크"},
 		{match: "data check", label: "Data check"},
+		{match: "데이터", label: "데이터"},
 		{match: "source", label: "Sources"},
+		{match: "출처", label: "출처"},
+		{match: "반대 의견", label: "반대 의견"},
 	}
 	var found []string
 	seen := map[string]bool{}

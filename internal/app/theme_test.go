@@ -25,6 +25,9 @@ func TestThemeContentShowsInteractivePreviews(t *testing.T) {
 				"Gacha",
 				"Preview",
 				"select this theme",
+				"Better odds through research.",
+				"Profile: US stocks / ETFs",
+				"Ask an investment question.",
 			},
 		},
 		{
@@ -40,6 +43,9 @@ func TestThemeContentShowsInteractivePreviews(t *testing.T) {
 				"Gacha",
 				"예시",
 				"이 테마 선택",
+				"Better odds through research.",
+				"Profile: US stocks / ETFs",
+				"Ask an investment question.",
 			},
 		},
 	} {
@@ -55,6 +61,9 @@ func TestThemeContentShowsInteractivePreviews(t *testing.T) {
 				if lipgloss.Width(line) > 80 {
 					t.Fatalf("line width %d exceeds 80: %q\n%s", lipgloss.Width(line), line, got)
 				}
+			}
+			if strings.Contains(got, "Decision desk") {
+				t.Fatalf("theme preview should match the prompt-first home:\n%s", got)
 			}
 		})
 	}

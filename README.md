@@ -13,6 +13,20 @@ and turn unclear questions into cleaner decisions.
 
 Korean: [docs/ko/README.md](docs/ko/README.md)
 
+## TL;DR
+
+Install Gacha, run `gch`, answer the one-time research profile, and ask an
+investment question.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dkstm95/gacha/main/install.sh | sh
+gch
+```
+
+Gacha is for research, not trading automation.
+It helps the AI check current data, compare alternatives, surface risks, and
+produce a report you can revisit.
+
 ## What It Helps With
 
 Gacha supports different stages of investment clarity:
@@ -40,6 +54,16 @@ It prepares the workflow and sends it to your connected AI tool.
 
 ## Quick Start
 
+### If You Use an AI Agent
+
+You can ask your coding assistant or terminal agent to install Gacha for you:
+
+```text
+Install Gacha by following the README:
+https://github.com/dkstm95/gacha
+Then run gch and help me complete the first-run setup.
+```
+
 ### macOS and Linux
 
 Install:
@@ -61,7 +85,10 @@ The installer adds two commands:
 
 You do not need extra programming tools to use Gacha.
 
-On first run, Gacha may ask to set up AI.
+On first run, Gacha asks a few questions to set your research profile.
+You can skip it, or change it later with `/profile`.
+
+Gacha may also ask to set up AI.
 Follow the prompts and connect the account you want to use.
 
 If the installer asks you to run one more command, run it once.
@@ -105,11 +132,9 @@ Start the app:
 gch
 ```
 
-You will see a terminal workspace.
-Context is on the left.
-The research area is on the right.
-
-![Gacha TUI home screen](docs/assets/gacha-home.png)
+You will see a simple prompt-first terminal screen.
+If this is your first run, Gacha asks for default research preferences first:
+markets, time horizon, risk preference, report style, and common goals.
 
 Type a question:
 
@@ -123,9 +148,8 @@ Or ask one question without opening the app:
 gch "Should I buy NVDA now?"
 ```
 
-You do not need to choose a model each time.
-By default, Gacha chooses a research-friendly model for you.
-If it cannot choose one, it uses the default from your AI setup.
+You do not need to choose a model. Gacha handles model routing through the
+local AI runtime and falls back to your runtime default when needed.
 
 ## Example Questions
 
@@ -177,16 +201,17 @@ You can paste that prompt into a web AI with browsing.
 Inside the app:
 
 ```text
+/profile
 /settings
-/language
 /theme
 /help
 /quit
 ```
 
-`/language` and `/theme` open interactive selectors.
-Use the arrow keys and enter.
-Or type the full command directly:
+`/profile` shows or edits your research profile.
+`/settings` opens language and theme settings.
+`/theme` jumps directly to the interactive theme selector.
+Use the arrow keys and enter, or type a full command directly:
 
 ```text
 /language auto
@@ -201,10 +226,23 @@ Or type the full command directly:
 Setup, diagnostics, and updates stay outside the app:
 
 ```bash
+gch profile
 gch setup
 gch doctor
 gch update
 ```
+
+## Privacy and Data Flow
+
+Gacha stores your profile and saved reports on your machine.
+Reports are saved only after you choose to save them.
+
+When you ask a question, Gacha sends the research prompt to your connected
+OpenCode runtime and AI provider.
+Your AI provider's own data policy applies to that request.
+
+Gacha does not include product analytics or telemetry in the current version.
+`gch update` contacts GitHub only when you run the update command.
 
 ## Reports
 
@@ -227,8 +265,11 @@ If your question contains Korean text, Gacha asks the AI to answer in Korean.
 To set the language inside the app:
 
 ```text
-/language
+/settings
 ```
+
+Then choose `Language`, or type `/language en`, `/language ko`, or
+`/language auto` directly.
 
 ## Updates
 
@@ -244,6 +285,35 @@ Then it replaces the old one.
 Download the latest Windows zip from the releases page.
 Replace your old `gacha.exe`.
 Then open a new terminal.
+
+## Uninstall
+
+macOS and Linux:
+
+```bash
+rm -f ~/.local/bin/gacha ~/.local/bin/gch
+```
+
+If you installed to a custom `GACHA_INSTALL_DIR`, remove `gacha` and `gch`
+from that directory instead.
+
+Windows:
+
+```powershell
+Remove-Item .\gacha.exe
+Remove-Item .\gch.exe
+```
+
+Run those commands in the folder where you placed the executables.
+
+To remove Gacha's local profile and saved reports too:
+
+```bash
+rm -rf ~/.config/gacha ~/.local/share/gacha
+```
+
+This does not remove OpenCode or your AI provider credentials.
+Remove those separately only if you no longer use them for anything else.
 
 ## Fresh Data
 

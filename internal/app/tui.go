@@ -17,6 +17,12 @@ type runResultMsg struct {
 	err       error
 }
 
+type promptOutputMsg struct {
+	query  string
+	chunk  string
+	stream <-chan tea.Msg
+}
+
 type researchPhaseMsg struct{}
 
 type tuiModel struct {
@@ -37,6 +43,7 @@ type tuiModel struct {
 	query   string
 	report  string
 	choice  *pendingChoice
+	profile *profileFlow
 }
 
 func newTUIModel(version string) tuiModel {
@@ -54,7 +61,14 @@ func newTUIModel(version string) tuiModel {
 	spin.Style = accentStyle
 
 	view := viewport.New(80, 16)
-	view.SetContent(welcomeContent(version, text, 80, 16))
+	config, _ := loadGachaConfig()
+	profile := (*profileFlow)(nil)
+	if shouldShowProfileOnboarding(config.Profile) {
+		profile = newProfileOnboarding(config.Profile)
+		view.SetContent(profile.render(lang, 80))
+	} else {
+		view.SetContent(welcomeContent(version, text, 80, 16))
+	}
 
 	return tuiModel{
 		version: version,
@@ -68,6 +82,7 @@ func newTUIModel(version string) tuiModel {
 		status:  text.Ready,
 		runtime: routeLabelFor(lang),
 		mode:    text.Auto,
+		profile: profile,
 	}
 }
 
@@ -85,13 +100,24 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.view.Height = max(6, msg.Height-8)
 		m.input.Width = max(16, msg.Width-8)
 		m.input.Placeholder = inputPlaceholderForWidth(m.text, msg.Width)
-		if m.choice != nil {
-			m.view.SetContent(m.choice.RenderWidth(m.text, m.view.Width))
+		if m.profile != nil {
+			m.view.SetContent(m.profile.render(m.lang, m.view.Width))
+		} else if m.choice != nil {
+			m.view.SetContent(m.choiceContent())
 		} else if m.mode == m.text.Auto && !m.busy {
 			m.view.SetContent(welcomeContent(m.version, m.text, m.view.Width, m.view.Height))
+		} else if m.mode == m.text.Report && m.report != "" && !m.busy {
+			if m.save != nil {
+				m.view.SetContent(reportContentWithPrompt(m.report, m.text))
+			} else {
+				m.view.SetContent(renderMarkdownReport(m.report))
+			}
 		}
 	case tea.KeyMsg:
 		key := msg.String()
+		if m.profile != nil {
+			return m.handleProfileKey(key)
+		}
 		if m.choice != nil {
 			switch key {
 			case "esc":
@@ -147,10 +173,22 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.save = nil
 				m.report = strings.TrimSpace(msg.output)
-				m.view.SetContent(msg.output)
+				m.view.SetContent(renderMarkdownReport(msg.output))
 			}
 		}
 		m.view.GotoTop()
+	case promptOutputMsg:
+		if m.busy && msg.query == m.query {
+			m.report += displayPromptChunk(msg.chunk)
+			if strings.TrimSpace(m.report) != "" {
+				m.mode = m.text.Report
+				m.view.SetContent(strings.TrimSpace(m.report))
+				m.view.GotoBottom()
+			}
+		}
+		if msg.stream != nil {
+			cmds = append(cmds, waitForPromptMsg(msg.stream))
+		}
 	case researchPhaseMsg:
 		if m.busy && len(m.text.ResearchPhases) > 0 {
 			m.phase++
@@ -181,68 +219,33 @@ func (m tuiModel) View() string {
 	}
 	bodyWidth := max(40, width-outerPadding)
 	contentHeight := max(6, m.height-7)
-	fullLayout := bodyWidth >= 132 && m.height >= 22
-	_, workspaceWidth := splitLayoutWidths(bodyWidth)
-	if fullLayout {
-		m.view.Width = max(30, workspaceWidth-8)
-		m.input.Width = max(16, workspaceWidth-12)
-	} else {
-		m.view.Width = max(30, bodyWidth-4)
-		m.input.Width = max(16, bodyWidth-8)
-	}
+	m.view.Width = max(30, bodyWidth-4)
+	m.input.Width = max(16, bodyWidth-8)
 	m.input.Placeholder = inputPlaceholderForWidth(m.text, m.input.Width)
 	workspaceHeight := contentHeight
-	if fullLayout {
-		workspaceHeight = max(6, contentHeight-4)
-	}
 	m.view.Height = workspaceHeight
 
 	content := m.view.View()
-	if m.mode == m.text.Auto && !m.busy {
-		content = welcomeContentWithColumns(m.version, m.text, m.view.Width, workspaceHeight, !fullLayout)
-		if !fullLayout {
-			homeHeight := lipgloss.Height(content) + 2
-			contentHeight = min(contentHeight, max(8, homeHeight))
-			workspaceHeight = contentHeight
-		}
+	if m.profile != nil {
+		content = m.profile.render(m.lang, m.view.Width)
+	} else if m.mode == m.text.Auto && !m.busy {
+		content = welcomeContent(m.version, m.text, m.view.Width, workspaceHeight)
+		homeHeight := lipgloss.Height(content) + 2
+		contentHeight = min(contentHeight, max(8, homeHeight))
+		workspaceHeight = contentHeight
 		m.view.Height = workspaceHeight
 	}
 
 	header := renderHeader(bodyWidth, m.version)
 	panel := panelStyle.Width(bodyWidth - 2).Height(contentHeight).Render(content)
-	if fullLayout {
-		panel = m.renderSplitMain(bodyWidth, contentHeight, content, m.input.View())
-	}
-	status := renderStatus(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text)
+	status := renderStatusWithFooter(bodyWidth, m.status, m.runtime, m.mode, m.busy, m.spin.View(), m.text, m.profile == nil)
 	parts := []string{header}
 	parts = append(parts, panel)
-	if !fullLayout {
+	if m.profile == nil {
 		parts = append(parts, renderInput(bodyWidth, m.input.View()))
 	}
 	parts = append(parts, status)
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
-}
-
-func (m tuiModel) renderSplitMain(bodyWidth int, height int, workspace string, input string) string {
-	gap := 2
-	railWidth, workspaceWidth := splitLayoutWidths(bodyWidth)
-	rail := panelStyle.Width(railWidth - 2).Height(height).Render(m.contextRail(railWidth - 4))
-	inputBlock := renderInput(workspaceWidth-8, input)
-	innerHeight := max(1, height-4)
-	spacerHeight := max(1, innerHeight-lipgloss.Height(workspace)-lipgloss.Height(inputBlock))
-	mainContent := lipgloss.JoinVertical(lipgloss.Left, workspace, strings.Repeat("\n", spacerHeight-1), inputBlock)
-	main := panelStyle.Width(workspaceWidth - 2).Height(height).Render(mainContent)
-	return lipgloss.JoinHorizontal(lipgloss.Top, rail, strings.Repeat(" ", gap), main)
-}
-
-func splitLayoutWidths(bodyWidth int) (int, int) {
-	gap := 2
-	railWidth := max(34, bodyWidth/3)
-	workspaceWidth := max(58, bodyWidth-railWidth-gap)
-	if railWidth+workspaceWidth+gap > bodyWidth {
-		workspaceWidth = max(40, bodyWidth-railWidth-gap)
-	}
-	return railWidth, workspaceWidth
 }
 
 func inputPlaceholderForWidth(text uiText, width int) string {
@@ -253,17 +256,52 @@ func inputPlaceholderForWidth(text uiText, width int) string {
 }
 
 func runPromptCmd(query string) tea.Cmd {
+	stream := make(chan tea.Msg, 64)
+	return tea.Batch(startPromptCmd(query, stream), waitForPromptMsg(stream))
+}
+
+func startPromptCmd(query string, stream chan tea.Msg) tea.Cmd {
 	return func() tea.Msg {
-		result := runPrompt(query)
-		return runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+		result := runPromptWithProgress(query, func(chunk string) {
+			stream <- promptOutputMsg{query: query, chunk: chunk, stream: stream}
+		})
+		stream <- runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+		close(stream)
+		return nil
 	}
 }
 
 func runDetailPromptCmd(query string, basicReport string) tea.Cmd {
+	stream := make(chan tea.Msg, 64)
+	return tea.Batch(startDetailPromptCmd(query, basicReport, stream), waitForPromptMsg(stream))
+}
+
+func startDetailPromptCmd(query string, basicReport string, stream chan tea.Msg) tea.Cmd {
 	return func() tea.Msg {
-		result := runDetailedPrompt(query, basicReport)
-		return runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+		result := runDetailedPromptWithProgress(query, basicReport, func(chunk string) {
+			stream <- promptOutputMsg{query: query, chunk: chunk, stream: stream}
+		})
+		stream <- runResultMsg{query: query, output: result.output, completed: result.completed, err: result.err}
+		close(stream)
+		return nil
 	}
+}
+
+func waitForPromptMsg(stream <-chan tea.Msg) tea.Cmd {
+	return func() tea.Msg {
+		msg, ok := <-stream
+		if !ok {
+			return nil
+		}
+		return msg
+	}
+}
+
+func displayPromptChunk(chunk string) string {
+	clean := stripANSI(chunk)
+	clean = strings.ReplaceAll(clean, "\r\n", "\n")
+	clean = strings.ReplaceAll(clean, "\r", "\n")
+	return clean
 }
 
 func researchPhaseTick() tea.Cmd {

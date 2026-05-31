@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"os"
 	"strings"
 )
 
@@ -12,22 +11,6 @@ func settingValue(value string) string {
 		return ""
 	}
 	return strings.TrimSpace(fields[1])
-}
-
-func configuredModelSummary(model string) string {
-	if envModel := strings.TrimSpace(os.Getenv("GACHA_OPENCODE_MODEL")); envModel != "" {
-		return envModel + " (from GACHA_OPENCODE_MODEL)"
-	}
-	switch {
-	case model == "":
-		return modelSettingAuto
-	case strings.EqualFold(model, modelSettingAuto):
-		return modelSettingAuto
-	case strings.EqualFold(model, modelSettingOpenCodeDefault):
-		return modelSettingOpenCodeDefault
-	default:
-		return model
-	}
 }
 
 func configuredThemeSummary(theme string) string {
@@ -60,6 +43,15 @@ func wrapLine(value string, width int) string {
 	}
 	lines = append(lines, current)
 	return strings.Join(lines, "\n")
+}
+
+func wrapParagraphs(value string, width int) string {
+	paragraphs := strings.Split(strings.TrimSpace(value), "\n\n")
+	wrapped := make([]string, 0, len(paragraphs))
+	for _, paragraph := range paragraphs {
+		wrapped = append(wrapped, wrapLine(paragraph, width))
+	}
+	return strings.Join(wrapped, "\n\n")
 }
 
 func wrapIndented(value string, width int, indent string) string {

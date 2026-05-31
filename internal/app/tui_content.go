@@ -2,12 +2,15 @@ package app
 
 import (
 	"fmt"
-	"github.com/charmbracelet/lipgloss"
 	"os"
 	"strings"
 )
 
 func runPrompt(query string) promptRunResult {
+	return runPromptWithProgress(query, nil)
+}
+
+func runPromptWithProgress(query string, onOutput func(string)) promptRunResult {
 	prompt, err := buildPrompt([]string{query})
 	if err != nil {
 		return promptRunResult{err: err}
@@ -16,7 +19,7 @@ func runPrompt(query string) promptRunResult {
 	if !ok || !hasOpenCodeAuth() {
 		return promptRunResult{output: prompt}
 	}
-	output, err := runOpenCodeWithResolution(commandPath, prompt, resolveOpenCodeModel(), false)
+	output, err := runOpenCodeWithResolutionProgress(commandPath, prompt, resolveOpenCodeModel(), false, onOutput)
 	if err != nil {
 		return promptRunResult{output: output, err: err}
 	}
@@ -25,6 +28,10 @@ func runPrompt(query string) promptRunResult {
 }
 
 func runDetailedPrompt(query string, basicReport string) promptRunResult {
+	return runDetailedPromptWithProgress(query, basicReport, nil)
+}
+
+func runDetailedPromptWithProgress(query string, basicReport string, onOutput func(string)) promptRunResult {
 	prompt, err := buildDetailedPrompt(query, basicReport)
 	if err != nil {
 		return promptRunResult{err: err}
@@ -33,7 +40,7 @@ func runDetailedPrompt(query string, basicReport string) promptRunResult {
 	if !ok || !hasOpenCodeAuth() {
 		return promptRunResult{output: prompt}
 	}
-	output, err := runOpenCodeWithResolution(commandPath, prompt, resolveOpenCodeModel(), false)
+	output, err := runOpenCodeWithResolutionProgress(commandPath, prompt, resolveOpenCodeModel(), false, onOutput)
 	if err != nil {
 		return promptRunResult{output: output, err: err}
 	}
@@ -44,60 +51,34 @@ func runDetailedPrompt(query string, basicReport string) promptRunResult {
 	return promptRunResult{output: strings.TrimSpace(basicReport) + "\n\n" + report, completed: true}
 }
 
-func welcomeContent(version string, text uiText, width int, height int) string {
-	return welcomeContentWithColumns(version, text, width, height, true)
-}
-
-func welcomeContentWithColumns(version string, text uiText, width int, height int, allowColumns bool) string {
-	compact := width < 72 || height < 14
-	wide := allowColumns && width >= 104 && height >= 16
-	actions := text.HomeActions
-	outcomes := text.HomeOutcomes
-	if compact {
-		actions = actions[:min(3, len(actions))]
-		outcomes = outcomes[:min(3, len(outcomes))]
+func welcomeContent(version string, text uiText, width int, _ int) string {
+	lang := detectLanguage()
+	config, _ := configWithDefaults()
+	blocks := []string{brandLine(lang)}
+	if profileHasValues(config.Profile) && !config.Profile.Onboarding.Skipped {
+		label := "Profile: "
+		if lang == languageKorean {
+			label = "프로필: "
+		}
+		blocks = append(blocks, "", mutedStyle.Render(wrapLine(label+profileSummary(config.Profile, lang), max(24, width-4))))
+	} else {
+		hint := "No research profile set. Type /profile to personalize reports."
+		if lang == languageKorean {
+			hint = "투자 프로필이 없습니다. /profile에서 리포트를 개인화하세요."
+		}
+		blocks = append(blocks, "", mutedStyle.Render(wrapLine(hint, max(24, width-4))))
 	}
-
-	header := renderHomeHero(text, width, compact)
-	actionBlock := renderHomeActions(text.HomeActionsTitle, actions, width)
-	outcomeBlock := renderHomeSection(text.HomeOutcomesTitle, outcomes, "•", width)
-	if wide {
-		leftWidth := max(38, (width*54)/100)
-		rightWidth := max(30, width-leftWidth-4)
-		actionBlock = renderHomeActions(text.HomeActionsTitle, actions, leftWidth)
-		outcomeBlock = renderHomeSection(text.HomeOutcomesTitle, outcomes, "•", rightWidth)
-	}
-
-	blocks := []string{header}
 	if onboarding := onboardingContent(text, width, setupReadiness()); onboarding != "" {
 		blocks = append(blocks, "", onboarding)
 	}
-	if wide {
-		leftWidth := max(38, (width*54)/100)
-		rightWidth := max(30, width-leftWidth-4)
-		blocks = append(blocks, "", lipgloss.JoinHorizontal(lipgloss.Top,
-			lipgloss.NewStyle().Width(leftWidth).Render(actionBlock),
-			"    ",
-			lipgloss.NewStyle().Width(rightWidth).Render(outcomeBlock),
-		))
-	} else {
-		blocks = append(blocks, "", actionBlock, "", outcomeBlock)
+	prompt := "Ask an investment question."
+	suggestions := "Discover opportunities · Compare a theme · Plan an entry"
+	if lang == languageKorean {
+		prompt = "투자 질문을 입력하세요."
+		suggestions = "투자 후보 탐색 · 테마 비교 · 매수 진입 계획"
 	}
-	if !compact {
-		blocks = append(blocks, "", renderHomeNote(text.HomeNote, width))
-	}
-	blocks = append(blocks, "", faintStyle.Render("v"+version))
+	blocks = append(blocks, "", titleStyle.Render(prompt), "", faintStyle.Render(wrapLine(suggestions, max(24, width-4))), "", faintStyle.Render("v"+version))
 	return strings.Join(blocks, "\n")
-}
-
-func renderHomeHero(text uiText, width int, compact bool) string {
-	title := heroStyle.Render(text.HomeTitle)
-	bodyWidth := width
-	if !compact {
-		bodyWidth = max(40, width-6)
-	}
-	subtitle := mutedStyle.Render(wrapLine(text.HomeSubtitle, bodyWidth))
-	return lipgloss.JoinVertical(lipgloss.Left, title, subtitle)
 }
 
 func onboardingContent(text uiText, width int, state setupState) string {
@@ -175,65 +156,39 @@ func unknownCommandContent(value string, text uiText) string {
 	return fmt.Sprintf(text.UnknownCommand, value) + "\n\n" + helpContent(text)
 }
 
-func doctorContent(text uiText) string {
-	status := text.Missing
-	if hasRunnableCommand(openCodeCommand) {
-		status = text.Ready
-		if !hasOpenCodeAuth() {
-			status = text.LoginRequired
-		}
-	}
-	lines := []string{
-		titleStyle.Render(text.RuntimeTitle),
-		fmt.Sprintf("OpenCode: %s", status),
-		fmt.Sprintf("Command:  %s", openCodeCommand),
-		fmt.Sprintf("Auth:     %s", openCodeAuthPath()),
-	}
-	if resolved, ok := resolveCommand(openCodeCommand); ok {
-		lines = append(lines, fmt.Sprintf("Resolved: %s", resolved))
-	}
-	lines = append(lines, fmt.Sprintf("Model:    %s", modelDescription(resolveOpenCodeModel())))
-	if hasOpenCodeAuth() {
-		if providers, err := openCodeAuthList(); err == nil && strings.TrimSpace(providers) != "" {
-			lines = append(lines, "", titleStyle.Render("Providers"), strings.TrimSpace(stripANSI(providers)))
-		}
-	} else {
-		lines = append(lines, "", text.RunSetupHint)
-	}
-	return strings.Join(lines, "\n")
-}
-
-func setupContent(text uiText) string {
-	lines := []string{
-		titleStyle.Render(text.SetupLines[0]),
-		text.SetupLines[1],
-		"",
-		text.SetupLines[2],
-		"",
-		text.SetupLines[3],
-		text.SetupLines[4],
-		text.SetupLines[5],
-	}
-	return strings.Join(lines, "\n")
-}
-
 func settingsContent(text uiText) string {
+	lines := []string{titleStyle.Render(text.SettingsTitle), settingsSummary(text)}
+	return strings.Join(lines, "\n")
+}
+
+func settingsOverview() string {
 	config, err := configWithDefaults()
 	if err != nil {
-		return strings.Join([]string{titleStyle.Render(text.SettingsTitle), err.Error()}, "\n")
+		return err.Error()
 	}
 	lines := []string{
-		titleStyle.Render(text.SettingsTitle),
+		fmt.Sprintf("Language: %s", config.Language),
+		fmt.Sprintf("Theme:    %s", configuredThemeSummary(config.Theme)),
+		fmt.Sprintf("Active:   %s", detectLanguage()),
+	}
+	if envLang := strings.TrimSpace(os.Getenv("GACHA_LANG")); envLang != "" {
+		lines = append(lines, mutedStyle.Render("GACHA_LANG is overriding the language setting."))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func settingsSummary(text uiText) string {
+	config, err := configWithDefaults()
+	if err != nil {
+		return err.Error()
+	}
+	lines := []string{
 		fmt.Sprintf("Config:   %s", gachaConfigPath()),
-		fmt.Sprintf("Model:    %s", configuredModelSummary(config.Model)),
 		fmt.Sprintf("Language: %s", config.Language),
 		fmt.Sprintf("Theme:    %s", configuredThemeSummary(config.Theme)),
 		fmt.Sprintf("Active:   %s", detectLanguage()),
 		"",
-		sectionStyle.Render("Commands"),
-		"/model auto",
-		"/model opencode-default",
-		"/model provider/model",
+		sectionStyle.Render(text.SettingsCommandsTitle),
 		"/language auto",
 		"/language en",
 		"/language ko",
@@ -241,9 +196,6 @@ func settingsContent(text uiText) string {
 		"/theme dark",
 		"/theme light",
 		"/theme gacha",
-	}
-	if envModel := strings.TrimSpace(os.Getenv("GACHA_OPENCODE_MODEL")); envModel != "" {
-		lines = append(lines, "", mutedStyle.Render("GACHA_OPENCODE_MODEL is currently overriding the model setting."))
 	}
 	if envLang := strings.TrimSpace(os.Getenv("GACHA_LANG")); envLang != "" {
 		lines = append(lines, mutedStyle.Render("GACHA_LANG is currently overriding the language setting."))

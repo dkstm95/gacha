@@ -7,8 +7,8 @@ import (
 type choiceKind string
 
 const (
-	choiceModel    choiceKind = "model"
 	choiceLanguage choiceKind = "language"
+	choiceSettings choiceKind = "settings"
 	choiceTheme    choiceKind = "theme"
 	choiceReport   choiceKind = "report"
 )
