@@ -42,6 +42,8 @@ func (a *App) Run(args []string) error {
 		return a.updateSelf()
 	case "config":
 		return runConfigCommand(args[1:])
+	case "profile":
+		return printProfileTo(a.env.Stdout)
 	case "prompt":
 		return printPrompt(args[1:])
 	default:
@@ -71,6 +73,7 @@ Usage:
   gch doctor                               Check the local AI runtime
   gch setup                                Install the runtime and connect an AI provider
   gch settings                             Show model and language settings
+  gch profile                              Show the research profile
   gch config get                           Print the current config JSON
   gch config set model auto                Set model mode or provider/model
   gch config set language ko               Set language: auto, en, or ko

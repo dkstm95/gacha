@@ -81,6 +81,91 @@ func TestBuildPromptLocksReportStructure(t *testing.T) {
 	}
 }
 
+func TestBuildPromptIncludesResearchProfile(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if err := saveGachaConfig(gachaConfig{Profile: gachaProfile{
+		Markets: profileMulti{
+			Selected: []string{profileMarketUSStocksETFs, profileMarketKoreanStocksETFs},
+			Default:  profileMarketUSStocksETFs,
+		},
+		Horizons: profileMulti{
+			Selected: []string{profileHorizonSixToTwelve},
+			Default:  profileHorizonSixToTwelve,
+		},
+		Risk:        profileRiskBalanced,
+		ReportStyle: profileReportBasicFirst,
+		Goals: profileMulti{
+			Selected: []string{profileGoalTheme, profileGoalEntry},
+			Default:  profileGoalEntry,
+		},
+		Onboarding: profileOnboarding{Completed: true},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	prompt, err := buildPrompt([]string{"Should I buy NVDA now?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, expected := range []string{
+		"User research profile:",
+		"Markets of interest: US stocks / ETFs, Korean stocks / ETFs",
+		"Default horizon when unspecified: 6-12 months",
+		"Risk preference: Balanced",
+		"prefer the user's current question over the saved profile",
+		"User request:\nShould I buy NVDA now?",
+	} {
+		if !strings.Contains(prompt, expected) {
+			t.Fatalf("prompt missing profile detail %q:\n%s", expected, prompt)
+		}
+	}
+}
+
+func TestBuildPromptOmitsSkippedResearchProfile(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if err := saveGachaConfig(gachaConfig{Profile: gachaProfile{
+		Markets:    profileMulti{Selected: []string{profileMarketUSStocksETFs}, Default: profileMarketUSStocksETFs},
+		Onboarding: profileOnboarding{Skipped: true},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	prompt, err := buildPrompt([]string{"Should I buy NVDA now?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(prompt, "User research profile:") {
+		t.Fatalf("skipped profile should be omitted:\n%s", prompt)
+	}
+}
+
+func TestBuildPromptUsesKoreanResearchProfileLabels(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if err := saveGachaConfig(gachaConfig{Profile: gachaProfile{
+		Markets: profileMulti{
+			Selected: []string{profileMarketKoreanStocksETFs},
+			Default:  profileMarketKoreanStocksETFs,
+		},
+		Horizons: profileMulti{
+			Selected: []string{profileHorizonSixToTwelve},
+			Default:  profileHorizonSixToTwelve,
+		},
+		Risk:        profileRiskBalanced,
+		ReportStyle: profileReportBasicFirst,
+		Goals:       profileMulti{Selected: []string{profileGoalEntry}, Default: profileGoalEntry},
+		Onboarding:  profileOnboarding{Completed: true},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	prompt, err := buildPrompt([]string{"삼성전자 지금 사도 될까?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, expected := range []string{"한국 주식/ETF", "6-12개월", "균형형", "매수 진입 계획"} {
+		if !strings.Contains(prompt, expected) {
+			t.Fatalf("prompt missing Korean profile label %q:\n%s", expected, prompt)
+		}
+	}
+}
+
 func TestBuildDetailedPromptContinuesFromBasicReport(t *testing.T) {
 	prompt, err := buildDetailedPrompt("NVDA 지금 사도 될까?", "## Easy Basic Report\n\nWatch")
 	if err != nil {

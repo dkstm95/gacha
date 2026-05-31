@@ -21,9 +21,29 @@ const (
 )
 
 type gachaConfig struct {
-	Model    string `json:"model"`
-	Language string `json:"language"`
-	Theme    string `json:"theme"`
+	Model    string       `json:"model"`
+	Language string       `json:"language"`
+	Theme    string       `json:"theme"`
+	Profile  gachaProfile `json:"profile,omitempty"`
+}
+
+func (config gachaConfig) MarshalJSON() ([]byte, error) {
+	type configJSON struct {
+		Model    string        `json:"model"`
+		Language string        `json:"language"`
+		Theme    string        `json:"theme"`
+		Profile  *gachaProfile `json:"profile,omitempty"`
+	}
+	output := configJSON{
+		Model:    config.Model,
+		Language: config.Language,
+		Theme:    config.Theme,
+	}
+	profile := normalizeProfile(config.Profile)
+	if !profileIsZero(profile) {
+		output.Profile = &profile
+	}
+	return json.Marshal(output)
 }
 
 func runConfigCommand(args []string) error {
@@ -143,6 +163,7 @@ func loadGachaConfig() (gachaConfig, error) {
 	if err := json.Unmarshal(data, &config); err != nil {
 		return gachaConfig{}, err
 	}
+	config.Profile = normalizeProfile(config.Profile)
 	return config, nil
 }
 
@@ -154,6 +175,7 @@ func saveGachaConfig(config gachaConfig) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
+	config.Profile = normalizeProfile(config.Profile)
 	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return err

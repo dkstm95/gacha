@@ -9,6 +9,7 @@ import (
 func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	m.save = nil
 	m.choice = nil
+	m.profile = nil
 	if isSettingsCommand(value) {
 		m.status = m.text.SettingsTitle
 		m.mode = m.text.System
@@ -31,6 +32,8 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 		return m.showModelChoice()
 	case "/language", "language", "/lang", "lang":
 		return m.showLanguageChoice()
+	case "/profile", "profile":
+		return m.showProfileEditor()
 	case "/home", "home":
 		m.status = m.text.Ready
 		m.mode = m.text.Auto
@@ -88,6 +91,19 @@ func (m tuiModel) handleSubmit(value string) (tea.Model, tea.Cmd) {
 	m.mode = m.text.Auto
 	m.view.SetContent(researchingContent(value, m.text))
 	return m, tea.Batch(m.spin.Tick, researchPhaseTick(), runPromptCmd(value))
+}
+
+func (m tuiModel) showProfileEditor() (tea.Model, tea.Cmd) {
+	config, err := loadGachaConfig()
+	if err != nil {
+		return m.showError(err)
+	}
+	m.profile = newProfileMenu(config.Profile)
+	m.status = profileTitleForLang(m.lang)
+	m.mode = m.text.System
+	m.view.SetContent(m.profile.render(m.lang, m.view.Width))
+	m.view.GotoTop()
+	return m, nil
 }
 
 func (m tuiModel) handleModelSetting(value string) (tea.Model, tea.Cmd) {

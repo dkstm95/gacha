@@ -61,7 +61,10 @@ The installer adds two commands:
 
 You do not need extra programming tools to use Gacha.
 
-On first run, Gacha may ask to set up AI.
+On first run, Gacha asks a few questions to set your research profile.
+You can skip it, or change it later with `/profile`.
+
+Gacha may also ask to set up AI.
 Follow the prompts and connect the account you want to use.
 
 If the installer asks you to run one more command, run it once.
@@ -105,11 +108,9 @@ Start the app:
 gch
 ```
 
-You will see a terminal workspace.
-Context is on the left.
-The research area is on the right.
-
-![Gacha TUI home screen](docs/assets/gacha-home.png)
+You will see a simple prompt-first terminal screen.
+If this is your first run, Gacha asks for default research preferences first:
+markets, time horizon, risk preference, report style, and common goals.
 
 Type a question:
 
@@ -177,6 +178,7 @@ You can paste that prompt into a web AI with browsing.
 Inside the app:
 
 ```text
+/profile
 /settings
 /language
 /theme
@@ -184,6 +186,7 @@ Inside the app:
 /quit
 ```
 
+`/profile` shows or edits your research profile.
 `/language` and `/theme` open interactive selectors.
 Use the arrow keys and enter.
 Or type the full command directly:
@@ -201,6 +204,7 @@ Or type the full command directly:
 Setup, diagnostics, and updates stay outside the app:
 
 ```bash
+gch profile
 gch setup
 gch doctor
 gch update

@@ -58,6 +58,10 @@ func (a *App) startLineSession() error {
 			if err := ensureRuntime(true); err != nil {
 				fmt.Fprintln(a.env.Stderr, err)
 			}
+		case "/profile", "profile":
+			if err := printProfileTo(a.env.Stdout); err != nil {
+				fmt.Fprintln(a.env.Stderr, err)
+			}
 		default:
 			if isSlashCommand(input) {
 				fmt.Fprintln(a.env.Stdout, fmt.Sprintf(text.UnknownCommand, input))

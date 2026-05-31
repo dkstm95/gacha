@@ -26,6 +26,13 @@ func TestLineSessionShowsHelpForUnknownSlashCommand(t *testing.T) {
 	}
 }
 
+func TestLineSessionShowsProfile(t *testing.T) {
+	output := runLineSessionWithInput(t, "/profile\n/quit\n")
+	if !strings.Contains(output, "Research Profile") {
+		t.Fatalf("line session did not show profile:\n%s", output)
+	}
+}
+
 func runLineSessionWithInput(t *testing.T, input string) string {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())

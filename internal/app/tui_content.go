@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"github.com/charmbracelet/lipgloss"
 	"os"
 	"strings"
 )
@@ -44,60 +43,34 @@ func runDetailedPrompt(query string, basicReport string) promptRunResult {
 	return promptRunResult{output: strings.TrimSpace(basicReport) + "\n\n" + report, completed: true}
 }
 
-func welcomeContent(version string, text uiText, width int, height int) string {
-	return welcomeContentWithColumns(version, text, width, height, true)
-}
-
-func welcomeContentWithColumns(version string, text uiText, width int, height int, allowColumns bool) string {
-	compact := width < 72 || height < 14
-	wide := allowColumns && width >= 104 && height >= 16
-	actions := text.HomeActions
-	outcomes := text.HomeOutcomes
-	if compact {
-		actions = actions[:min(3, len(actions))]
-		outcomes = outcomes[:min(3, len(outcomes))]
+func welcomeContent(version string, text uiText, width int, _ int) string {
+	lang := detectLanguage()
+	config, _ := configWithDefaults()
+	blocks := []string{brandLine(lang)}
+	if profileHasValues(config.Profile) && !config.Profile.Onboarding.Skipped {
+		label := "Profile: "
+		if lang == languageKorean {
+			label = "프로필: "
+		}
+		blocks = append(blocks, "", mutedStyle.Render(wrapLine(label+profileSummary(config.Profile, lang), max(24, width-4))))
+	} else {
+		hint := "No research profile set. Type /profile to personalize reports."
+		if lang == languageKorean {
+			hint = "투자 프로필이 없습니다. /profile에서 리포트를 개인화하세요."
+		}
+		blocks = append(blocks, "", mutedStyle.Render(wrapLine(hint, max(24, width-4))))
 	}
-
-	header := renderHomeHero(text, width, compact)
-	actionBlock := renderHomeActions(text.HomeActionsTitle, actions, width)
-	outcomeBlock := renderHomeSection(text.HomeOutcomesTitle, outcomes, "•", width)
-	if wide {
-		leftWidth := max(38, (width*54)/100)
-		rightWidth := max(30, width-leftWidth-4)
-		actionBlock = renderHomeActions(text.HomeActionsTitle, actions, leftWidth)
-		outcomeBlock = renderHomeSection(text.HomeOutcomesTitle, outcomes, "•", rightWidth)
-	}
-
-	blocks := []string{header}
 	if onboarding := onboardingContent(text, width, setupReadiness()); onboarding != "" {
 		blocks = append(blocks, "", onboarding)
 	}
-	if wide {
-		leftWidth := max(38, (width*54)/100)
-		rightWidth := max(30, width-leftWidth-4)
-		blocks = append(blocks, "", lipgloss.JoinHorizontal(lipgloss.Top,
-			lipgloss.NewStyle().Width(leftWidth).Render(actionBlock),
-			"    ",
-			lipgloss.NewStyle().Width(rightWidth).Render(outcomeBlock),
-		))
-	} else {
-		blocks = append(blocks, "", actionBlock, "", outcomeBlock)
+	prompt := "Ask an investment question."
+	suggestions := "Discover opportunities · Compare a theme · Plan an entry"
+	if lang == languageKorean {
+		prompt = "투자 질문을 입력하세요."
+		suggestions = "투자 후보 탐색 · 테마 비교 · 매수 진입 계획"
 	}
-	if !compact {
-		blocks = append(blocks, "", renderHomeNote(text.HomeNote, width))
-	}
-	blocks = append(blocks, "", faintStyle.Render("v"+version))
+	blocks = append(blocks, "", titleStyle.Render(prompt), "", faintStyle.Render(wrapLine(suggestions, max(24, width-4))), "", faintStyle.Render("v"+version))
 	return strings.Join(blocks, "\n")
-}
-
-func renderHomeHero(text uiText, width int, compact bool) string {
-	title := heroStyle.Render(text.HomeTitle)
-	bodyWidth := width
-	if !compact {
-		bodyWidth = max(40, width-6)
-	}
-	subtitle := mutedStyle.Render(wrapLine(text.HomeSubtitle, bodyWidth))
-	return lipgloss.JoinVertical(lipgloss.Left, title, subtitle)
 }
 
 func onboardingContent(text uiText, width int, state setupState) string {

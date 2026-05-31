@@ -62,6 +62,15 @@ func wrapLine(value string, width int) string {
 	return strings.Join(lines, "\n")
 }
 
+func wrapParagraphs(value string, width int) string {
+	paragraphs := strings.Split(strings.TrimSpace(value), "\n\n")
+	wrapped := make([]string, 0, len(paragraphs))
+	for _, paragraph := range paragraphs {
+		wrapped = append(wrapped, wrapLine(paragraph, width))
+	}
+	return strings.Join(wrapped, "\n\n")
+}
+
 func wrapIndented(value string, width int, indent string) string {
 	wrapped := wrapLine(value, width)
 	lines := strings.Split(wrapped, "\n")

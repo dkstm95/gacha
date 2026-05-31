@@ -117,13 +117,19 @@ Classify the user's request into discover, select, entry, exit, portfolio, or jo
 		query = "(No additional user request supplied.)"
 	}
 	lang := responseLanguage(query)
+	config, _ := loadGachaConfig()
 	sections := []string{
 		strings.TrimSpace(system),
 		strings.TrimSpace(workflow),
 		"Workflow library:\n" + strings.TrimSpace(workflows),
-		"User request:\n" + query,
-		"Response language:\nWrite the final report in " + string(lang) + ". Keep source names, ticker symbols, numbers, and URLs unchanged.",
-		"Report template:\n" + strings.TrimSpace(template),
+	}
+	if profileBlock := profilePromptBlock(config, lang); strings.TrimSpace(profileBlock) != "" {
+		sections = append(sections, profileBlock)
+	}
+	sections = append(sections,
+		"User request:\n"+query,
+		"Response language:\nWrite the final report in "+string(lang)+". Keep source names, ticker symbols, numbers, and URLs unchanged.",
+		"Report template:\n"+strings.TrimSpace(template),
 		`Report structure contract:
 - The final answer must start with the Easy Basic Report from the template.
 - Write for ordinary users, not investment professionals. Use short sentences and explain necessary jargon in plain language.
@@ -140,7 +146,7 @@ Classify the user's request into discover, select, entry, exit, portfolio, or jo
 - Include data freshness, source links, risks, action conditions, and what to monitor next. Include the strongest opposite view when making a recommendation.
 - Write user-facing explanations, headings, and action conditions in the response language above.
 - Do not execute trades. The final decision remains with the user.`,
-	}
+	)
 	return strings.Join(sections, "\n\n"), nil
 }
 

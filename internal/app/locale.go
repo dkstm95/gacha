@@ -100,21 +100,8 @@ type uiText struct {
 	Researching           string
 	ResearchPhases        []string
 	Footer                string
-	HomeTitle             string
-	HomeSubtitle          string
 	HomeActionsTitle      string
 	HomeActions           []homeAction
-	HomeOutcomesTitle     string
-	HomeOutcomes          []string
-	HomeNote              string
-	ContextTitle          string
-	ContextTypesTitle     string
-	ContextRequestTitle   string
-	ContextResearchTitle  string
-	ContextSourcesTitle   string
-	ContextSourcesPending string
-	ContextReportTitle    string
-	ContextReportFallback string
 	Onboarding            []string
 	Research              func(string) []string
 	HelpLines             []string
@@ -201,10 +188,8 @@ func englishText() uiText {
 			"Reviewing risks",
 			"Writing report",
 		},
-		Footer:           " /help  /settings  /theme  /quit   •   enter to run   •   esc to exit",
-		FooterShort:      " /help  /quit   •   enter run   •   esc exit",
-		HomeTitle:        "What are you deciding?",
-		HomeSubtitle:     "Choose a starting point or ask in plain language.",
+		Footer:           " /profile  /settings  /quit   •   enter to run   •   esc to exit",
+		FooterShort:      " /profile  /settings  /quit   •   enter run",
 		HomeActionsTitle: "Decision desk",
 		HomeActions: []homeAction{
 			{Name: "Buy", Prompt: "Should I buy NVDA now?"},
@@ -213,23 +198,6 @@ func englishText() uiText {
 			{Name: "Exit", Prompt: "Where should I stop out or sell?"},
 			{Name: "Portfolio", Prompt: "Is my portfolio too concentrated?"},
 		},
-		HomeOutcomesTitle: "You'll get",
-		HomeOutcomes: []string{
-			"Bottom line",
-			"Decision rules",
-			"Biggest risks",
-			"Checked data",
-			"Optional detailed analysis",
-		},
-		HomeNote:              "Fresh data before recommendations. No automatic trading.",
-		ContextTitle:          "Context",
-		ContextTypesTitle:     "Decision types",
-		ContextRequestTitle:   "Current request",
-		ContextResearchTitle:  "Research",
-		ContextSourcesTitle:   "Sources",
-		ContextSourcesPending: "Collected during research",
-		ContextReportTitle:    "Report",
-		ContextReportFallback: "Report output on the right",
 		Onboarding: []string{
 			"Setup needed",
 			"OpenCode is not installed yet.",
@@ -258,6 +226,7 @@ func englishText() uiText {
 			"Command palette",
 			"/home     return to the dashboard",
 			"/help     show this command palette",
+			"/profile  show or edit your research profile",
 			"/settings show model and language settings",
 			"/model    set model: /model auto, /model opencode-default, or /model provider/model",
 			"/language set UI/report language: /language auto, /language en, /language ko",
@@ -285,9 +254,9 @@ func englishText() uiText {
 		ReportActionsTitle: "Next",
 		ReportChoiceIntro:  "Choose the next step.",
 		ReportActions: []reportChoice{
-			{Key: "d", Label: "d  Detailed analysis", Description: "Extend the report with deeper checks."},
-			{Key: "y", Label: "y  Save", Description: "Write this report to your local reports folder."},
-			{Key: "n", Label: "n  Skip", Description: "Keep reading without saving."},
+			{Key: "d", Label: "Detailed analysis", Description: "Extend the report with deeper checks. Shortcut: d."},
+			{Key: "y", Label: "Save report", Description: "Write this report to your local reports folder. Shortcut: y."},
+			{Key: "n", Label: "Skip saving", Description: "Keep reading without saving. Shortcut: n."},
 		},
 		NewQuestionAction:    "or ask a new question",
 		SavedReport:          "Saved report:",
@@ -357,10 +326,8 @@ func koreanText() uiText {
 			"리스크 검토 중",
 			"리포트 작성 중",
 		},
-		Footer:           " /help  /settings  /theme  /quit   •   enter 실행   •   esc 종료",
-		FooterShort:      " /help  /quit   •   enter 실행   •   esc 종료",
-		HomeTitle:        "어떤 결정을 도와드릴까요?",
-		HomeSubtitle:     "아래에서 시작하거나 평소 말처럼 질문하세요.",
+		Footer:           " /profile  /settings  /quit   •   enter 실행   •   esc 종료",
+		FooterShort:      " /profile  /settings  /quit   •   enter 실행",
 		HomeActionsTitle: "결정 데스크",
 		HomeActions: []homeAction{
 			{Name: "매수", Prompt: "NVDA 지금 사도 될까?"},
@@ -369,23 +336,6 @@ func koreanText() uiText {
 			{Name: "매도", Prompt: "어디서 손절하거나 매도해야 할까?"},
 			{Name: "포트폴리오", Prompt: "내 포트폴리오가 너무 집중되어 있을까?"},
 		},
-		HomeOutcomesTitle: "받게 되는 답변",
-		HomeOutcomes: []string{
-			"쉬운 결론",
-			"행동 기준",
-			"가장 큰 리스크",
-			"확인한 데이터",
-			"선택 상세 분석",
-		},
-		HomeNote:              "추천 전 최신 데이터를 확인합니다. 거래는 실행하지 않습니다.",
-		ContextTitle:          "맥락",
-		ContextTypesTitle:     "결정 유형",
-		ContextRequestTitle:   "현재 질문",
-		ContextResearchTitle:  "조사",
-		ContextSourcesTitle:   "출처",
-		ContextSourcesPending: "조사 중 수집",
-		ContextReportTitle:    "리포트",
-		ContextReportFallback: "오른쪽 리포트 참고",
 		Onboarding: []string{
 			"설정 필요",
 			"OpenCode가 아직 설치되어 있지 않습니다.",
@@ -414,6 +364,7 @@ func koreanText() uiText {
 			"명령 팔레트",
 			"/home     대시보드로 돌아가기",
 			"/help     명령 팔레트 보기",
+			"/profile  투자 프로필 보기 또는 수정",
 			"/settings 모델과 언어 설정 보기",
 			"/model    모델 설정: /model auto, /model opencode-default, /model provider/model",
 			"/language UI/리포트 언어: /language auto, /language en, /language ko",
@@ -441,9 +392,9 @@ func koreanText() uiText {
 		ReportActionsTitle: "다음",
 		ReportChoiceIntro:  "다음 동작을 선택하세요.",
 		ReportActions: []reportChoice{
-			{Key: "d", Label: "d  상세 분석", Description: "리포트를 더 깊게 검증합니다."},
-			{Key: "y", Label: "y  저장", Description: "이 리포트를 로컬 reports 폴더에 저장합니다."},
-			{Key: "n", Label: "n  건너뛰기", Description: "저장하지 않고 계속 봅니다."},
+			{Key: "d", Label: "상세 분석", Description: "리포트를 더 깊게 검증합니다. 단축키: d."},
+			{Key: "y", Label: "리포트 저장", Description: "이 리포트를 로컬 reports 폴더에 저장합니다. 단축키: y."},
+			{Key: "n", Label: "저장 건너뛰기", Description: "저장하지 않고 계속 봅니다. 단축키: n."},
 		},
 		NewQuestionAction:    "또는 새 질문 입력",
 		SavedReport:          "리포트 저장:",

@@ -48,31 +48,3 @@ func renderFooter(width int, text uiText) string {
 	}
 	return faintStyle.Render(footer)
 }
-
-func renderHomeSection(title string, items []string, marker string, width int) string {
-	lines := []string{sectionStyle.Render(title)}
-	for _, item := range items {
-		wrapped := wrapIndented(item, max(16, width-4), "  ")
-		lines = append(lines, bulletStyle.Render(marker)+" "+wrapped)
-	}
-	return strings.Join(lines, "\n")
-}
-
-func renderHomeActions(title string, actions []homeAction, width int) string {
-	lines := []string{sectionStyle.Render(title)}
-	nameWidth := 0
-	for _, action := range actions {
-		nameWidth = max(nameWidth, lipgloss.Width(action.Name))
-	}
-	for _, action := range actions {
-		name := actionNameStyle.Render(padRight(action.Name, nameWidth))
-		promptWidth := max(18, width-nameWidth-4)
-		prompt := wrapIndented(action.Prompt, promptWidth, strings.Repeat(" ", nameWidth+3))
-		lines = append(lines, bulletStyle.Render("›")+" "+name+" "+prompt)
-	}
-	return strings.Join(lines, "\n")
-}
-
-func renderHomeNote(value string, width int) string {
-	return noteStyle.Width(max(24, width-2)).Render(wrapLine(value, max(20, width-6)))
-}
